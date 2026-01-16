@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agendamento - Vinicius Ravagnani</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background-color: #F3F4F6; -webkit-tap-highlight-color: transparent; }
+        
+        /* Ocultar barra de rolagem horizontal mas manter funcionalidade */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Estilo dos Slots de Horário (Pílulas) */
+        .time-slot {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .time-slot.active {
+            background-color: #22c55e; /* Green-500 - Similar ao app da imagem */
+            color: white;
+            border-color: #22c55e;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.3);
+        }
+        .time-slot:disabled {
+            background-color: #f3f4f6;
+            color: #d1d5db;
+            border-color: #e5e7eb;
+            text-decoration: line-through;
+            cursor: not-allowed;
+        }
+
+        /* Animação suave entre telas */
+        .view-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .view-section.active { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="text-gray-800 antialiased pb-24">
+
+    <div id="view-profile" class="view-section active max-w-md mx-auto bg-white min-h-screen shadow-xl overflow-hidden relative">
+        
+        <div class="relative">
+            <div class="h-24 bg-gradient-to-r from-blue-600 to-blue-400"></div> <div class="px-5">
+                <div class="relative -mt-12 mb-3">
+                    <div class="w-24 h-24 rounded-full border-4 border-white overflow-hidden shadow-md bg-white">
+                        <img src="https://ui-avatars.com/api/?name=Vinicius+Ravagnani&background=0D8ABC&color=fff&size=256" alt="Vinicius Ravagnani" class="w-full h-full object-cover">
+                    </div>
+                </div>
+                
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900 leading-tight">Vinicius Ravagnani</h1>
+                        <p class="text-xs text-gray-500 font-medium mt-1">Psicólogo Clínico &bull; CRP 06/XXXXX</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-bold text-gray-900">R$ 150,00</p>
+                        <p class="text-[10px] text-gray-500">/ 50 min</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1 mt-2 mb-4">
+                    <div class="flex text-yellow-400 text-xs">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    </div>
+                    <span class="text-xs text-gray-400 font-medium ml-1">(Agenda Aberta)</span>
+                </div>
+            </div>
+        </div>
+
+        <hr class="border-gray-100">
+
+        <div class="px-5 py-4">
+            <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-shapes text-blue-500"></i> Abordagens
+            </h3>
+            <div class="flex flex-wrap gap-2">
+                <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">TCC</span>
+                <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">Ansiedade</span>
+                <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">Desenvolvimento Pessoal</span>
+            </div>
+        </div>
+
+        <div class="h-2 bg-gray-50"></div>
+
+        <div class="px-5 py-4">
+            <h3 class="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <i class="fa-regular fa-user text-blue-500"></i> Sobre mim
+            </h3>
+            <p class="text-sm text-gray-600 leading-relaxed text-justify">
+                Olá! Sou o Vinicius. Meu foco é ajudar você a compreender seus padrões de comportamento e encontrar caminhos para uma vida mais leve e autêntica. Atendo adolescentes e adultos com foco em Terapia Cognitivo-Comportamental.
+            </p>
+        </div>
+
+        <div class="h-2 bg-gray-50"></div>
+
+        <div class="px-5 py-4 mb-20">
+            <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-graduation-cap text-blue-500"></i> Formação
+            </h3>
+            <ul class="space-y-4">
+                <li class="flex gap-3">
+                    <div class="mt-1 w-2 h-2 rounded-full bg-gray-300 shrink-0"></div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">Psicologia</p>
+                        <p class="text-xs text-gray-500">Universidade X (Ano de Conclusão)</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 max-w-md mx-auto z-10">
+            <button onclick="navigateTo('view-calendar')" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] transition text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/30 flex justify-center items-center gap-2">
+                <i class="fa-regular fa-calendar-check"></i>
+                Ver Horários Disponíveis
+            </button>
+        </div>
+    </div>
+
+    <div id="view-calendar" class="view-section max-w-md mx-auto bg-gray-50 min-h-screen relative">
+        
+        <div class="bg-white px-4 py-3 shadow-sm sticky top-0 z-20 flex items-center gap-3">
+            <button onclick="navigateTo('view-profile')" class="text-gray-600 p-1 hover:bg-gray-100 rounded-full transition"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2 class="font-semibold text-gray-800">Selecionar Horário</h2>
+        </div>
+
+        <div class="bg-white pb-2 pt-2 shadow-sm mb-4">
+            <div class="px-4 mb-2 flex justify-between items-end">
+                <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Mês Atual</p>
+                    <h3 id="current-month-label" class="text-lg font-bold text-gray-800 capitalize">Janeiro</h3>
+                </div>
+                <i class="fa-regular fa-calendar text-gray-300 text-xl"></i>
+            </div>
+            
+            <div id="date-scroll-container" class="flex overflow-x-auto px-4 gap-3 py-2 no-scrollbar snap-x">
+                </div>
+        </div>
+
+        <div class="px-4">
+            <div id="slots-loader" class="hidden flex justify-center py-8">
+                <i class="fa-solid fa-circle-notch fa-spin text-blue-500 text-2xl"></i>
+            </div>
+            
+            <div id="slots-grid" class="grid grid-cols-4 gap-3 pb-32 transition-opacity duration-300">
+                <div class="col-span-4 text-center py-10 text-gray-400 text-sm">
+                    Selecione uma data acima para carregar a agenda.
+                </div>
+            </div>
+        </div>
+
+        <div id="confirm-bar" class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 max-w-md mx-auto transform translate-y-full transition-transform duration-300 z-30">
+            <div class="flex justify-between items-center mb-3">
+                <div class="text-xs text-gray-500">Selecionado:</div>
+                <div id="selected-summary" class="text-sm font-bold text-gray-800 text-right">--/-- às --:--</div>
+            </div>
+            <button onclick="openModal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-green-600/20">
+                Continuar para Pagamento
+            </button>
+        </div>
+    </div>
+
+    <div id="checkout-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.3s_ease-out]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-gray-900">Finalizar Agendamento</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+
+            <form id="booking-form" onsubmit="submitToN8N(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1 uppercase">Nome Completo</label>
+                    <input type="text" name="name" required class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition" placeholder="Ex: Vinicius Ravagnani">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1 uppercase">Celular</label>
+                        <input type="tel" name="phone" required class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition" placeholder="(11) 99999-9999">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1 uppercase">E-mail</label>
+                        <input type="email" name="email" required class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition" placeholder="seu@email.com">
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 p-3 rounded-lg flex items-start gap-3 mt-2">
+                    <i class="fa-solid fa-info-circle text-blue-600 mt-1"></i>
+                    <p class="text-xs text-blue-800 leading-snug">Ao continuar, você será redirecionado para o pagamento seguro. Sua sessão será confirmada após a aprovação.</p>
+                </div>
+
+                <button type="submit" id="btn-submit" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-xl mt-4 flex justify-center items-center gap-3 transition-all">
+                    <span>Pagar e Agendar</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURAÇÃO (PREENCHA AQUI) ---
+        const CONFIG = {
+            // URL do seu Webhook N8N (GET) que retorna horários livres
+            // Se deixar vazio, o app usa o MODO SIMULAÇÃO automaticamente
+            webhookGetSlots: "", 
+            
+            // URL do seu Webhook N8N (POST) que processa o pagamento
+            webhookCreateBooking: "" 
+        };
+
+        // --- ESTADO GLOBAL ---
+        let state = {
+            selectedDateISO: null, // YYYY-MM-DD
+            selectedDateDisplay: null,
+            selectedTime: null,
+            slotsCache: {}
+        };
+
+        // --- INICIALIZAÇÃO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initCalendar();
+        });
+
+        // --- NAVEGAÇÃO ---
+        function navigateTo(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        function openModal() {
+            document.getElementById('checkout-modal').classList.remove('hidden');
+        }
+        function closeModal() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+        }
+
+        // --- LÓGICA DE DATAS (CALENDÁRIO DINÂMICO) ---
+        function initCalendar() {
+            const container = document.getElementById('date-scroll-container');
+            const monthLabel = document.getElementById('current-month-label');
+            const today = new Date();
+            const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            
+            // Define Mês Atual
+            monthLabel.textContent = today.toLocaleDateString('pt-BR', { month: 'long' });
+
+            // Gera próximos 21 dias
+            for (let i = 0; i < 21; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                
+                // Pular Domingos (Opcional - Psicólogos as vezes não atendem domingo)
+                if (date.getDay() === 0) continue; 
+
+                const dayNum = date.getDate();
+                const weekDay = weekDays[date.getDay()];
+                const isoDate = date.toISOString().split('T')[0];
+                const fullDisplay = date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+
+                // Cria elemento HTML do dia
+                const btn = document.createElement('button');
+                btn.className = `flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl border border-gray-200 bg-white transition snap-center focus:outline-none date-card`;
+                btn.dataset.date = isoDate;
+                btn.dataset.display = fullDisplay;
+                
+                btn.innerHTML = `
+                    <span class="text-[10px] text-gray-400 font-bold uppercase mb-1 pointer-events-none">${weekDay}</span>
+                    <span class="text-lg font-bold text-gray-700 pointer-events-none">${dayNum}</span>
+                `;
+
+                btn.onclick = () => selectDate(btn, isoDate, fullDisplay);
+                container.appendChild(btn);
+
+                // Selecionar o primeiro dia automaticamente
+                if (i === 0) selectDate(btn, isoDate, fullDisplay);
+            }
+        }
+
+        function selectDate(btnElement, dateISO, dateDisplay) {
+            // UI Update
+            document.querySelectorAll('.date-card').forEach(b => {
+                b.className = `flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl border border-gray-200 bg-white transition snap-center focus:outline-none date-card`;
+                b.children[0].className = 'text-[10px] text-gray-400 font-bold uppercase mb-1';
+                b.children[1].className = 'text-lg font-bold text-gray-700';
+            });
+            
+            // Active State
+            btnElement.className = `flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl bg-gray-800 border-gray-800 shadow-lg shadow-gray-400/50 transform scale-105 transition snap-center focus:outline-none date-card`;
+            btnElement.children[0].className = 'text-[10px] text-gray-300 font-bold uppercase mb-1';
+            btnElement.children[1].className = 'text-lg font-bold text-white';
+
+            // Logic Update
+            state.selectedDateISO = dateISO;
+            state.selectedDateDisplay = dateDisplay;
+            state.selectedTime = null;
+            document.getElementById('confirm-bar').classList.remove('translate-y-0');
+            document.getElementById('confirm-bar').classList.add('translate-y-full');
+
+            loadSlots(dateISO);
+        }
+
+        // --- LÓGICA DE HORÁRIOS (INTEGRAÇÃO N8N) ---
+        async function loadSlots(dateISO) {
+            const grid = document.getElementById('slots-grid');
+            const loader = document.getElementById('slots-loader');
+            
+            grid.innerHTML = '';
+            loader.classList.remove('hidden');
+
+            let slots = [];
+
+            try {
+                if (CONFIG.webhookGetSlots) {
+                    // MODO PRODUÇÃO: Chama o N8N
+                    const response = await fetch(`${CONFIG.webhookGetSlots}?date=${dateISO}`);
+                    const data = await response.json();
+                    slots = data.availableSlots || []; // Espera { availableSlots: ["08:00", ...] }
+                } else {
+                    // MODO SIMULAÇÃO (Fallback Inteligente)
+                    await new Promise(r => setTimeout(r, 600)); // Fake delay
+                    slots = generateMockSlots(dateISO);
+                }
+            } catch (e) {
+                console.error("Erro ao buscar horários", e);
+                slots = generateMockSlots(dateISO); // Fallback em erro
+            }
+
+            loader.classList.add('hidden');
+            renderSlots(slots);
+        }
+
+        function generateMockSlots(dateISO) {
+            // Gera horários fictícios para demonstração
+            // Remove aleatoriamente alguns horários para parecer real
+            const all = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
+            return all.filter(() => Math.random() > 0.3); 
+        }
+
+        function renderSlots(slots) {
+            const grid = document.getElementById('slots-grid');
+            
+            if(slots.length === 0) {
+                grid.innerHTML = '<div class="col-span-4 text-center py-4 text-gray-500 text-sm bg-white rounded-lg border border-gray-100">Sem horários para este dia.</div>';
+                return;
+            }
+
+            slots.forEach(time => {
+                const btn = document.createElement('button');
+                btn.className = 'time-slot border border-gray-200 bg-white rounded-lg py-3 text-sm font-medium text-gray-600 hover:border-green-500 hover:text-green-600 focus:outline-none';
+                btn.textContent = time;
+                
+                btn.onclick = () => {
+                    // Remove active de todos
+                    document.querySelectorAll('.time-slot').forEach(b => b.classList.remove('active'));
+                    // Adiciona neste
+                    btn.classList.add('active');
+                    
+                    state.selectedTime = time;
+                    updateSummary();
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function updateSummary() {
+            const bar = document.getElementById('confirm-bar');
+            const summary = document.getElementById('selected-summary');
+            
+            if (state.selectedTime) {
+                summary.innerHTML = `<span class="text-green-600">${state.selectedDateDisplay}</span> às <span class="text-green-600">${state.selectedTime}</span>`;
+                bar.classList.remove('translate-y-full');
+                bar.classList.add('translate-y-0');
+            }
+        }
+
+        // --- SUBMISSÃO (CHECKOUT) ---
+        async function submitToN8N(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit');
+            const originalText = btn.innerHTML;
+            
+            // Estado Loading
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Processando...`;
+
+            const formData = new FormData(e.target);
+            const payload = {
+                profissional: "Vinicius Ravagnani",
+                cliente: {
+                    nome: formData.get('name'),
+                    telefone: formData.get('phone'),
+                    email: formData.get('email')
+                },
+                agendamento: {
+                    dataISO: state.selectedDateISO,
+                    hora: state.selectedTime,
+                    valor: 150.00
+                }
+            };
+
+            try {
+                if (CONFIG.webhookCreateBooking) {
+                    // MODO REAL
+                    const response = await fetch(CONFIG.webhookCreateBooking, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    
+                    // Se o n8n devolver { redirectUrl: "..." }
+                    if (result.redirectUrl) {
+                        window.location.href = result.redirectUrl;
+                    } else {
+                        alert("Agendamento recebido! Verifique seu e-mail.");
+                    }
+                } else {
+                    // MODO SIMULAÇÃO
+                    await new Promise(r => setTimeout(r, 1500));
+                    console.log("PAYLOAD ENVIADO (Simulação):", payload);
+                    alert(`SIMULAÇÃO DE SUCESSO!\n\nDados que seriam enviados ao N8N:\nData: ${payload.agendamento.dataISO}\nHora: ${payload.agendamento.hora}\nCliente: ${payload.cliente.nome}\n\nAgora configure a URL no código!`);
+                    location.reload();
+                }
+            } catch (err) {
+                alert("Erro ao processar. Tente novamente.");
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+    </script>
+</body>
+</html>
