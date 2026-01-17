@@ -307,33 +307,47 @@
 
         // --- LÓGICA DE HORÁRIOS (INTEGRAÇÃO N8N) ---
         async function loadSlots(dateISO) {
-            const grid = document.getElementById('slots-grid');
-            const loader = document.getElementById('slots-loader');
-            
-            grid.innerHTML = '';
-            loader.classList.remove('hidden');
+    const grid = document.getElementById('slots-grid');
+    const loader = document.getElementById('slots-loader');
+    
+    grid.innerHTML = '';
+    loader.classList.remove('hidden');
 
-            let slots = [];
+    let slots = [];
 
-            try {
-                if (CONFIG.webhookGetSlots) {
-                    // MODO PRODUÇÃO: Chama o N8N
-                    const response = await fetch(`${CONFIG.webhookGetSlots}?date=${dateISO}`);
-                    const data = await response.json();
-                    slots = data.availableSlots || []; // Espera { availableSlots: ["08:00", ...] }
-                } else {
-                    // MODO SIMULAÇÃO (Fallback Inteligente)
-                    await new Promise(r => setTimeout(r, 600)); // Fake delay
-                    slots = generateMockSlots(dateISO);
+    try {
+        if (CONFIG.webhookGetSlots) {
+            // MODO PRODUÇÃO: Chama o N8N com headers CORS
+            const response = await fetch(`${CONFIG.webhookGetSlots}?date=${dateISO}`, {
+                method: 'GET',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 }
-            } catch (e) {
-                console.error("Erro ao buscar horários", e);
-                slots = generateMockSlots(dateISO); // Fallback em erro
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-
-            loader.classList.add('hidden');
-            renderSlots(slots);
+            
+            const data = await response.json();
+            slots = data.availableSlots || []; // Espera { availableSlots: ["08:00", ...] }
+            console.log('Dados recebidos:', data);
+        } else {
+            // MODO SIMULAÇÃO (Fallback Inteligente)
+            await new Promise(r => setTimeout(r, 600)); // Fake delay
+            slots = generateMockSlots(dateISO);
         }
+    } catch (e) {
+        console.error("Erro ao buscar horários", e);
+        alert(`Erro ao carregar horários: ${e.message}. Usando dados de teste.`);
+        slots = generateMockSlots(dateISO); // Fallback em erro
+    }
+
+    loader.classList.add('hidden');
+    renderSlots(slots);
+}
 
         function generateMockSlots(dateISO) {
             // Gera horários fictícios para demonstração
