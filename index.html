@@ -535,15 +535,20 @@
                        
     <script>
 // --- ESTADO & CONFIGURAÇÃO ---
-const SESSION_PRICE = 150; // Valor padrão por sessão
+const SESSION_PRICE = 150; 
 
+// Estado Global
 let state = {
-    dateCursor: new Date(),
-    selectedDateISO: null,
-    currentClientId: null, // Para prontuário
+    dateCursor: new Date(), // Usado tanto pelo admin quanto pelo cliente
+    selectedDateISO: null,  // Data selecionada
+    selectedTimeSlot: null, // Horário selecionado pelo cliente
+    currentClientId: null,
+    
+    // Dados Persistentes (Simulando Banco de Dados)
     clients: JSON.parse(localStorage.getItem('adminClients') || '[]'),
     slots: JSON.parse(localStorage.getItem('availableSlots') || '{}'),
     notes: JSON.parse(localStorage.getItem('adminNotes') || '{}'),
+    bookings: JSON.parse(localStorage.getItem('bookings') || '[]'), // Adicionado ao state
     settings: JSON.parse(localStorage.getItem('adminSettings') || JSON.stringify({
         confirm: "Olá {{nome}}, confirmo seu agendamento para {{data}} às {{hora}}. Link: {{link}}",
         reminder: "Oi {{nome}}! Lembrando nosso atendimento amanhã, {{data}} às {{hora}}. Te espero!",
@@ -554,20 +559,237 @@ let state = {
 // --- INICIALIZAÇÃO ---
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
+    
+    // Roteamento Simples
     if (urlParams.get('view') === 'admin') {
         navigateTo('view-admin');
         initDashboard();
-        renderCalendar();
+        renderCalendar(); // Admin Calendar
         renderClientList();
         renderFinancials();
         loadSettings();
     } else {
+        // Fluxo do Cliente
         navigateTo('view-profile');
-        initCalendar();
+        initClientCalendar(); // Inicia calendário do cliente
     }
 });
 
-// Navegação entre abas do painel admin
+// --- FUNÇÕES COMPARTILHADAS / UTILITÁRIOS ---
+
+function navigateTo(viewId) {
+    // Esconde todas as views
+    document.querySelectorAll('.view-section').forEach(el => {
+        el.classList.remove('active');
+        el.style.display = 'none'; // Garante que saia do fluxo
+    });
+    
+    // Mostra a view alvo
+    const target = document.getElementById(viewId);
+    if(target) {
+        target.style.display = 'block';
+        setTimeout(() => target.classList.add('active'), 10); // Pequeno delay para animação CSS
+    }
+}
+
+function showToast(message) {
+    const container = document.getElementById('toast-container');
+    if (!container) return; // Se estiver na visão do cliente, pode não ter container, ou cria-se um
+    
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = message;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+}
+
+function getBookings() {
+    return JSON.parse(localStorage.getItem('bookings') || '[]');
+}
+
+// --- LÓGICA DO CLIENTE (FALTAVA ISSO) ---
+
+function initClientCalendar() {
+    renderClientMonthDays();
+}
+
+function renderClientMonthDays() {
+    const container = document.getElementById('date-scroll-container');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    const label = document.getElementById('current-month-label');
+    
+    const now = new Date();
+    label.textContent = now.toLocaleDateString('pt-BR', { month: 'long' });
+
+    // Gera os próximos 30 dias
+    for (let i = 0; i < 30; i++) {
+        const d = new Date();
+        d.setDate(now.getDate() + i);
+        const iso = d.toISOString().split('T')[0];
+        
+        const dayName = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+        const dayNumber = d.getDate();
+
+        const btn = document.createElement('button');
+        btn.className = `flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center border transition snap-start
+            ${state.selectedDateISO === iso 
+                ? 'bg-gray-900 text-white border-gray-900 shadow-lg transform scale-105' 
+                : 'bg-white border-gray-100 text-gray-500 hover:border-blue-200'}`;
+        
+        btn.onclick = () => selectClientDate(iso, btn);
+        
+        btn.innerHTML = `
+            <span class="text-[10px] font-bold uppercase tracking-wider mb-1">${dayName}</span>
+            <span class="text-xl font-bold">${dayNumber}</span>
+        `;
+        
+        container.appendChild(btn);
+    }
+}
+
+function selectClientDate(iso, btnElement) {
+    state.selectedDateISO = iso;
+    state.selectedTimeSlot = null; // Reseta horário ao trocar dia
+    
+    // Atualiza visual dos botões de dia
+    const container = document.getElementById('date-scroll-container');
+    Array.from(container.children).forEach(child => {
+        child.className = 'flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center border transition snap-start bg-white border-gray-100 text-gray-500 hover:border-blue-200';
+    });
+    btnElement.className = 'flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center border transition snap-start bg-gray-900 text-white border-gray-900 shadow-lg transform scale-105';
+
+    renderClientSlots(iso);
+    updateConfirmBar();
+}
+
+function renderClientSlots(iso) {
+    const grid = document.getElementById('slots-grid');
+    const loader = document.getElementById('slots-loader');
+    
+    grid.classList.add('hidden');
+    loader.classList.remove('hidden');
+
+    // Simula delay de rede
+    setTimeout(() => {
+        grid.innerHTML = '';
+        const daySlots = state.slots[iso] || [];
+        const dayBookings = getBookings().filter(b => b.agendamento.dataISO === iso).map(b => b.agendamento.hora);
+
+        if (daySlots.length === 0) {
+            grid.innerHTML = `<div class="col-span-4 text-center py-8 text-gray-400 text-sm">Sem horários para este dia.</div>`;
+        } else {
+            // Filtra horários já ocupados
+            const available = daySlots.filter(s => !dayBookings.includes(s));
+
+            if (available.length === 0) {
+                 grid.innerHTML = `<div class="col-span-4 text-center py-8 text-gray-400 text-sm">Dia lotado!</div>`;
+            }
+
+            available.sort().forEach(time => {
+                const btn = document.createElement('button');
+                btn.className = `time-slot py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 bg-white hover:border-blue-500 hover:text-blue-600`;
+                btn.textContent = time;
+                btn.onclick = () => selectTimeSlot(time, btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        loader.classList.add('hidden');
+        grid.classList.remove('hidden');
+    }, 300);
+}
+
+function selectTimeSlot(time, btnElement) {
+    state.selectedTimeSlot = time;
+    
+    // Remove active de todos
+    document.querySelectorAll('.time-slot').forEach(el => {
+        el.classList.remove('active');
+        el.classList.add('bg-white', 'text-gray-600');
+    });
+
+    // Adiciona active no selecionado
+    btnElement.classList.remove('bg-white', 'text-gray-600');
+    btnElement.classList.add('active');
+
+    updateConfirmBar();
+}
+
+function updateConfirmBar() {
+    const bar = document.getElementById('confirm-bar');
+    const summary = document.getElementById('selected-summary');
+    
+    if (state.selectedDateISO && state.selectedTimeSlot) {
+        const dateParts = state.selectedDateISO.split('-');
+        summary.textContent = `${dateParts[2]}/${dateParts[1]} às ${state.selectedTimeSlot}`;
+        bar.classList.remove('translate-y-full');
+    } else {
+        bar.classList.add('translate-y-full');
+    }
+}
+
+// Modal de Checkout e Submit
+function openModal() {
+    document.getElementById('checkout-modal').classList.remove('hidden');
+}
+
+function closeModal(id = 'checkout-modal') { // Sobrecarga para funcionar com ambos
+    document.getElementById(id).classList.add('hidden');
+}
+
+function submitBooking(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-submit');
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processando...';
+    btn.disabled = true;
+
+    const formData = new FormData(e.target);
+    const booking = {
+        id: Date.now(),
+        cliente: {
+            nome: formData.get('name'),
+            telefone: formData.get('phone'),
+            email: formData.get('email'),
+            id: Date.now() + 1 // ID ficticio do cliente
+        },
+        agendamento: {
+            dataISO: state.selectedDateISO,
+            hora: state.selectedTimeSlot,
+            valor: SESSION_PRICE
+        },
+        status: 'confirmado'
+    };
+
+    // Salva no LocalStorage
+    const currentBookings = getBookings();
+    currentBookings.push(booking);
+    localStorage.setItem('bookings', JSON.stringify(currentBookings));
+
+    // Salva cliente na lista de clientes se não existir (Opcional, para popular admin)
+    const clientExists = state.clients.find(c => c.phone === booking.cliente.telefone);
+    if (!clientExists) {
+        state.clients.push({
+            id: booking.cliente.id,
+            name: booking.cliente.nome,
+            phone: booking.cliente.telefone,
+            email: booking.cliente.email
+        });
+        localStorage.setItem('adminClients', JSON.stringify(state.clients));
+    }
+
+    setTimeout(() => {
+        alert('Agendamento realizado com sucesso! Em um app real, você receberia um WhatsApp agora.');
+        location.reload(); // Recarrega para limpar estado
+    }, 1500);
+}
+
+
+// --- LÓGICA DO ADMIN (MANTIDA E INTEGRADA) ---
+
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
@@ -575,25 +797,21 @@ function switchTab(tabId) {
     document.getElementById(`tab-${tabId}`).classList.remove('hidden');
     document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
 
-    // Refresh data if needed
     if(tabId === 'dashboard') initDashboard();
     if(tabId === 'financial') renderFinancials();
 }
 
-// --- DASHBOARD ---
 function initDashboard() {
     const bookings = getBookings();
     const now = new Date();
     
-    // Total Clientes
     document.getElementById('dash-total-clients').textContent = state.clients.length;
 
-    // Sessões do Mês
-    const currentMonthISO = now.toISOString().slice(0, 7); // YYYY-MM
+    const currentMonthISO = now.toISOString().slice(0, 7); 
     const monthSessions = bookings.filter(b => b.agendamento.dataISO.startsWith(currentMonthISO)).length;
     document.getElementById('dash-month-sessions').textContent = monthSessions;
 
-    // Próxima Sessão
+    // Lógica da Próxima Sessão
     const upcoming = bookings
         .filter(b => new Date(`${b.agendamento.dataISO}T${b.agendamento.hora}`) > now)
         .sort((a, b) => new Date(`${a.agendamento.dataISO}T${a.agendamento.hora}`) - new Date(`${b.agendamento.dataISO}T${b.agendamento.hora}`));
@@ -618,19 +836,20 @@ function initDashboard() {
     }
 }
 
-// --- AGENDA & CALENDÁRIO ---
 function renderCalendar() {
     const year = state.dateCursor.getFullYear();
     const month = state.dateCursor.getMonth();
     
-    document.getElementById('calendar-month-label').textContent = 
-        state.dateCursor.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    const label = document.getElementById('calendar-month-label');
+    if(label) label.textContent = state.dateCursor.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
     const firstDay = new Date(year, month, 1);
     const startDate = new Date(firstDay);
     startDate.setDate(firstDay.getDate() - firstDay.getDay());
 
     const grid = document.getElementById('calendar-grid');
+    if(!grid) return;
+    
     grid.innerHTML = '';
     const bookings = getBookings();
 
@@ -691,7 +910,6 @@ function switchDayTab(tab) {
     document.getElementById(`day-tab-${tab}`).classList.remove('hidden');
 }
 
-// Gerenciamento de Slots
 function renderDaySlots() {
     const list = document.getElementById('slots-list');
     list.innerHTML = '';
@@ -700,10 +918,7 @@ function renderDaySlots() {
     slots.sort().forEach(time => {
         const btn = document.createElement('button');
         btn.className = "bg-slate-100 text-slate-600 rounded-lg py-2 text-xs font-medium hover:bg-red-50 hover:text-red-600 transition relative group";
-        btn.innerHTML = `
-            ${time}
-            <i class="fa-solid fa-times absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-[8px]"></i>
-        `;
+        btn.innerHTML = `${time} <i class="fa-solid fa-times absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-[8px]"></i>`;
         btn.onclick = () => removeSlot(time);
         list.appendChild(btn);
     });
@@ -719,9 +934,7 @@ function generateSlots(type) {
     if (type === 'morning') newSlots = ["08:00", "09:00", "10:00", "11:00"];
     if (type === 'afternoon') newSlots = ["13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
     if (type === 'full') newSlots = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
-    
     saveSlots(newSlots);
-    showToast(`${newSlots.length} horários adicionados!`);
 }
 
 function saveSlots(newTimes) {
@@ -746,13 +959,11 @@ function saveSlots(newTimes) {
 function removeSlot(time) {
     state.slots[state.selectedDateISO] = state.slots[state.selectedDateISO].filter(t => t !== time);
     if (state.slots[state.selectedDateISO].length === 0) delete state.slots[state.selectedDateISO];
-    
     localStorage.setItem('availableSlots', JSON.stringify(state.slots));
     renderDaySlots();
     renderCalendar();
 }
 
-// Agendamentos no Modal
 function renderDayBookings() {
     const list = document.getElementById('bookings-list');
     list.innerHTML = '';
@@ -776,17 +987,16 @@ function renderDayBookings() {
             </div>
             <div class="flex gap-2 mt-2">
                 <button onclick="sendWhatsApp(${b.id}, 'confirm')" class="flex-1 bg-green-50 text-green-700 text-[10px] py-1.5 rounded border border-green-100 hover:bg-green-100 font-medium">Confirmar</button>
-                <button onclick="sendWhatsApp(${b.id}, 'link')" class="flex-1 bg-purple-50 text-purple-700 text-[10px] py-1.5 rounded border border-purple-100 hover:bg-purple-100 font-medium"><i class="fa-solid fa-video mr-1"></i>Link Vídeo</button>
-                <button onclick="openNotesModal(${b.cliente.id}, '${b.cliente.nome}')" class="w-8 flex items-center justify-center bg-slate-100 rounded hover:bg-slate-200"><i class="fa-regular fa-file-lines text-slate-600 text-xs"></i></button>
+                <button onclick="sendWhatsApp(${b.id}, 'link')" class="flex-1 bg-purple-50 text-purple-700 text-[10px] py-1.5 rounded border border-purple-100 hover:bg-purple-100 font-medium"><i class="fa-solid fa-video mr-1"></i> Vídeo</button>
             </div>
         `;
         list.appendChild(div);
     });
 }
 
-// --- CLIENTES ---
 function renderClientList(filter = '') {
     const list = document.getElementById('clients-list');
+    if(!list) return;
     list.innerHTML = '';
     
     const filtered = state.clients.filter(c => c.name.toLowerCase().includes(filter.toLowerCase()));
@@ -837,7 +1047,6 @@ function deleteClient(id) {
     }
 }
 
-// --- PRONTUÁRIO (NOTAS) ---
 function openNotesModal(clientId, clientName) {
     state.currentClientId = clientId;
     document.getElementById('note-client-name').textContent = clientName;
@@ -854,12 +1063,10 @@ function saveNotes() {
     closeModal('notes-modal');
 }
 
-// --- FINANCEIRO ---
 function renderFinancials() {
     const bookings = getBookings();
     const now = new Date();
     const currentMonthISO = now.toISOString().slice(0, 7);
-
     const monthBookings = bookings.filter(b => b.agendamento.dataISO.startsWith(currentMonthISO));
     const total = monthBookings.length * SESSION_PRICE;
 
@@ -882,7 +1089,6 @@ function renderFinancials() {
     });
 }
 
-// --- CONFIGURAÇÕES & WHATSAPP ---
 function loadSettings() {
     document.getElementById('conf-video').value = state.settings.videoLink || '';
     document.getElementById('conf-msg-confirm').value = state.settings.confirm;
@@ -923,11 +1129,6 @@ function openVideoLink(bookingId) {
     else showToast('Configure seu link de vídeo primeiro!');
 }
 
-// --- UTILITÁRIOS ---
-function getBookings() {
-    return JSON.parse(localStorage.getItem('bookings') || '[]');
-}
-
 function deleteBooking(id) {
     if(confirm('Cancelar este agendamento?')) {
         let bookings = getBookings().filter(b => b.id !== id);
@@ -939,16 +1140,6 @@ function deleteBooking(id) {
 }
 
 function openClientModal() { document.getElementById('client-modal').classList.remove('hidden'); }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-function showToast(message) {
-    const container = document.getElementById('toast-container');
-    const el = document.createElement('div');
-    el.className = 'toast';
-    el.textContent = message;
-    container.appendChild(el);
-    setTimeout(() => el.remove(), 3000);
-}
         </script>
 </body>
 </html>
