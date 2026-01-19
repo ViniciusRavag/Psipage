@@ -210,7 +210,6 @@
 
     <!-- INTERFACE DE ADMIN -->
     <div id="view-admin" class="view-section max-w-md mx-auto bg-gray-50 min-h-screen relative">
-    <!-- Cabeçalho fixo -->
     <div class="bg-white px-4 py-3 shadow-sm sticky top-0 z-20 flex justify-between items-center">
         <h2 class="font-semibold text-gray-800">Painel do Psicólogo</h2>
         <button onclick="navigateTo('view-profile')" class="text-blue-600 text-sm font-medium">← Perfil</button>
@@ -627,7 +626,10 @@ document.addEventListener('DOMContentLoaded', () => {
         initCalendar();
     }
 });
-         </script>
+                         </script>
+    </div>
+
+    <script>
         // Estado global
         let state = {
             selectedDateISO: null,
@@ -866,3 +868,4 @@ document.addEventListener('DOMContentLoaded', () => {
     </script>
 </body>
 </html>
+
