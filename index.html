@@ -627,7 +627,242 @@ document.addEventListener('DOMContentLoaded', () => {
         initCalendar();
     }
 });
-</script>
+         </script>
+        // Estado global
+        let state = {
+            selectedDateISO: null,
+            selectedDateDisplay: null,
+            selectedTime: null,
+            slotsCache: {}
+        };
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('view') === 'admin') {
+                navigateTo('view-admin');
+                loadAdminBookings();
+            } else {
+                navigateTo('view-profile');
+                initCalendar();
+            }
+        });
+
+        // Navegação
+        function navigateTo(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function openModal() {
+            document.getElementById('checkout-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+        }
+
+        // Calendário
+        function initCalendar() {
+            const container = document.getElementById('date-scroll-container');
+            const monthLabel = document.getElementById('current-month-label');
+            const today = new Date();
+            const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            
+            monthLabel.textContent = today.toLocaleDateString('pt-BR', { month: 'long' });
+
+            for (let i = 0; i < 21; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                if (date.getDay() === 0) continue; // Pular domingos
+
+                const dayNum = date.getDate();
+                const weekDay = weekDays[date.getDay()];
+                const isoDate = date.toISOString().split('T')[0];
+                const fullDisplay = date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+
+                const btn = document.createElement('button');
+                btn.className = `flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl border border-gray-200 bg-white transition snap-center focus:outline-none date-card`;
+                btn.dataset.date = isoDate;
+                btn.dataset.display = fullDisplay;
+                btn.innerHTML = `
+                    <span class="text-[10px] text-gray-400 font-bold uppercase mb-1 pointer-events-none">${weekDay}</span>
+                    <span class="text-lg font-bold text-gray-700 pointer-events-none">${dayNum}</span>
+                `;
+                btn.onclick = () => selectDate(btn, isoDate, fullDisplay);
+                container.appendChild(btn);
+
+                if (i === 0) selectDate(btn, isoDate, fullDisplay);
+            }
+        }
+
+        function selectDate(btnElement, dateISO, dateDisplay) {
+            document.querySelectorAll('.date-card').forEach(b => {
+                b.className = `flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl border border-gray-200 bg-white transition snap-center focus:outline-none date-card`;
+                b.children[0].className = 'text-[10px] text-gray-400 font-bold uppercase mb-1';
+                b.children[1].className = 'text-lg font-bold text-gray-700';
+            });
+            
+            btnElement.className = `flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl bg-gray-800 border-gray-800 shadow-lg shadow-gray-400/50 transform scale-105 transition snap-center focus:outline-none date-card`;
+            btnElement.children[0].className = 'text-[10px] text-gray-300 font-bold uppercase mb-1';
+            btnElement.children[1].className = 'text-lg font-bold text-white';
+
+            state.selectedDateISO = dateISO;
+            state.selectedDateDisplay = dateDisplay;
+            state.selectedTime = null;
+            document.getElementById('confirm-bar').classList.add('translate-y-full');
+
+            loadSlots(dateISO);
+        }
+
+        // Horários (simulados)
+        async function loadSlots(dateISO) {
+            const grid = document.getElementById('slots-grid');
+            const loader = document.getElementById('slots-loader');
+            grid.innerHTML = '';
+            loader.classList.remove('hidden');
+
+            await new Promise(r => setTimeout(r, 600));
+            const slots = generateMockSlots(dateISO);
+            loader.classList.add('hidden');
+            renderSlots(slots);
+        }
+
+        function generateMockSlots(dateISO) {
+            const all = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
+            return all.filter(() => Math.random() > 0.3);
+        }
+
+        function renderSlots(slots) {
+            const grid = document.getElementById('slots-grid');
+            if (slots.length === 0) {
+                grid.innerHTML = '<div class="col-span-4 text-center py-4 text-gray-500 text-sm bg-white rounded-lg border border-gray-100">Sem horários para este dia.</div>';
+                return;
+            }
+
+            slots.forEach(time => {
+                const btn = document.createElement('button');
+                btn.className = 'time-slot border border-gray-200 bg-white rounded-lg py-3 text-sm font-medium text-gray-600 hover:border-green-500 hover:text-green-600 focus:outline-none';
+                btn.textContent = time;
+                btn.onclick = () => {
+                    document.querySelectorAll('.time-slot').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.selectedTime = time;
+                    updateSummary();
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function updateSummary() {
+            const bar = document.getElementById('confirm-bar');
+            const summary = document.getElementById('selected-summary');
+            if (state.selectedTime) {
+                summary.innerHTML = `<span class="text-green-600">${state.selectedDateDisplay}</span> às <span class="text-green-600">${state.selectedTime}</span>`;
+                bar.classList.remove('translate-y-full');
+                bar.classList.add('translate-y-0');
+            }
+        }
+
+        // Submissão de agendamento
+        function submitBooking(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const booking = {
+                id: Date.now(),
+                profissional: "Vinicius Ravagnani",
+                cliente: {
+                    nome: formData.get('name'),
+                    telefone: formData.get('phone'),
+                    email: formData.get('email')
+                },
+                agendamento: {
+                    dataISO: state.selectedDateISO,
+                    hora: state.selectedTime,
+                    valor: 150.00
+                },
+                status: "pendente"
+            };
+
+            // Salvar no localStorage
+            const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+            bookings.push(booking);
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+
+            alert("Solicitação enviada! O psicólogo entrará em contato via WhatsApp.");
+            location.reload();
+        }
+
+        // Painel do Admin
+        function loadAdminBookings() {
+            const content = document.getElementById('admin-content');
+            const loading = document.getElementById('admin-loading');
+            loading.classList.remove('hidden');
+
+            setTimeout(() => {
+                const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+                content.innerHTML = '';
+
+                if (bookings.length === 0) {
+                    content.innerHTML = '<div class="text-center py-8 text-gray-500">Nenhuma solicitação pendente.</div>';
+                } else {
+                    bookings.forEach(booking => {
+                        const div = document.createElement('div');
+                        div.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100';
+                        div.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-bold text-gray-800">${booking.cliente.nome}</h3>
+                                    <p class="text-sm text-gray-600">${booking.agendamento.dataISO} às ${booking.agendamento.hora}</p>
+                                    <p class="text-xs text-gray-500 mt-1">${booking.cliente.telefone} | ${booking.cliente.email}</p>
+                                </div>
+                                <span class="px-2 py-1 text-xs rounded-full ${
+                                    booking.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                                }">${booking.status}</span>
+                            </div>
+                            ${booking.status === 'pendente' ? `
+                                <div class="mt-3 flex gap-2">
+                                    <button onclick="confirmBooking(${booking.id})" class="flex-1 bg-green-600 text-white text-sm py-2 rounded-lg">
+                                        Confirmar via WhatsApp
+                                    </button>
+                                    <button onclick="deleteBooking(${booking.id})" class="flex-1 bg-red-600 text-white text-sm py-2 rounded-lg">
+                                        Recusar
+                                    </button>
+                                </div>
+                            ` : ''}
+                        `;
+                        content.appendChild(div);
+                    });
+                }
+                loading.classList.add('hidden');
+            }, 500);
+        }
+
+        function confirmBooking(id) {
+            const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+            const booking = bookings.find(b => b.id === id);
+            if (!booking) return;
+
+            // Gerar link do WhatsApp
+            const message = `Olá ${booking.cliente.nome}, sua consulta com Vinicius Ravagnani foi confirmada para ${booking.agendamento.dataISO} às ${booking.agendamento.hora}. Valor: R$ 150,00. Aguardamos você!`;
+            const whatsappUrl = `https://wa.me/${booking.cliente.telefone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+            
+            // Atualizar status
+            booking.status = "confirmado";
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+            
+            // Abrir WhatsApp
+            window.open(whatsappUrl, '_blank');
+            loadAdminBookings(); // Atualizar lista
+        }
+
+        function deleteBooking(id) {
+            let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+            bookings = bookings.filter(b => b.id !== id);
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+            loadAdminBookings();
+        }
+    </script>
 </body>
 </html>
-
