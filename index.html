@@ -210,258 +210,424 @@
 
     <!-- INTERFACE DE ADMIN -->
     <div id="view-admin" class="view-section max-w-md mx-auto bg-gray-50 min-h-screen relative">
-        <div class="bg-white px-4 py-3 shadow-sm sticky top-0 z-20">
-            <h2 class="font-semibold text-gray-800 text-center">Painel do Psicólogo</h2>
+    <!-- Cabeçalho fixo -->
+    <div class="bg-white px-4 py-3 shadow-sm sticky top-0 z-20 flex justify-between items-center">
+        <h2 class="font-semibold text-gray-800">Painel do Psicólogo</h2>
+        <button onclick="navigateTo('view-profile')" class="text-blue-600 text-sm font-medium">← Perfil</button>
+    </div>
+
+    <!-- Abas de navegação -->
+    <div class="flex border-b border-gray-200 bg-white sticky top-14 z-10">
+        <button onclick="switchAdminTab('calendar')" class="admin-tab active" data-tab="calendar">Agenda</button>
+        <button onclick="switchAdminTab('clients')" class="admin-tab" data-tab="clients">Clientes</button>
+        <button onclick="switchAdminTab('settings')" class="admin-tab" data-tab="settings">Configurações</button>
+    </div>
+
+    <!-- Conteúdo das abas -->
+    <div class="p-4 space-y-6">
+
+        <!-- ABA: CALENDÁRIO -->
+        <div id="tab-calendar" class="admin-content active">
+            <!-- Seleção de mês -->
+            <div class="flex justify-between items-center mb-4">
+                <button onclick="changeMonth(-1)" class="p-2 rounded-full hover:bg-gray-100"><i class="fa-solid fa-chevron-left"></i></button>
+                <h3 id="admin-month-label" class="font-bold text-gray-800 capitalize">Janeiro 2026</h3>
+                <button onclick="changeMonth(1)" class="p-2 rounded-full hover:bg-gray-100"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+
+            <!-- Dias da semana -->
+            <div class="grid grid-cols-7 gap-1 mb-2">
+                <div class="text-center text-xs font-medium text-gray-500">Dom</div>
+                <div class="text-center text-xs font-medium text-gray-500">Seg</div>
+                <div class="text-center text-xs font-medium text-gray-500">Ter</div>
+                <div class="text-center text-xs font-medium text-gray-500">Qua</div>
+                <div class="text-center text-xs font-medium text-gray-500">Qui</div>
+                <div class="text-center text-xs font-medium text-gray-500">Sex</div>
+                <div class="text-center text-xs font-medium text-gray-500">Sáb</div>
+            </div>
+
+            <!-- Grade do calendário -->
+            <div id="admin-calendar-grid" class="grid grid-cols-7 gap-1"></div>
+
+            <!-- Modal de detalhes do dia -->
+            <div id="day-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+                <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-5 shadow-2xl animate-[slideUp_0.3s_ease-out]">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="modal-date-title" class="font-bold text-gray-800">Segunda, 20 Jan</h3>
+                        <button onclick="closeDayModal()" class="text-gray-400"><i class="fa-solid fa-times"></i></button>
+                    </div>
+
+                    <div id="day-sessions-list" class="space-y-3 mb-4"></div>
+
+                    <div class="flex gap-2">
+                        <button onclick="openAddSlotModal()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium">+ Horário</button>
+                        <button onclick="toggleDayAvailability()" id="toggle-availability-btn" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg text-sm font-medium">Desativar Dia</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal: Adicionar horário -->
+            <div id="add-slot-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-white w-full max-w-md rounded-2xl p-5 shadow-2xl">
+                    <h3 class="font-bold text-gray-800 mb-4">Adicionar Horário</h3>
+                    <input type="time" id="new-slot-time" class="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4" value="09:00">
+                    <div class="flex gap-2">
+                        <button onclick="closeAddSlotModal()" class="flex-1 bg-gray-200 py-2 rounded-lg">Cancelar</button>
+                        <button onclick="saveNewSlot()" class="flex-1 bg-green-600 text-white py-2 rounded-lg">Salvar</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="p-4">
-            <div id="admin-loading" class="hidden flex justify-center py-8">
-                <i class="fa-solid fa-circle-notch fa-spin text-blue-500 text-2xl"></i>
+        <!-- ABA: CLIENTES -->
+        <div id="tab-clients" class="admin-content hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-gray-800">Meus Clientes</h3>
+                <button onclick="openAddClientModal()" class="bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg">+ Novo</button>
             </div>
+
+            <div id="clients-list" class="space-y-3"></div>
+
+            <!-- Modal: Adicionar cliente -->
+            <div id="add-client-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-white w-full max-w-md rounded-2xl p-5 shadow-2xl">
+                    <h3 class="font-bold text-gray-800 mb-4">Novo Cliente</h3>
+                    <form id="client-form" onsubmit="saveClient(event)">
+                        <input type="text" name="name" placeholder="Nome completo" required class="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3">
+                        <input type="tel" name="phone" placeholder="(11) 99999-9999" required class="w-full border border-gray-200 rounded-lg px-4 py-3 mb-3">
+                        <input type="email" name="email" placeholder="email@exemplo.com" class="w-full border border-gray-200 rounded-lg px-4 py-3 mb-4">
+                        <div class="flex gap-2">
+                            <button type="button" onclick="closeAddClientModal()" class="flex-1 bg-gray-200 py-2 rounded-lg">Cancelar</button>
+                            <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-lg">Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA: CONFIGURAÇÕES -->
+        <div id="tab-settings" class="admin-content hidden">
+            <h3 class="font-bold text-gray-800 mb-4">Mensagens Automáticas</h3>
             
-            <div id="admin-content" class="space-y-4">
-                <!-- Lista de agendamentos será inserida aqui -->
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Confirmação de Sessão</label>
+                    <textarea id="msg-confirm" rows="3" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">Olá {{nome}}, sua sessão com Vinicius Ravagnani foi confirmada para {{data}} às {{hora}}. Valor: R$ 150,00. Aguardamos você!</textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Lembrete (24h antes)</label>
+                    <textarea id="msg-reminder" rows="3" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">Olá {{nome}}, lembrando que sua sessão com Vinicius Ravagnani será amanhã ({{data}}) às {{hora}}. Estamos ansiosos para conversar!</textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Link de Chamada (opcional)</label>
+                    <input type="url" id="video-link" placeholder="https://meet.google.com/xxx" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <button onclick="saveMessages()" class="w-full bg-green-600 text-white py-2.5 rounded-lg font-medium">Salvar Mensagens</button>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        // Estado global
-        let state = {
-            selectedDateISO: null,
-            selectedDateDisplay: null,
-            selectedTime: null,
-            slotsCache: {}
-        };
+<style>
+.admin-tab {
+    flex: 1;
+    text-align: center;
+    py-3;
+    text-sm font-medium;
+    color: #6b7280;
+    border-bottom: 2px solid transparent;
+}
+.admin-tab.active {
+    color: #1d4ed8;
+    border-bottom-color: #1d4ed8;
+}
+.admin-content { display: none; }
+.admin-content.active { display: block; }
+.animate-[slideUp_0.3s_ease-out] {
+    animation: slideUp 0.3s ease-out;
+}
+@keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+</style>
 
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('view') === 'admin') {
-                navigateTo('view-admin');
-                loadAdminBookings();
-            } else {
-                navigateTo('view-profile');
-                initCalendar();
-            }
+<script>
+// Estado do painel admin
+let adminState = {
+    currentMonth: new Date(2026, 0), // Janeiro 2026
+    selectedDate: null,
+    clients: JSON.parse(localStorage.getItem('adminClients') || '[]'),
+    availableSlots: JSON.parse(localStorage.getItem('availableSlots') || '{}'),
+    messages: JSON.parse(localStorage.getItem('adminMessages') || JSON.stringify({
+        confirm: "Olá {{nome}}, sua sessão com Vinicius Ravagnani foi confirmada para {{data}} às {{hora}}. Valor: R$ 150,00. Aguardamos você!",
+        reminder: "Olá {{nome}}, lembrando que sua sessão com Vinicius Ravagnani será amanhã ({{data}}) às {{hora}}. Estamos ansiosos para conversar!",
+        videoLink: ""
+    }))
+};
+
+// Inicialização do painel admin
+function initAdminPanel() {
+    renderCalendar();
+    renderClientsList();
+    loadMessagesIntoForm();
+}
+
+// Navegação entre abas
+function switchAdminTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.admin-content').forEach(el => el.classList.remove('active'));
+    
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+// CALENDÁRIO
+function renderCalendar() {
+    const year = adminState.currentMonth.getFullYear();
+    const month = adminState.currentMonth.getMonth();
+    document.getElementById('admin-month-label').textContent = 
+        adminState.currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(firstDay.getDate() - firstDay.getDay()); // Começa no domingo
+
+    const grid = document.getElementById('admin-calendar-grid');
+    grid.innerHTML = '';
+
+    for (let i = 0; i < 42; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        const isCurrentMonth = date.getMonth() === month;
+        const iso = date.toISOString().split('T')[0];
+        const dayNum = date.getDate();
+        const isToday = date.toDateString() === new Date().toDateString();
+
+        // Verificar se há sessões ou slots
+        const hasSlots = adminState.availableSlots[iso] && adminState.availableSlots[iso].length > 0;
+        const bookings = JSON.parse(localStorage.getItem('bookings') || '[]')
+            .filter(b => b.agendamento.dataISO === iso);
+
+        let bgColor = 'bg-white';
+        if (!isCurrentMonth) bgColor = 'bg-gray-50';
+        else if (hasSlots || bookings.length > 0) bgColor = 'bg-blue-50';
+        if (isToday) bgColor = 'bg-yellow-50 border-yellow-300';
+
+        const div = document.createElement('div');
+        div.className = `text-center p-1.5 text-sm rounded-lg border ${bgColor} cursor-pointer transition hover:bg-gray-100`;
+        if (isCurrentMonth) {
+            div.onclick = () => openDayModal(iso, date);
+        }
+        div.innerHTML = `
+            <div class="font-medium ${isCurrentMonth ? 'text-gray-800' : 'text-gray-400'}">${dayNum}</div>
+            ${bookings.length > 0 ? `<div class="text-[10px] mt-0.5 text-red-600 font-bold">${bookings.length} sessão${bookings.length > 1 ? 's' : ''}</div>` : ''}
+        `;
+        grid.appendChild(div);
+    }
+}
+
+function changeMonth(delta) {
+    adminState.currentMonth.setMonth(adminState.currentMonth.getMonth() + delta);
+    renderCalendar();
+}
+
+function openDayModal(iso, date) {
+    adminState.selectedDate = iso;
+    document.getElementById('modal-date-title').textContent = 
+        date.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' }).replace(/^./, c => c.toUpperCase());
+
+    const slots = adminState.availableSlots[iso] || [];
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]')
+        .filter(b => b.agendamento.dataISO === iso);
+
+    const list = document.getElementById('day-sessions-list');
+    list.innerHTML = '';
+
+    // Mostrar horários livres
+    if (slots.length > 0) {
+        slots.forEach(time => {
+            const isBooked = bookings.some(b => b.agendamento.hora === time);
+            const div = document.createElement('div');
+            div.className = "flex justify-between items-center p-2 bg-gray-100 rounded-lg";
+            div.innerHTML = `
+                <span class="${isBooked ? 'text-red-600 line-through' : 'text-green-600'}">${time}</span>
+                <button onclick="removeSlot('${iso}', '${time}')" class="text-red-500 text-xs"><i class="fa-solid fa-trash"></i></button>
+            `;
+            list.appendChild(div);
         });
+    }
 
-        // Navegação
-        function navigateTo(viewId) {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
-            window.scrollTo(0, 0);
-        }
+    // Mostrar sessões agendadas
+    if (bookings.length > 0) {
+        bookings.forEach(booking => {
+            const div = document.createElement('div');
+            div.className = "p-2 bg-white border border-gray-200 rounded-lg";
+            div.innerHTML = `
+                <div class="font-bold text-gray-800">${booking.cliente.nome}</div>
+                <div class="text-sm text-gray-600">${booking.agendamento.hora}</div>
+                <div class="flex gap-1 mt-2">
+                    <button onclick="sendWhatsApp(${booking.id}, 'confirm')" class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Confirmar</button>
+                    <button onclick="sendWhatsApp(${booking.id}, 'reminder')" class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Lembrete</button>
+                    ${adminState.messages.videoLink ? `<button onclick="sendVideoLink(${booking.id})" class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">Chamada</button>` : ''}
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
 
-        function openModal() {
-            document.getElementById('checkout-modal').classList.remove('hidden');
-        }
+    if (slots.length === 0 && bookings.length === 0) {
+        list.innerHTML = '<div class="text-center py-4 text-gray-500 text-sm">Nenhum horário cadastrado.</div>';
+    }
 
-        function closeModal() {
-            document.getElementById('checkout-modal').classList.add('hidden');
-        }
+    document.getElementById('day-modal').classList.remove('hidden');
+}
 
-        // Calendário
-        function initCalendar() {
-            const container = document.getElementById('date-scroll-container');
-            const monthLabel = document.getElementById('current-month-label');
-            const today = new Date();
-            const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-            
-            monthLabel.textContent = today.toLocaleDateString('pt-BR', { month: 'long' });
+function closeDayModal() {
+    document.getElementById('day-modal').classList.add('hidden');
+}
 
-            for (let i = 0; i < 21; i++) {
-                const date = new Date(today);
-                date.setDate(today.getDate() + i);
-                if (date.getDay() === 0) continue; // Pular domingos
+function openAddSlotModal() {
+    document.getElementById('add-slot-modal').classList.remove('hidden');
+}
 
-                const dayNum = date.getDate();
-                const weekDay = weekDays[date.getDay()];
-                const isoDate = date.toISOString().split('T')[0];
-                const fullDisplay = date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+function closeAddSlotModal() {
+    document.getElementById('add-slot-modal').classList.add('hidden');
+}
 
-                const btn = document.createElement('button');
-                btn.className = `flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl border border-gray-200 bg-white transition snap-center focus:outline-none date-card`;
-                btn.dataset.date = isoDate;
-                btn.dataset.display = fullDisplay;
-                btn.innerHTML = `
-                    <span class="text-[10px] text-gray-400 font-bold uppercase mb-1 pointer-events-none">${weekDay}</span>
-                    <span class="text-lg font-bold text-gray-700 pointer-events-none">${dayNum}</span>
-                `;
-                btn.onclick = () => selectDate(btn, isoDate, fullDisplay);
-                container.appendChild(btn);
+function saveNewSlot() {
+    const time = document.getElementById('new-slot-time').value;
+    if (!adminState.selectedDate) return;
 
-                if (i === 0) selectDate(btn, isoDate, fullDisplay);
-            }
-        }
+    if (!adminState.availableSlots[adminState.selectedDate]) {
+        adminState.availableSlots[adminState.selectedDate] = [];
+    }
+    if (!adminState.availableSlots[adminState.selectedDate].includes(time)) {
+        adminState.availableSlots[adminState.selectedDate].push(time);
+        localStorage.setItem('availableSlots', JSON.stringify(adminState.availableSlots));
+        renderCalendar();
+        closeAddSlotModal();
+        openDayModal(adminState.selectedDate, new Date(adminState.selectedDate));
+    }
+}
 
-        function selectDate(btnElement, dateISO, dateDisplay) {
-            document.querySelectorAll('.date-card').forEach(b => {
-                b.className = `flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl border border-gray-200 bg-white transition snap-center focus:outline-none date-card`;
-                b.children[0].className = 'text-[10px] text-gray-400 font-bold uppercase mb-1';
-                b.children[1].className = 'text-lg font-bold text-gray-700';
-            });
-            
-            btnElement.className = `flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl bg-gray-800 border-gray-800 shadow-lg shadow-gray-400/50 transform scale-105 transition snap-center focus:outline-none date-card`;
-            btnElement.children[0].className = 'text-[10px] text-gray-300 font-bold uppercase mb-1';
-            btnElement.children[1].className = 'text-lg font-bold text-white';
+function removeSlot(date, time) {
+    adminState.availableSlots[date] = adminState.availableSlots[date].filter(t => t !== time);
+    if (adminState.availableSlots[date].length === 0) {
+        delete adminState.availableSlots[date];
+    }
+    localStorage.setItem('availableSlots', JSON.stringify(adminState.availableSlots));
+    openDayModal(date, new Date(date));
+}
 
-            state.selectedDateISO = dateISO;
-            state.selectedDateDisplay = dateDisplay;
-            state.selectedTime = null;
-            document.getElementById('confirm-bar').classList.add('translate-y-full');
+function toggleDayAvailability() {
+    const date = adminState.selectedDate;
+    if (adminState.availableSlots[date]) {
+        delete adminState.availableSlots[date];
+        document.getElementById('toggle-availability-btn').textContent = 'Ativar Dia';
+    } else {
+        adminState.availableSlots[date] = ["09:00", "10:00", "14:00", "15:00"];
+        document.getElementById('toggle-availability-btn').textContent = 'Desativar Dia';
+    }
+    localStorage.setItem('availableSlots', JSON.stringify(adminState.availableSlots));
+    openDayModal(date, new Date(date));
+}
 
-            loadSlots(dateISO);
-        }
+// CLIENTES
+function renderClientsList() {
+    const list = document.getElementById('clients-list');
+    list.innerHTML = '';
+    adminState.clients.forEach(client => {
+        const div = document.createElement('div');
+        div.className = "bg-white p-3 rounded-lg border border-gray-100";
+        div.innerHTML = `
+            <div class="font-bold text-gray-800">${client.name}</div>
+            <div class="text-sm text-gray-600">${client.phone} | ${client.email || '–'}</div>
+        `;
+        list.appendChild(div);
+    });
+}
 
-        // Horários (simulados)
-        async function loadSlots(dateISO) {
-            const grid = document.getElementById('slots-grid');
-            const loader = document.getElementById('slots-loader');
-            grid.innerHTML = '';
-            loader.classList.remove('hidden');
+function openAddClientModal() {
+    document.getElementById('add-client-modal').classList.remove('hidden');
+}
 
-            await new Promise(r => setTimeout(r, 600));
-            const slots = generateMockSlots(dateISO);
-            loader.classList.add('hidden');
-            renderSlots(slots);
-        }
+function closeAddClientModal() {
+    document.getElementById('add-client-modal').classList.add('hidden');
+}
 
-        function generateMockSlots(dateISO) {
-            const all = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-            return all.filter(() => Math.random() > 0.3);
-        }
+function saveClient(e) {
+    e.preventDefault();
+    const form = e.target;
+    const client = {
+        id: Date.now(),
+        name: form.name.value,
+        phone: form.phone.value,
+        email: form.email.value || ''
+    };
+    adminState.clients.push(client);
+    localStorage.setItem('adminClients', JSON.stringify(adminState.clients));
+    renderClientsList();
+    closeAddClientModal();
+    form.reset();
+}
 
-        function renderSlots(slots) {
-            const grid = document.getElementById('slots-grid');
-            if (slots.length === 0) {
-                grid.innerHTML = '<div class="col-span-4 text-center py-4 text-gray-500 text-sm bg-white rounded-lg border border-gray-100">Sem horários para este dia.</div>';
-                return;
-            }
+// MENSAGENS
+function loadMessagesIntoForm() {
+    document.getElementById('msg-confirm').value = adminState.messages.confirm;
+    document.getElementById('msg-reminder').value = adminState.messages.reminder;
+    document.getElementById('video-link').value = adminState.messages.videoLink || '';
+}
 
-            slots.forEach(time => {
-                const btn = document.createElement('button');
-                btn.className = 'time-slot border border-gray-200 bg-white rounded-lg py-3 text-sm font-medium text-gray-600 hover:border-green-500 hover:text-green-600 focus:outline-none';
-                btn.textContent = time;
-                btn.onclick = () => {
-                    document.querySelectorAll('.time-slot').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    state.selectedTime = time;
-                    updateSummary();
-                };
-                grid.appendChild(btn);
-            });
-        }
+function saveMessages() {
+    adminState.messages = {
+        confirm: document.getElementById('msg-confirm').value,
+        reminder: document.getElementById('msg-reminder').value,
+        videoLink: document.getElementById('video-link').value
+    };
+    localStorage.setItem('adminMessages', JSON.stringify(adminState.messages));
+    alert('Mensagens salvas com sucesso!');
+}
 
-        function updateSummary() {
-            const bar = document.getElementById('confirm-bar');
-            const summary = document.getElementById('selected-summary');
-            if (state.selectedTime) {
-                summary.innerHTML = `<span class="text-green-600">${state.selectedDateDisplay}</span> às <span class="text-green-600">${state.selectedTime}</span>`;
-                bar.classList.remove('translate-y-full');
-                bar.classList.add('translate-y-0');
-            }
-        }
+// WHATSAPP
+function sendWhatsApp(bookingId, type) {
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    const booking = bookings.find(b => b.id == bookingId);
+    if (!booking) return;
 
-        // Submissão de agendamento
-        function submitBooking(e) {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const booking = {
-                id: Date.now(),
-                profissional: "Vinicius Ravagnani",
-                cliente: {
-                    nome: formData.get('name'),
-                    telefone: formData.get('phone'),
-                    email: formData.get('email')
-                },
-                agendamento: {
-                    dataISO: state.selectedDateISO,
-                    hora: state.selectedTime,
-                    valor: 150.00
-                },
-                status: "pendente"
-            };
+    let message = adminState.messages[type === 'confirm' ? 'confirm' : 'reminder'];
+    message = message
+        .replace(/{{nome}}/g, booking.cliente.nome)
+        .replace(/{{data}}/g, booking.agendamento.dataISO.split('-').reverse().join('/'))
+        .replace(/{{hora}}/g, booking.agendamento.hora);
 
-            // Salvar no localStorage
-            const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-            bookings.push(booking);
-            localStorage.setItem('bookings', JSON.stringify(bookings));
+    const phone = booking.cliente.telefone.replace(/\D/g, '');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+}
 
-            alert("Solicitação enviada! O psicólogo entrará em contato via WhatsApp.");
-            location.reload();
-        }
+function sendVideoLink(bookingId) {
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    const booking = bookings.find(b => b.id == bookingId);
+    if (!booking || !adminState.messages.videoLink) return;
 
-        // Painel do Admin
-        function loadAdminBookings() {
-            const content = document.getElementById('admin-content');
-            const loading = document.getElementById('admin-loading');
-            loading.classList.remove('hidden');
+    const message = `Olá ${booking.cliente.nome}, segue o link para nossa sessão de hoje:\n\n${adminState.messages.videoLink}`;
+    const phone = booking.cliente.telefone.replace(/\D/g, '');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+}
 
-            setTimeout(() => {
-                const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-                content.innerHTML = '';
-
-                if (bookings.length === 0) {
-                    content.innerHTML = '<div class="text-center py-8 text-gray-500">Nenhuma solicitação pendente.</div>';
-                } else {
-                    bookings.forEach(booking => {
-                        const div = document.createElement('div');
-                        div.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-100';
-                        div.innerHTML = `
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h3 class="font-bold text-gray-800">${booking.cliente.nome}</h3>
-                                    <p class="text-sm text-gray-600">${booking.agendamento.dataISO} às ${booking.agendamento.hora}</p>
-                                    <p class="text-xs text-gray-500 mt-1">${booking.cliente.telefone} | ${booking.cliente.email}</p>
-                                </div>
-                                <span class="px-2 py-1 text-xs rounded-full ${
-                                    booking.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
-                                }">${booking.status}</span>
-                            </div>
-                            ${booking.status === 'pendente' ? `
-                                <div class="mt-3 flex gap-2">
-                                    <button onclick="confirmBooking(${booking.id})" class="flex-1 bg-green-600 text-white text-sm py-2 rounded-lg">
-                                        Confirmar via WhatsApp
-                                    </button>
-                                    <button onclick="deleteBooking(${booking.id})" class="flex-1 bg-red-600 text-white text-sm py-2 rounded-lg">
-                                        Recusar
-                                    </button>
-                                </div>
-                            ` : ''}
-                        `;
-                        content.appendChild(div);
-                    });
-                }
-                loading.classList.add('hidden');
-            }, 500);
-        }
-
-        function confirmBooking(id) {
-            const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-            const booking = bookings.find(b => b.id === id);
-            if (!booking) return;
-
-            // Gerar link do WhatsApp
-            const message = `Olá ${booking.cliente.nome}, sua consulta com Vinicius Ravagnani foi confirmada para ${booking.agendamento.dataISO} às ${booking.agendamento.hora}. Valor: R$ 150,00. Aguardamos você!`;
-            const whatsappUrl = `https://wa.me/${booking.cliente.telefone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-            
-            // Atualizar status
-            booking.status = "confirmado";
-            localStorage.setItem('bookings', JSON.stringify(bookings));
-            
-            // Abrir WhatsApp
-            window.open(whatsappUrl, '_blank');
-            loadAdminBookings(); // Atualizar lista
-        }
-
-        function deleteBooking(id) {
-            let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-            bookings = bookings.filter(b => b.id !== id);
-            localStorage.setItem('bookings', JSON.stringify(bookings));
-            loadAdminBookings();
-        }
-    </script>
+// Atualizar inicialização
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('view') === 'admin') {
+        navigateTo('view-admin');
+        initAdminPanel();
+    } else {
+        navigateTo('view-profile');
+        initCalendar();
+    }
+});
+</script>
 </body>
 </html>
 
