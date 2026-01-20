@@ -974,31 +974,29 @@ body {
 
     // ==== INICIALIZAÇÃO ====
     document.addEventListener('DOMContentLoaded', async () => {
-      // Verificar se usuário está autenticado
-      auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          console.log("Usuário autenticado:", user.uid);
-          state.psychologistId = user.uid;
-          
-          // Carregar dados do psicólogo
-          await loadPsychologistData();
-          
-          // Carregar dados iniciais
-          await Promise.all([
-            loadClients(),
-            loadSlots(),
-            loadBookings(),
-            loadSettings()
-          ]);
-          
-          // Mostrar o painel admin
-          navigateTo('view-admin');
-          initDashboard();
-        } else {
-          // Mostrar tela de autenticação
-          navigateTo('auth-screen');
-        }
-      });
+      // AUTENTICAÇÃO REMOVIDA PARA TESTES - USANDO ID DE TESTE
+console.log("Modo de teste: autenticação desativada");
+state.psychologistId = "test-psychologist-id"; // ID de teste
+
+// Carregar dados com ID de teste
+setTimeout(async () => {
+  // Carregar dados do psicólogo de teste
+  await loadPsychologistData();
+  
+  // Carregar dados iniciais
+  await Promise.all([
+    loadClients(),
+    loadSlots(),
+    loadBookings(),
+    loadSettings()
+  ]);
+  
+  // Mostrar o painel admin diretamente
+  navigateTo('view-admin');
+  initDashboard();
+  
+  showToast('Modo de teste ativado! Autenticação removida.', 'success');
+}, 1000);
       
       // Configurar listeners de autenticação
       setupAuthListeners();
@@ -3121,74 +3119,127 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// Configurar Firebase quando o DOM estiver carregado
+// INICIALIZAÇÃO SEM AUTENTICAÇÃO - MODO TESTE
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    // Verificar autenticação
-    auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        console.log("Usuário autenticado:", user.uid);
-        state.psychologistId = user.uid;
-        
-        // Carregar dados do psicólogo
-        const psychologistDoc = await db.collection('psychologists').doc(user.uid).get();
-        if (psychologistDoc.exists) {
-          state.psychologist = psychologistDoc.data();
-          
-          // Atualizar UI com informações do psicólogo
-          document.getElementById('display-name').textContent = state.psychologist.name || 'PsiPro';
-          document.getElementById('conf-prof-name').value = state.psychologist.name || '';
-          document.getElementById('display-price').textContent = `R$ ${state.psychologist.sessionValue || 150},00`;
-          
-          // Atualizar especialidades
-          if (state.psychologist.specialties && state.psychologist.specialties.length > 0) {
-            renderSpecialties(state.psychologist.specialties);
-          }
-        }
-      }
-    });
+    console.log("Inicializando em modo de teste...");
+    state.psychologistId = "test-psychologist-id"; // ID de teste fixo
     
-    // Carregar dados iniciais se estiver no modo admin
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('view') === 'admin') {
-      if (state.psychologistId) {
-        await loadInitialData();
+    // Carregar dados do psicólogo de teste
+    const psychologistDoc = await db.collection('psychologists').doc(state.psychologistId).get();
+    if (psychologistDoc.exists) {
+      state.psychologist = psychologistDoc.data();
+      
+      // Atualizar UI com informações do psicólogo
+      document.getElementById('display-name').textContent = state.psychologist.name || 'PsiPro';
+      document.getElementById('conf-prof-name').value = state.psychologist.name || '';
+      document.getElementById('display-price').textContent = `R$ ${state.psychologist.sessionValue || 150},00`;
+      
+      // Atualizar especialidades
+      if (state.psychologist.specialties && state.psychologist.specialties.length > 0) {
+        renderSpecialties(state.psychologist.specialties);
       }
+    } else {
+      // Criar dados de teste se não existirem
+      await createTestData();
+      state.psychologist = {
+        name: "Dra. Teste Psicóloga",
+        sessionValue: 150,
+        specialties: ["Ansiedade", "Depressão", "TDAH"],
+        about: "Olá! Sou uma psicóloga dedicada a ajudar meus pacientes em sua jornada de autoconhecimento e bem-estar emocional.",
+        settings: {
+          videoLink: "https://meet.google.com/teste",
+          confirmMessage: "Olá {{nome}}, confirmo seu agendamento para {{data}} às {{hora}}. Link da chamada: {{link}}",
+          reminderMessage: "Oi {{nome}}! Lembrando nosso atendimento amanhã, {{data}} às {{hora}}. Te espero!"
+        }
+      };
+      
+      // Atualizar UI com dados de teste
+      document.getElementById('display-name').textContent = state.psychologist.name;
+      document.getElementById('conf-prof-name').value = state.psychologist.name;
+      document.getElementById('display-price').textContent = `R$ ${state.psychologist.sessionValue},00`;
+      renderSpecialties(state.psychologist.specialties);
     }
+    
+    // Carregar dados iniciais
+    await loadInitialData();
+    
+    // Mostrar painel admin diretamente
+    navigateTo('view-admin');
+    initDashboard();
+    
   } catch (error) {
     console.error("Erro na inicialização:", error);
     showToast("Erro ao inicializar o sistema. Verifique sua conexão.", "error");
   }
 });
 
-async function loadInitialData() {
+// Função para criar dados de teste se não existirem
+async function createTestData() {
   try {
-    // Carregar clientes
-    await loadClients();
+    // Criar psicólogo de teste
+    await db.collection('psychologists').doc("test-psychologist-id").set({
+      name: "Dra. Teste Psicóloga",
+      email: "teste@psicologa.com",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      specialties: ["Ansiedade", "Depressão", "TDAH", "Terapia de Casal"],
+      about: "Olá! Sou uma psicóloga dedicada a ajudar meus pacientes em sua jornada de autoconhecimento e bem-estar emocional. Ofereço um ambiente seguro e acolhedor para nossas sessões.",
+      sessionValue: 150,
+      settings: {
+        videoLink: "https://meet.google.com/teste-link",
+        confirmMessage: "Olá {{nome}}, confirmo seu agendamento para {{data}} às {{hora}}. Link da cham
+
+
+      },
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
     
-    // Carregar horários disponíveis
-    await loadSlots();
+    // Criar alguns clientes de teste
+    const clients = [
+      { name: "João Silva", phone: "(11) 98765-4321", email: "joao@email.com" },
+      { name: "Maria Santos", phone: "(21) 99887-7665", email: "maria@email.com" },
+      { name: "Pedro Souza", phone: "(31) 97654-3210", email: "pedro@email.com" }
+    ];
     
-    // Carregar agendamentos
-    await loadBookings();
+    for (const client of clients) {
+      const clientRef = db.collection('clients').doc();
+      await clientRef.set({
+        id: clientRef.id,
+        psychologistId: "test-psychologist-id",
+        name: client.name,
+        phone: client.phone,
+        email: client.email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
     
-    // Carregar configurações
-    await loadSettings();
+    // Criar alguns horários disponíveis para os próximos dias
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const isoDate = date.toISOString().split('T')[0];
+      
+      const slots = ["09:00", "10:00", "14:00", "15:00", "16:00"];
+      
+      for (const time of slots) {
+        const slotRef = db.collection('availability').doc();
+        await slotRef.set({
+          psychologistId: "test-psychologist-id",
+          date: isoDate,
+          time: time,
+          available: true,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+    }
     
-    // Inicializar dashboard
-    initDashboard();
+    console.log("Dados de teste criados com sucesso!");
+    showToast("Dados de teste criados com sucesso!", "success");
     
-    // Renderizar calendário
-    renderCalendar();
-    
-    // Renderizar lista de pacientes
-    renderClientList();
-    
-    // Renderizar dados financeiros
-    renderFinancials();
   } catch (error) {
-    console.error("Erro ao carregar dados iniciais:", error);
-    showToast("Erro ao carregar dados do sistema", "error");
+    console.error("Erro ao criar dados de teste:", error);
   }
 }
 
