@@ -13,12 +13,12 @@
 <script>
 // Configuração do Firebase - SUBSTITUA PELOS SEUS DADOS
 const firebaseConfig = {
-  apiKey: "AIzaSyB9SL_ti3Zc0KUxUAmJylZ0WGgSK56258s",
-  authDomain: "psipro-78ae1.firebaseapp.com",
-  projectId: "psipro-78ae1",
-  storageBucket: "psipro-78ae1.firebasestorage.app",
-  messagingSenderId: "688675443489",
-  appId: "1:688675443489:web:1d4292fbfdf7ebee9da460"
+  apiKey: "SEU_API_KEY",
+  authDomain: "SEU_PROJETO.firebaseapp.com",
+  projectId: "SEU_PROJETO",
+  storageBucket: "SEU_PROJETO.appspot.com",
+  messagingSenderId: "SEU_SENDER_ID",
+  appId: "SEU_APP_ID"
 };
 
 // Inicializar Firebase
@@ -942,333 +942,2070 @@ body {
   </div>
 
   <script>
-    //==== ESTADO GLOBAL DA APLICAÇÃO====
-const SESSION_PRICE = 150;
-let state = {
-  // Navegação 
-  currentView: 'view-admin', // Mudado para começar diretamente no admin
-  currentTab: 'dashboard',
-  
-  // Datas e seleção 
-  dateCursor: new Date(),
-  selectedDateISO: null,
-  selectedTimeSlot: null,
-  currentClientId: null,
-  
-  // Dados persistentes (simulando banco de dados com dados de teste)
-  clients: [
-    {
-      id: 1,
-      name: "João Silva",
-      phone: "(11) 98765-4321",
-      email: "joao.silva@email.com",
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 2,
-      name: "Maria Oliveira",
-      phone: "(21) 99887-7665",
-      email: "maria.oliveira@email.com",
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 3,
-      name: "Carlos Santos",
-      phone: "(31) 97654-3210",
-      email: "carlos.santos@email.com",
-      createdAt: new Date().toISOString()
-    }
-  ],
-  
-  slots: {
-    // Dados de teste de horários disponíveis para os próximos dias
-    [new Date().toISOString().split('T')[0]]: ["09:00", "10:00", "14:00", "16:00"],
-    [new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0]]: ["08:00", "11:00", "15:00", "17:00"],
-    [new Date(new Date().setDate(new Date().getDate() + 2)).toISOString().split('T')[0]]: ["09:30", "13:00", "14:30", "16:30"]
-  },
-  
-  notes: {
-    "1": "Paciente apresenta sintomas de ansiedade generalizada. Primeira sessão focada em avaliação inicial e estabelecimento de rapport.",
-    "2": "Sessão de acompanhamento. Paciente relata melhora significativa nos sintomas após início do tratamento."
-  },
-  
-  bookings: [
-    {
-      id: 100,
-      cliente: {
-        id: 1,
-        nome: "João Silva",
-        telefone: "(11) 98765-4321",
-        email: "joao.silva@email.com"
-      },
-      agendamento: {
-        dataISO: new Date().toISOString().split('T')[0],
-        hora: "09:00",
-        valor: 150
-      },
-      status: 'confirmado',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 101,
-      cliente: {
-        id: 2,
-        nome: "Maria Oliveira",
-        telefone: "(21) 99887-7665",
-        email: "maria.oliveira@email.com"
-      },
-      agendamento: {
-        dataISO: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0],
-        hora: "11:00",
-        valor: 150
-      },
-      status: 'confirmado',
-      createdAt: new Date().toISOString()
-    }
-  ],
-  
-  settings: {
-    videoLink: 'https://meet.google.com/exemplo',
-    confirm: 'Olá {{nome}}, confirmo seu agendamento para {{data}} às {{hora}}. Link da chamada: {{link}}',
-    reminder: 'Oi {{nome}}! Lembrando nosso atendimento amanhã, {{data}} às {{hora}}. Te espero!',
-    sessionValue: 150,
-    specialties: ['Ansiedade', 'Depressão', 'TDAH', 'Terapia de Casal'],
-    about: 'Bem-vindo à PsiPro, sua plataforma completa para agendamento de consultas psicológicas. Oferecemos um ambiente seguro e confidencial para suas sessões, com profissionais qualificados prontos para ajudar você em sua jornada de autoconhecimento e bem-estar emocional.',
-    profName: 'Dra. Teste Psicóloga'
-  }
-};
+    // ==== ESTADO GLOBAL DA APLICAÇÃO ====
+    let state = {
+      // Navegação
+      currentView: 'auth-screen',
+      currentTab: 'dashboard',
+      
+      // Datas e seleção
+      dateCursor: new Date(),
+      selectedDateISO: null,
+      selectedTimeSlot: null,
+      currentClientId: null,
+      
+      // Dados do psicólogo
+      psychologistId: null,
+      psychologist: null,
+      
+      // Cache de dados
+      clients: [],
+      slots: {},
+      bookings: [],
+      settings: {
+        videoLink: 'https://meet.google.com/exemplo',
+        confirm: 'Olá {{nome}}, confirmo seu agendamento para {{data}} às {{hora}}. Link da chamada: {{link}}',
+        reminder: 'Oi {{nome}}! Lembrando nosso atendimento amanhã, {{data}} às {{hora}}. Te espero!',
+        sessionValue: 150,
+        specialties: ['Ansiedade', 'Depressão', 'TDAH', 'Terapia de Casal'],
+        about: 'Bem-vindo à PsiPro, sua plataforma completa para agendamento de consultas psicológicas. Oferecemos um ambiente seguro e confidencial para suas sessões, com profissionais qualificados prontos para ajudar você em sua jornada de autoconhecimento e bem-estar emocional.'
+      }
+    };
 
-//==== INICIALIZAÇÃO====
-document.addEventListener('DOMContentLoaded', () => {
-  // Forçar navegação direta para o painel admin sem autenticação
-  navigateTo('view-admin');
-  
-  // Inicializar todas as views do admin
-  initDashboard();
-  renderCalendar();
-  renderClientList();
-  renderFinancials();
-  loadSettings();
-  
-  // Mostrar mensagem de boas-vindas
-  setTimeout(() => {
-    showToast('Bem-vindo ao PsiPro Admin! Autenticação removida para testes.', 'success');
-  }, 1000);
-  
-  // Inicializar o calendário do cliente também
-  initClientCalendar();
-});
-
-//==== FUNÇÕES DE NAVEGAÇÃO====
-function navigateTo(viewId) {
-  // Esconder todas as views
-  document.querySelectorAll('.view-section').forEach(el => {
-    el.classList.remove('active');
-    el.style.display = 'none';
-  });
-  
-  // Mostrar view selecionada
-  const target = document.getElementById(viewId);
-  if (target) {
-    target.style.display = 'block';
-    setTimeout(() => {
-      target.classList.add('active');
-      state.currentView = viewId;
-    }, 50);
-  }
-}
-
-function switchTab(tabId) {
-  // Esconder todos os tabs
-  document.querySelectorAll('.tab-content').forEach(el => {
-    el.classList.add('hidden');
-  });
-  
-  // Remover classe active de todos os nav tabs
-  document.querySelectorAll('.nav-tab').forEach(el => {
-    el.classList.remove('active');
-  });
-  
-  // Mostrar tab selecionado
-  document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-  document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-  
-  state.currentTab = tabId;
-  
-  // Atualizar conteúdo específico do tab
-  if (tabId === 'dashboard') initDashboard();
-  if (tabId === 'calendar') renderCalendar();
-  if (tabId === 'financial') renderFinancials();
-}
-
-//==== UTILITÁRIOS====
-function showToast(message, type = 'info') {
-  const container = document.getElementById('toast-container');
-  if (!container) return;
-  
-  const toast = document.createElement('div');
-  toast.className = `toast ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-slate-800'}`;
-  const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
-  
-  toast.innerHTML = `
-    <div class="flex items-center gap-2">
-      <i class="fa-solid ${icon}"></i>
-      <span>${message}</span>
-    </div>
-  `;
-  
-  container.appendChild(toast);
-  
-  // Remover toast após 3 segundos
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(-10px)';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-function formatDate(date) {
-  return date.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-}
-
-function formatTime(date) {
-  return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-}
-
-function getBookings() {
-  return state.bookings;
-}
-
-//==== LÓGICA DO CLIENTE====
-function initClientCalendar() {
-  renderClientMonthDays();
-}
-
-function renderClientMonthDays() {
-  const container = document.getElementById('date-scroll-container');
-  if (!container) return;
-  
-  container.innerHTML = '';
-  const label = document.getElementById('current-month-label');
-  const now = new Date();
-  
-  // Atualizar label do mês atual
-  label.textContent = now.toLocaleDateString('pt-BR', { month: 'long' });
-  
-  // Gerar os próximos 30 dias
-  for (let i = 0; i < 30; i++) {
-    const d = new Date();
-    d.setDate(now.getDate() + i);
-    const iso = d.toISOString().split('T')[0];
-    const dayName = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
-    const dayNumber = d.getDate();
-    const isToday = now.toDateString() === d.toDateString();
-    
-    const btn = document.createElement('button');
-    btn.className = `flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center border transition-all duration-200 snap-start
-      ${state.selectedDateISO === iso ? 
-        'bg-gradient-to-br from-primary-500 to-primary-600 text-white border-primary-500 shadow-lg scale-105' : 
-        'bg-white border-gray-100 text-gray-500 hover:border-primary-200 hover:shadow'}`;
-    
-    if (isToday) {
-      btn.className += ' ring-2 ring-primary-200 bg-primary-50 text-primary-700 font-medium';
-    }
-    
-    btn.onclick = () => selectClientDate(iso, btn);
-    btn.innerHTML = `
-      <span class="text-[10px] font-bold uppercase tracking-wider mb-1">${dayName}</span>
-      <span class="text-xl font-bold">${dayNumber}</span>
-    `;
-    
-    container.appendChild(btn);
-  }
-}
-
-function selectClientDate(iso, btnElement) {
-  state.selectedDateISO = iso;
-  state.selectedTimeSlot = null; // Resetar horário
-  
-  // Atualizar visual dos botões de dia
-  const container = document.getElementById('date-scroll-container');
-  Array.from(container.children).forEach(child => {
-    child.className = 'flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center border transition-all duration-200 snap-start bg-white border-gray-100 text-gray-500 hover:border-primary-200 hover:shadow';
-    
-    const date = new Date(child.querySelector('span:last-child').textContent);
-    const today = new Date();
-    
-    if (date.getDate() === today.getDate() && date.getMonth() === today.getMonth()) {
-      child.className += ' ring-2 ring-primary-200 bg-primary-50 text-primary-700 font-medium';
-    }
-  });
-  
-  btnElement.className = 'flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center border transition-all duration-200 snap-start bg-gradient-to-br from-primary-500 to-primary-600 text-white border-primary-500 shadow-lg scale-105';
-  
-  renderClientSlots(iso);
-  updateConfirmBar();
-}
-
-function renderClientSlots(iso) {
-  const grid = document.getElementById('slots-grid');
-  const loader = document.getElementById('slots-loader');
-  
-  grid.classList.add('opacity-50');
-  loader.classList.remove('hidden');
-  
-  // Simular delay de rede
-  setTimeout(() => {
-    grid.innerHTML = '';
-    loader.classList.add('hidden');
-    grid.classList.remove('opacity-50');
-    
-    const daySlots = state.slots[iso] || [];
-    const bookings = getBookings().filter(b => b.agendamento.dataISO === iso);
-    
-    if (daySlots.length === 0) {
-      grid.innerHTML = `<div class="col-span-2 text-center py-10 text-gray-400">Sem horários disponíveis para este dia</div>`;
-      return;
-    }
-    
-    // Filtrar horários já agendados
-    const availableSlots = daySlots.filter(slot => {
-      return !bookings.some(b => b.agendamento.hora === slot);
+    // ==== INICIALIZAÇÃO ====
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Verificar se usuário está autenticado
+      auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          console.log("Usuário autenticado:", user.uid);
+          state.psychologistId = user.uid;
+          
+          // Carregar dados do psicólogo
+          await loadPsychologistData();
+          
+          // Carregar dados iniciais
+          await Promise.all([
+            loadClients(),
+            loadSlots(),
+            loadBookings(),
+            loadSettings()
+          ]);
+          
+          // Mostrar o painel admin
+          navigateTo('view-admin');
+          initDashboard();
+        } else {
+          // Mostrar tela de autenticação
+          navigateTo('auth-screen');
+        }
+      });
+      
+      // Configurar listeners de autenticação
+      setupAuthListeners();
+      
+      // Carregar gráficos
+      if (typeof Chart !== 'undefined') {
+        initCharts();
+      }
     });
-    
-    if (availableSlots.length === 0) {
-      grid.innerHTML = `<div class="col-span-2 text-center py-10 text-gray-400">Todos os horários estão ocupados para este dia</div>`;
-      return;
+
+    // ==== FUNÇÕES DE AUTENTICAÇÃO ====
+    function setupAuthListeners() {
+      // Login
+      document.getElementById('login-btn').addEventListener('click', async () => {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        
+        if (!email || !password) {
+          showToast('Preencha todos os campos', 'error');
+          return;
+        }
+        
+        try {
+          const userCredential = await auth.signInWithEmailAndPassword(email, password);
+          console.log("Login bem-sucedido:", userCredential.user.uid);
+          showToast('Login realizado com sucesso!', 'success');
+        } catch (error) {
+          console.error("Erro no login:", error);
+          let errorMessage = 'Erro ao fazer login. ';
+          
+          if (error.code === 'auth/user-not-found') {
+            errorMessage += 'Usuário não encontrado.';
+          } else if (error.code === 'auth/wrong-password') {
+            errorMessage += 'Senha incorreta.';
+          } else if (error.code === 'auth/invalid-email') {
+            errorMessage += 'Email inválido.';
+          } else {
+            errorMessage += error.message;
+          }
+          
+          showToast(errorMessage, 'error');
+        }
+      });
+      
+      // Registro
+      document.getElementById('register-btn').addEventListener('click', async () => {
+        const name = document.getElementById('register-name').value;
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+        const confirmPassword = document.getElementById('register-confirm-password').value;
+        
+        if (!name || !email || !password || !confirmPassword) {
+          showToast('Preencha todos os campos', 'error');
+          return;
+        }
+        
+        if (password !== confirmPassword) {
+          showToast('As senhas não coincidem', 'error');
+          return;
+        }
+        
+        if (password.length < 6) {
+          showToast('A senha deve ter pelo menos 6 caracteres', 'error');
+          return;
+        }
+        
+        try {
+          // Criar usuário
+          const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+          const user = userCredential.user;
+          
+          // Salvar dados adicionais no Firestore
+          await db.collection('psychologists').doc(user.uid).set({
+            name,
+            email,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            specialties: ['Ansiedade', 'Depressão'],
+            about: 'Psicólogo dedicado a ajudar pacientes em sua jornada de autocuidado.',
+            sessionValue: 150,
+            settings: {
+              videoLink: '',
+              confirmMessage: 'Olá {{nome}}, seu agendamento foi confirmado para {{data}} às {{hora}}.',
+              reminderMessage: 'Lembrete: sua sessão é amanhã, {{data}} às {{hora}}.'
+            }
+          });
+          
+          showToast('Conta criada com sucesso! Faça login para continuar.', 'success');
+          showLoginSection();
+        } catch (error) {
+          console.error("Erro no registro:", error);
+          let errorMessage = 'Erro ao criar conta. ';
+          
+          if (error.code === 'auth/email-already-in-use') {
+            errorMessage += 'Este email já está em uso.';
+          } else if (error.code === 'auth/invalid-email') {
+            errorMessage += 'Email inválido.';
+          } else {
+            errorMessage += error.message;
+          }
+          
+          showToast(errorMessage, 'error');
+        }
+      });
+      
+      // Botões de alternância entre login/registro
+      document.getElementById('show-register-btn').addEventListener('click', () => {
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('register-section').classList.remove('hidden');
+      });
+      
+      document.getElementById('show-login-btn').addEventListener('click', () => {
+        showLoginSection();
+      });
+      
+      // Logout
+      document.getElementById('logout-btn').addEventListener('click', async () => {
+        try {
+          await auth.signOut();
+          showToast('Logout realizado com sucesso!', 'success');
+          navigateTo('auth-screen');
+        } catch (error) {
+          console.error("Erro no logout:", error);
+          showToast('Erro ao fazer logout. Tente novamente.', 'error');
+        }
+      });
     }
     
-    // Ordenar e renderizar slots
-    availableSlots.sort().forEach(time => {
-      const btn = document.createElement('button');
-      btn.className = 'time-slot py-3 rounded-xl border border-gray-200 text-base font-medium text-gray-700 bg-white hover:border-primary-300 hover:text-primary-600 transition-all duration-200';
-      btn.textContent = time;
-      btn.onclick = () => selectTimeSlot(time, btn);
-      grid.appendChild(btn);
-    });
-  }, 500);
-}
+    function showLoginSection() {
+      document.getElementById('register-section').classList.add('hidden');
+      document.getElementById('login-section').classList.remove('hidden');
+      document.getElementById('register-name').value = '';
+      document.getElementById('register-email').value = '';
+      document.getElementById('register-password').value = '';
+      document.getElementById('register-confirm-password').value = '';
+    }
 
-function selectTimeSlot(time, btnElement) {
-  state.selectedTimeSlot = time;
-  
-  // Remover classe active de todos os botões
-  document.querySelectorAll('.time-slot').forEach(el => {
-    el.classList.remove('active');
-    el.classList.remove('bg-primary-600');
-    el.classList.remove('text-white');
-    el.classList.add('bg-white');
-    el.classList.add('text-gray-700');
-  });
-  
-  // Adicionar classe active no selecionado
-  btnElement.classList.remove('bg-white');
-  btnElement.classList.remove('text-gray-700');
-  btnElement.classList.add('active');
-  btnElement.classList.add('bg-primary-600');
-  btnElement.classList.add('text-white');
-  
-  updateConfirmBar();
+    // ==== FUNÇÕES DE CARREGAMENTO DE DADOS ====
+    async function loadPsychologistData() {
+      if (!state.psychologistId) return;
+      
+      try {
+        const doc = await db.collection('psychologists').doc(state.psychologistId).get();
+        if (doc.exists) {
+          state.psychologist = doc.data();
+          
+          // Atualizar UI com dados do psicólogo
+          document.getElementById('display-name').textContent = state.psychologist.name || 'PsiPro';
+          document.getElementById('conf-prof-name').value = state.psychologist.name || '';
+          document.getElementById('display-price').textContent = `R$ ${state.psychologist.sessionValue || 150},00`;
+          
+          // Atualizar especialidades
+          if (state.psychologist.specialties && state.psychologist.specialties.length > 0) {
+            renderSpecialties(state.psychologist.specialties);
+          }
+          
+          // Atualizar sobre
+          if (state.psychologist.about) {
+            document.getElementById('about-text').textContent = state.psychologist.about;
+            document.getElementById('conf-about').value = state.psychologist.about;
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados do psicólogo:", error);
+        showToast('Erro ao carregar dados do perfil', 'error');
+      }
+    }
+    
+    async function loadClients() {
+      if (!state.psychologistId) return;
+      
+      try {
+        const snapshot = await db.collection('clients')
+          .where('psychologistId', '==', state.psychologistId)
+          .orderBy('name', 'asc')
+          .get();
+        
+        state.clients = [];
+        snapshot.forEach(doc => {
+          const client = doc.data();
+          client.id = doc.id;
+          state.clients.push(client);
+        });
+        
+        renderClientList();
+      } catch (error) {
+        console.error("Erro ao carregar clientes:", error);
+        showToast('Erro ao carregar pacientes', 'error');
+      }
+    }
+    
+    async function loadSlots() {
+      if (!state.psychologistId) return;
+      
+      try {
+        const snapshot = await db.collection('availability')
+          .where('psychologistId', '==', state.psychologistId)
+          .get();
+        
+        state.slots = {};
+        snapshot.forEach(doc => {
+          const slot = doc.data();
+          if (!state.slots[slot.date]) {
+            state.slots[slot.date] = [];
+          }
+          state.slots[slot.date].push({
+            id: doc.id,
+            time: slot.time,
+            available: slot.available
+          });
+        });
+        
+        // Ordenar slots por horário
+        Object.keys(state.slots).forEach(date => {
+          state.slots[date].sort((a, b) => a.time.localeCompare(b.time));
+        });
+        
+        if (state.currentTab === 'calendar') {
+          renderCalendar();
+        }
+      } catch (error) {
+        console.error("Erro ao carregar horários:", error);
+        showToast('Erro ao carregar horários', 'error');
+      }
+    }
+    
+    async function loadBookings() {
+      if (!state.psychologistId) return;
+      
+      try {
+        const snapshot = await db.collection('bookings')
+          .where('psychologistId', '==', state.psychologistId)
+          .orderBy('date', 'desc')
+          .limit(50)
+          .get();
+        
+        state.bookings = [];
+        snapshot.forEach(doc => {
+          const booking = doc.data();
+          booking.id = doc.id;
+          state.bookings.push(booking);
+        });
+        
+        // Atualizar dashboard e calendar se necessário
+        if (state.currentTab === 'dashboard') {
+          initDashboard();
+        }
+        if (state.currentTab === 'calendar') {
+          renderCalendar();
+        }
+        if (state.currentTab === 'financial') {
+          renderFinancials();
+        }
+      } catch (error) {
+        console.error("Erro ao carregar agendamentos:", error);
+        showToast('Erro ao carregar agendamentos', 'error');
+      }
+    }
+    
+    async function loadSettings() {
+      if (!state.psychologistId || !state.psychologist) return;
+      
+      try {
+        state.settings = {
+          videoLink: state.psychologist.settings?.videoLink || 'https://meet.google.com/exemplo',
+          confirm: state.psychologist.settings?.confirmMessage || 'Olá {{nome}}, confirmo seu agendamento para {{data}} às {{hora}}. Link da chamada: {{link}}',
+          reminder: state.psychologist.settings?.reminderMessage || 'Oi {{nome}}! Lembrando nosso atendimento amanhã, {{data}} às {{hora}}. Te espero!',
+          sessionValue: state.psychologist.sessionValue || 150,
+          specialties: state.psychologist.specialties || ['Ansiedade', 'Depressão', 'TDAH', 'Terapia de Casal'],
+          about: state.psychologist.about || 'Bem-vindo à PsiPro, sua plataforma completa para agendamento de consultas psicológicas. Oferecemos um ambiente seguro e confidencial para suas sessões, com profissionais qualificados prontos para ajudar você em sua jornada de autoconhecimento e bem-estar emocional.'
+        };
+        
+        // Atualizar UI
+        loadSettingsUI();
+      } catch (error) {
+        console.error("Erro ao carregar configurações:", error);
+        showToast('Erro ao carregar configurações', 'error');
+      }
+    }
+    
+    function loadSettingsUI() {
+      document.getElementById('conf-video-link').value = state.settings.videoLink;
+      document.getElementById('conf-msg-confirm').value = state.settings.confirm;
+      document.getElementById('conf-msg-reminder').value = state.settings.reminder;
+      document.getElementById('conf-session-value').value = state.settings.sessionValue;
+      document.getElementById('conf-prof-name').value = state.psychologist?.name || '';
+      document.getElementById('conf-about').value = state.settings.about;
+      
+      // Renderizar especialidades
+      renderSpecialtiesList();
+    }
+    
+    function renderSpecialties(specialties) {
+      const container = document.getElementById('specialties-container');
+      container.innerHTML = '';
+      
+      specialties.forEach(specialty => {
+        const span = document.createElement('span');
+        span.className = 'px-3 py-1 bg-primary-50 text-primary-700 text-sm font-semibold rounded-full';
+        span.textContent = specialty;
+        container.appendChild(span);
+      });
+    }
+    
+    function renderSpecialtiesList() {
+      const container = document.getElementById('specialties-list');
+      container.innerHTML = '';
+      
+      state.settings.specialties.forEach(specialty => {
+        const span = document.createElement('span');
+        span.className = 'px-2 py-1 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full flex items-center';
+        span.innerHTML = `${specialty}
+          <button class="ml-1 text-primary-500 hover:text-primary-700" onclick="removeSpecialty('${specialty}')">
+            <i class="fa-solid fa-xmark text-[10px]"></i>
+          </button>`;
+        container.appendChild(span);
+      });
+    }
+
+    // ==== FUNÇÕES DE NAVEGAÇÃO ====
+    function navigateTo(viewId) {
+      // Esconder todas as views
+      document.querySelectorAll('.view-section, #auth-screen').forEach(el => {
+        el.classList.remove('active');
+        el.style.display = 'none';
+      });
+      
+      // Mostrar view selecionada
+      const target = document.getElementById(viewId);
+      if (target) {
+        target.style.display = 'block';
+        setTimeout(() => {
+          target.classList.add('active');
+          state.currentView = viewId;
+        }, 50);
+      }
+    }
+    
+    function switchTab(tabId) {
+      // Esconder todos os tabs
+      document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+      });
+      
+      // Remover classe active de todos os nav tabs
+      document.querySelectorAll('.nav-tab').forEach(el => {
+        el.classList.remove('active');
+      });
+      
+      // Mostrar tab selecionado
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+      
+      state.currentTab = tabId;
+      
+      // Atualizar conteúdo específico do tab
+      if (tabId === 'dashboard') initDashboard();
+      if (tabId === 'calendar') renderCalendar();
+      if (tabId === 'financial') renderFinancials();
+    }
+
+    // ==== FUNÇÕES DO DASHBOARD ====
+    function initDashboard() {
+      const now = new Date();
+      
+      // Total de clientes
+      document.getElementById('dash-total-clients').textContent = state.clients.length;
+      
+      // Sessões do mês atual
+      const currentMonthISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const monthSessions = state.bookings.filter(b => {
+        const bookingMonth = `${new Date(b.date).getFullYear()}-${String(new Date(b.date).getMonth() + 1).padStart(2, '0')}`;
+        return bookingMonth === currentMonthISO;
+      }).length;
+      
+      document.getElementById('dash-month-sessions').textContent = monthSessions;
+      
+      // Próximo atendimento
+      renderNextSession();
+      
+      // Sessões recentes
+      renderRecentSessions();
+    }
+    
+    function renderNextSession() {
+      const now = new Date();
+      const upcoming = state.bookings
+        .filter(b => {
+          const bookingDate = new Date(`${b.date}T${b.time}`);
+          return bookingDate > now && b.status === 'confirmed';
+        })
+        .sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
+      
+      const nextSessionDiv = document.getElementById('dash-next-session');
+      const noSessionDiv = document.getElementById('dash-no-session');
+      
+      if (upcoming.length > 0) {
+        const next = upcoming[0];
+        const sessionDate = new Date(`${next.date}T${next.time}`);
+        const formattedTime = sessionDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const formattedDate = sessionDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+        
+        const client = state.clients.find(c => c.id === next.clientId) || { name: 'Paciente não encontrado' };
+        
+        nextSessionDiv.innerHTML = `
+          <p class="text-3xl font-bold">${formattedTime}</p>
+          <p class="text-primary-100 mb-1">${formattedDate}</p>
+          <p class="text-white font-semibold flex items-center gap-2">
+            <i class="fa-solid fa-user-doctor"></i>
+            ${client.name}
+          </p>
+          <div class="mt-4 flex flex-wrap gap-3">
+            <button class="mt-3 bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-2 rounded-lg transition flex items-center gap-2" onclick="switchTab('calendar')">
+              <i class="fa-regular fa-calendar"></i> Ver Agenda Completa
+            </button>
+            <button class="mt-3 bg-primary-500 hover:bg-primary-600 text-white text-sm px-4 py-2 rounded-lg transition flex items-center gap-2" onclick="openVideoLink()">
+              <i class="fa-solid fa-video"></i> Entrar na Sala
+            </button>
+            <button class="mt-3 bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-2 rounded-lg transition flex items-center gap-2" onclick="sendWhatsApp('${next.id}', 'confirm')">
+              <i class="fa-brands fa-whatsapp"></i> Enviar Confirmação
+            </button>
+          </div>
+        `;
+        
+        noSessionDiv.classList.add('hidden');
+        nextSessionDiv.classList.remove('hidden');
+      } else {
+        noSessionDiv.classList.remove('hidden');
+        nextSessionDiv.classList.add('hidden');
+      }
+    }
+    
+    function renderRecentSessions() {
+      const container = document.getElementById('recent-sessions');
+      container.innerHTML = '';
+      
+      if (state.bookings.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-slate-400">
+            <i class="fa-solid fa-clock text-3xl mb-2"></i>
+            <p>Nenhuma sessão recente encontrada</p>
+            <p class="text-xs mt-1">Comece adicionando horários disponíveis na sua agenda</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Ordenar por data mais recente e pegar as últimas 5
+      const recent = [...state.bookings]
+        .sort((a, b) => new Date(b.createdAt?.toDate?.() || b.createdAt) - new Date(a.createdAt?.toDate?.() || a.createdAt))
+        .slice(0, 5);
+      
+      recent.forEach(booking => {
+        const date = new Date(`${booking.date}T${booking.time}`);
+        const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+        const formattedTime = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        
+        const client = state.clients.find(c => c.id === booking.clientId) || { name: 'Paciente' };
+        const statusClass = booking.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' : 
+                           booking.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
+                           'bg-amber-100 text-amber-800';
+        
+        const div = document.createElement('div');
+        div.className = 'p-4 hover:bg-slate-50 transition';
+        div.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+                <span class="text-primary-700 font-bold">${client.name.charAt(0)}</span>
+              </div>
+              <div>
+                <p class="font-bold text-slate-800">${client.name}</p>
+                <p class="text-xs text-slate-500">${formattedDate} • ${formattedTime}</p>
+              </div>
+            </div>
+            <span class="px-2 py-1 ${statusClass} text-xs font-bold rounded-full">${booking.status === 'confirmed' ? 'Confirmado' : booking.status === 'cancelled' ? 'Cancelado' : 'Pendente'}</span>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // ==== FUNÇÕES DO CALENDÁRIO ====
+    function renderCalendar() {
+      const year = state.dateCursor.getFullYear();
+      const month = state.dateCursor.getMonth();
+      
+      // Atualizar label do mês e ano
+      const label = document.getElementById('calendar-month-label');
+      if (label) {
+        label.textContent = state.dateCursor.toLocaleDateString('pt-BR', {
+          month: 'long',
+          year: 'numeric'
+        });
+      }
+      
+      const firstDay = new Date(year, month, 1);
+      const startDate = new Date(firstDay);
+      startDate.setDate(firstDay.getDate() - firstDay.getDay()); // Começar no domingo
+      
+      const grid = document.getElementById('calendar-grid');
+      if (!grid) return;
+      
+      grid.innerHTML = '';
+      const today = new Date().toISOString().split('T')[0];
+      
+      for (let i = 0; i < 42; i++) { // 6 semanas x 7 dias
+        const d = new Date(startDate);
+        d.setDate(startDate.getDate() + i);
+        const iso = d.toISOString().split('T')[0];
+        const isCurrentMonth = d.getMonth() === month;
+        const isToday = iso === today;
+        
+        // Verificar se há horários disponíveis neste dia
+        const hasSlots = state.slots[iso] && state.slots[iso].length > 0;
+        
+        // Verificar se há agendamentos neste dia
+        const dayBookings = state.bookings.filter(b => b.date === iso && b.status === 'confirmed');
+        const hasBookings = dayBookings.length > 0;
+        
+        // Determinar cor do ponto indicador
+        let dotClass = '';
+        if (hasBookings) dotClass = 'bg-primary-600'; // Com sessões agendadas
+        else if (hasSlots) dotClass = 'bg-blue-300'; // Com horários disponíveis
+        else if (!isCurrentMonth) dotClass = 'bg-slate-200'; // Mês fora do período
+        
+        const dayElement = document.createElement('button');
+        dayElement.className = `calendar-day w-full h-14 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all duration-200 relative overflow-hidden
+          ${!isCurrentMonth ? 'bg-slate-50 text-slate-300 border-transparent' : 'bg-white border-slate-100 text-slate-700 hover:border-primary-200 hover:shadow-sm'}
+          ${isToday ? 'today border-2 border-yellow-300 bg-yellow-50' : ''}
+          ${hasBookings ? 'booked' : ''}
+          ${hasSlots && !hasBookings ? 'has-sessions' : ''}
+        `;
+        
+        dayElement.innerHTML = `
+          <span class="font-medium text-sm z-10">${d.getDate()}</span>
+          ${dotClass ? `<div class="w-2 h-2 rounded-full mt-1 ${dotClass} z-10"></div>` : ''}
+        `;
+        
+        if (isCurrentMonth) {
+          dayElement.onclick = () => openDayModal(iso, d);
+        }
+        
+        grid.appendChild(dayElement);
+      }
+    }
+    
+    function changeMonth(delta) {
+      state.dateCursor.setMonth(state.dateCursor.getMonth() + delta);
+      renderCalendar();
+    }
+    
+    function openDayModal(iso, dateObj) {
+      state.selectedDateISO = iso;
+      
+      // Atualizar título e subtítulo do modal
+      document.getElementById('modal-day-title').textContent = dateObj.toLocaleDateString('pt-BR', {
+        weekday: 'long'
+      }).replace(/^\w/, c => c.toUpperCase());
+      
+      document.getElementById('modal-day-subtitle').textContent = dateObj.toLocaleDateString('pt-BR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+      
+      // Resetar para aba de slots
+      switchDayTab('slots');
+      
+      // Renderizar conteúdo
+      renderDaySlots();
+      renderDayBookings();
+      
+      // Mostrar modal
+      document.getElementById('day-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeDayModal() {
+      document.getElementById('day-modal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+    
+    function switchDayTab(tab) {
+      // Remover classe active de todos os tabs
+      document.querySelectorAll('.day-tab').forEach(t => {
+        t.classList.remove('active');
+      });
+      
+      // Esconder todos os conteúdos
+      document.querySelectorAll('.day-content').forEach(c => {
+        c.classList.add('hidden');
+      });
+      
+      // Mostrar tab e conteúdo selecionado
+      document.getElementById(`btn-tab-${tab}`).classList.add('active');
+      document.getElementById(`day-tab-${tab}`).classList.remove('hidden');
+    }
+    
+    function renderDaySlots() {
+      const list = document.getElementById('slots-list');
+      if (!list) return;
+      
+      list.innerHTML = '';
+      
+      const slots = state.slots[state.selectedDateISO] || [];
+      
+      if (slots.length === 0) {
+        list.innerHTML = `
+          <div class="col-span-4 text-center py-8 text-slate-400">
+            <i class="fa-regular fa-clock text-2xl mb-2"></i>
+            <p>Nenhum horário disponível para este dia</p>
+            <p class="text-xs mt-1">Use o gerador rápido ou adicione manualmente</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Renderizar slots
+      slots.forEach(slot => {
+        const isAvailable = slot.available !== false; // Padrão é true se não definido
+        const slotElement = document.createElement('div');
+        slotElement.className = `time-card bg-white border ${isAvailable ? 'border-slate-100' : 'border-red-200'} rounded-xl p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group`;
+        
+        slotElement.innerHTML = `
+          <span class="font-medium text-slate-700 ${isAvailable ? '' : 'text-red-500 line-through'}">${slot.time}</span>
+          <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" ${isAvailable ? 'checked' : ''} class="sr-only peer" onchange="toggleSlotAvailability('${slot.id}', this.checked)">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+            </label>
+            <button onclick="removeSlot('${slot.id}')" class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition" title="Remover horário">
+              <i class="fa-solid fa-trash-can text-[10px]"></i>
+            </button>
+          </div>
+        `;
+        
+        list.appendChild(slotElement);
+      });
+    }
+    
+    function renderDayBookings() {
+      const list = document.getElementById('bookings-list');
+      if (!list) return;
+      
+      const bookings = state.bookings.filter(b => b.date === state.selectedDateISO);
+      
+      if (bookings.length === 0) {
+        list.innerHTML = `
+          <div class="text-center py-8 text-slate-400">
+            <i class="fa-solid fa-calendar-check text-3xl mb-2"></i>
+            <p>Nenhum agendamento para este dia</p>
+            <p class="text-xs mt-1">Crie horários disponíveis na aba "Gerenciar Horários"</p>
+          </div>
+        `;
+        return;
+      }
+      
+      list.innerHTML = '';
+      
+      bookings.forEach(booking => {
+        const client = state.clients.find(c => c.id === booking.clientId) || { name: 'Paciente não encontrado' };
+        
+        const bookingElement = document.createElement('div');
+        bookingElement.className = 'bg-white p-4 rounded-xl border border-slate-100 shadow-sm transition hover:shadow-md';
+        
+        const statusClass = booking.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : 
+                           booking.status === 'cancelled' ? 'bg-red-100 text-red-700' : 
+                           'bg-amber-100 text-amber-700';
+        
+        bookingElement.innerHTML = `
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h4 class="font-bold text-slate-800 text-lg">${client.name}</h4>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-sm bg-primary-100 text-primary-700 px-2 py-0.5 rounded-md font-medium">${booking.time}</span>
+                <span class="text-xs text-slate-400">• R$ ${booking.value?.toFixed(2) || state.settings.sessionValue.toFixed(2)}</span>
+              </div>
+            </div>
+            <button onclick="deleteBooking('${booking.id}')" class="text-slate-300 hover:text-red-500 transition" title="Cancelar agendamento">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+          <div class="flex gap-2 mt-3">
+            <button onclick="sendWhatsApp('${booking.id}', 'confirm')" class="flex-1 bg-green-50 text-green-700 text-xs py-2 rounded-lg border border-green-100 hover:bg-green-100 font-medium transition flex items-center justify-center gap-1">
+              <i class="fa-brands fa-whatsapp text-sm"></i> Confirmar
+            </button>
+            <button onclick="sendWhatsApp('${booking.id}', 'reminder')" class="flex-1 bg-amber-50 text-amber-700 text-xs py-2 rounded-lg border border-amber-100 hover:bg-amber-100 font-medium transition flex items-center justify-center gap-1">
+              <i class="fa-solid fa-bell text-sm"></i> Lembrete
+            </button>
+            <button onclick="sendWhatsApp('${booking.id}', 'link')" class="flex-1 bg-purple-50 text-purple-700 text-xs py-2 rounded-lg border border-purple-100 hover:bg-purple-100 font-medium transition flex items-center justify-center gap-1">
+              <i class="fa-solid fa-video text-sm"></i> Vídeo
+            </button>
+          </div>
+          <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
+            <button onclick="openNotesModal('${booking.clientId}', '${client.name.replace(/'/g, "\\'")}', '${booking.id}')" class="text-primary-600 hover:text-primary-800 text-sm font-medium flex items-center gap-1 transition">
+              <i class="fa-solid fa-notes-medical"></i> Prontuário
+            </button>
+            <span class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full ${statusClass}">${booking.status === 'confirmed' ? 'Confirmado' : booking.status === 'cancelled' ? 'Cancelado' : 'Pendente'}</span>
+          </div>
+        `;
+        
+        list.appendChild(bookingElement);
+      });
+    }
+
+    // ==== FUNÇÕES DE GESTÃO DE HORÁRIOS ====
+    async function addSingleSlot() {
+      const timeInput = document.getElementById('new-slot-input');
+      const time = timeInput.value;
+      
+      if (!time) {
+        showToast('Selecione um horário válido', 'error');
+        return;
+      }
+      
+      try {
+        await saveSlots([time]);
+        timeInput.value = "09:00"; // Resetar para próximo horário comum
+        showToast('Horário adicionado com sucesso!', 'success');
+      } catch (error) {
+        console.error("Erro ao adicionar horário:", error);
+        showToast('Erro ao adicionar horário. Tente novamente.', 'error');
+      }
+    }
+    
+    async function generateSlots(type) {
+      let newSlots = [];
+      const existingTimes = state.slots[state.selectedDateISO] ? 
+        state.slots[state.selectedDateISO].map(s => s.time) : [];
+      
+      switch(type) {
+        case 'morning':
+          newSlots = ["08:00", "09:00", "10:00", "11:00", "12:00"].filter(t => !existingTimes.includes(t));
+          break;
+        case 'afternoon':
+          newSlots = ["13:00", "14:00", "15:00", "16:00", "17:00", "18:00"].filter(t => !existingTimes.includes(t));
+          break;
+        case 'full':
+          newSlots = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"].filter(t => !existingTimes.includes(t));
+          break;
+      }
+      
+      if (newSlots.length === 0) {
+        showToast('Todos os horários já foram adicionados', 'info');
+        return;
+      }
+      
+      try {
+        await saveSlots(newSlots);
+        showToast(`Horários de ${type === 'morning' ? 'manhã' : type === 'afternoon' ? 'tarde' : 'dia todo'} gerados com sucesso!`, 'success');
+      } catch (error) {
+        console.error("Erro ao gerar horários:", error);
+        showToast('Erro ao gerar horários. Tente novamente.', 'error');
+      }
+    }
+    
+    async function saveSlots(newTimes) {
+      if (!state.selectedDateISO || !state.psychologistId) {
+        throw new Error('Data selecionada ou ID do psicólogo não encontrado');
+      }
+      
+      const batch = db.batch();
+      
+      // Se não existirem slots para esta data, inicializar
+      if (!state.slots[state.selectedDateISO]) {
+        state.slots[state.selectedDateISO] = [];
+      }
+      
+      newTimes.forEach(time => {
+        const slotRef = db.collection('availability').doc(); // Novo documento com ID gerado
+        batch.set(slotRef, {
+          psychologistId: state.psychologistId,
+          date: state.selectedDateISO,
+          time: time,
+          available: true,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        state.slots[state.selectedDateISO].push({
+          id: slotRef.id,
+          time: time,
+          available: true
+        });
+      });
+      
+      // Salvar no banco de dados
+      await batch.commit();
+      
+      // Ordenar os horários
+      state.slots[state.selectedDateISO].sort((a, b) => a.time.localeCompare(b.time));
+      
+      // Atualizar UI
+      renderDaySlots();
+      renderCalendar();
+      
+      return newTimes.length;
+    }
+    
+    async function toggleSlotAvailability(slotId, available) {
+      if (!slotId) return;
+      
+      try {
+        // Atualizar no Firestore
+        await db.collection('availability').doc(slotId).update({
+          available: available,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Atualizar no estado local
+        Object.keys(state.slots).forEach(date => {
+          const index = state.slots[date].findIndex(s => s.id === slotId);
+          if (index !== -1) {
+            state.slots[date][index].available = available;
+          }
+        });
+        
+        // Re-renderizar se o modal estiver aberto para esta data
+        if (document.getElementById('day-modal').classList.contains('hidden') === false && 
+            state.slots[state.selectedDateISO]) {
+          renderDaySlots();
+        }
+        
+        // Atualizar calendário
+        renderCalendar();
+      } catch (error) {
+        console.error("Erro ao atualizar disponibilidade:", error);
+        showToast('Erro ao atualizar disponibilidade do horário', 'error');
+      }
+    }
+    
+    async function removeSlot(slotId) {
+      if (!slotId) return;
+      
+      if (!confirm('Tem certeza que deseja remover este horário?')) {
+        return;
+      }
+      
+      try {
+        // Remover do Firestore
+        await db.collection('availability').doc(slotId).delete();
+        
+        // Remover do estado local
+        Object.keys(state.slots).forEach(date => {
+          state.slots[date] = state.slots[date].filter(s => s.id !== slotId);
+          if (state.slots[date].length === 0) {
+            delete state.slots[date];
+          }
+        });
+        
+        // Atualizar UI
+        renderDaySlots();
+        renderCalendar();
+        
+        showToast('Horário removido com sucesso!', 'success');
+      } catch (error) {
+        console.error("Erro ao remover horário:", error);
+        showToast('Erro ao remover horário. Tente novamente.', 'error');
+      }
+    }
+
+    // ==== FUNÇÕES DE GESTÃO DE CLIENTES ====
+    function renderClientList(filter = '') {
+      const list = document.getElementById('clients-list');
+      if (!list) return;
+      
+      list.innerHTML = '';
+      
+      const filtered = state.clients.filter(client =>
+        client.name.toLowerCase().includes(filter.toLowerCase()) ||
+        client.phone.includes(filter.replace(/\D/g, ''))
+      );
+      
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div class="text-center py-12 text-slate-400">
+            <i class="fa-solid fa-users text-4xl mb-3"></i>
+            <p>Nenhum paciente encontrado</p>
+            <p class="text-sm mt-1 mb-4">Tente outra pesquisa ou adicione um novo paciente</p>
+            <button onclick="openClientModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 mx-auto">
+              <i class="fa-solid fa-plus"></i> Adicionar Paciente
+            </button>
+          </div>
+        `;
+        return;
+      }
+      
+      filtered.forEach(client => {
+        const clientElement = document.createElement('div');
+        clientElement.className = 'bg-white rounded-xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-shadow';
+        
+        // Formatar data de nascimento
+        let birthDateFormatted = '';
+        if (client.birthDate) {
+          try {
+            const birthDate = client.birthDate.toDate ? client.birthDate.toDate() : new Date(client.birthDate);
+            birthDateFormatted = birthDate.toLocaleDateString('pt-BR');
+          } catch (e) {
+            birthDateFormatted = 'Data inválida';
+          }
+        }
+        
+        clientElement.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                  <span class="text-primary-700 font-bold text-lg">${client.name.charAt(0)}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-bold text-slate-800 truncate">${client.name}</h3>
+                  <div class="flex gap-2 mt-0.5">
+                    <span class="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">ID: ${client.id.substring(0, 6)}</span>
+                    ${birthDateFormatted ? `<span class="text-xs bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">${birthDateFormatted}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-1.5 mt-2">
+                <div class="flex items-center gap-1.5 text-sm text-slate-600">
+                  <i class="fa-brands fa-whatsapp text-green-500"></i>
+                  <span>${formatPhone(client.phone)}</span>
+                </div>
+                ${client.email ? `
+                  <div class="flex items-center gap-1.5 text-sm text-slate-600">
+                    <i class="fa-solid fa-envelope text-amber-500"></i>
+                    <span class="truncate">${client.email}</span>
+                  </div>` : ''}
+                ${birthDateFormatted ? `
+                  <div class="flex items-center gap-1.5 text-sm text-slate-600">
+                    <i class="fa-solid fa-cake-candles text-pink-500"></i>
+                    <span>${birthDateFormatted}</span>
+                  </div>` : ''}
+                ${client.notes ? `
+                  <div class="flex items-start gap-1.5 text-sm text-slate-600 mt-1">
+                    <i class="fa-solid fa-note-sticky text-slate-500 mt-1"></i>
+                    <span class="text-xs bg-slate-100 p-1 rounded truncate">${client.notes.substring(0, 50)}${client.notes.length > 50 ? '...' : ''}</span>
+                  </div>` : ''}
+              </div>
+              <div class="mt-3 flex justify-between items-center">
+                <button onclick="openNotesModal('${client.id}', '${client.name.replace(/'/g, "\\'")}')"
+                  class="text-sm text-primary-600 hover:text-primary-800 font-medium flex items-center gap-1 transition">
+                  <i class="fa-solid fa-notes-medical mr-0.5"></i> Prontuário
+                </button>
+                ${getLastSessionDate(client.id)}
+              </div>
+            </div>
+            <div class="flex flex-col gap-2 ml-2">
+              <button onclick="deleteClient('${client.id}')" 
+                class="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition" 
+                title="Remover paciente">
+                <i class="fa-solid fa-trash-can text-sm"></i>
+              </button>
+              <button onclick="sendWhatsAppToClient('${client.phone}', 'client')" 
+                class="w-8 h-8 rounded-full bg-green-50 text-green-500 hover:bg-green-100 flex items-center justify-center transition" 
+                title="Enviar WhatsApp">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        
+        list.appendChild(clientElement);
+      });
+    }
+    
+    function getLastSessionDate(clientId) {
+      const clientBookings = state.bookings
+        .filter(b => b.clientId === clientId && b.status === 'confirmed')
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      if (clientBookings.length === 0) {
+        return '<span class="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded-full">Sem sessões</span>';
+      }
+      
+      const lastBooking = clientBookings[0];
+      const bookingDate = new Date(`${lastBooking.date}T${lastBooking.time}`);
+      const today = new Date();
+      const diffDays = Math.floor((today - bookingDate) / (1000 * 60 * 60 * 24));
+      
+      let statusText = '';
+      let statusClass = '';
+      
+      if (diffDays === 0) {
+        statusText = 'Hoje';
+        statusClass = 'bg-green-100 text-green-800';
+      } else if (diffDays === 1) {
+        statusText = 'Ontem';
+        statusClass = 'bg-blue-100 text-blue-800';
+      } else if (diffDays < 7) {
+        statusText = `${diffDays} dias atrás`;
+        statusClass = 'bg-amber-100 text-amber-800';
+      } else {
+        statusText = `${diffDays} dias`;
+        statusClass = 'bg-slate-100 text-slate-800';
+      }
+      
+      return `<span class="text-xs ${statusClass} px-2 py-1 rounded-full">${statusText}</span>`;
+    }
+    
+    function formatPhone(phone) {
+      if (!phone) return '';
+      const cleaned = phone.replace(/\D/g, '');
+      if (cleaned.length === 11) {
+        return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 7)}-${cleaned.substring(7)}`;
+      }
+      return phone;
+    }
+    
+    function filterClients() {
+      const searchTerm = document.getElementById('client-search').value;
+      renderClientList(searchTerm);
+    }
+    
+    function openClientModal() {
+      document.getElementById('client-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeClientModal() {
+      document.getElementById('client-modal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+    
+    async function saveClient(e) {
+      e.preventDefault();
+      const form = e.target;
+      const clientName = form.name.value.trim();
+      const clientPhone = form.phone.value.replace(/\D/g, '');
+      
+      if (!clientName || clientName.length < 3) {
+        showToast('Nome inválido', 'error');
+        return;
+      }
+      
+      if (clientPhone.length < 10) {
+        showToast('Telefone inválido', 'error');
+        return;
+      }
+      
+      // Verificar se cliente já existe
+      const existingClient = state.clients.find(c => c.phone === clientPhone);
+      if (existingClient) {
+        if (confirm('Este paciente já está cadastrado. Deseja atualizar as informações?')) {
+          try {
+            await updateClient(existingClient.id, {
+              name: clientName,
+              phone: form.phone.value,
+              email: form.email.value,
+              birthDate: form.birthDate.value ? new Date(form.birthDate.value) : null,
+              notes: form.notes.value
+            });
+            showToast('Paciente atualizado com sucesso!', 'success');
+          } catch (error) {
+            console.error("Erro ao atualizar paciente:", error);
+            showToast('Erro ao atualizar paciente', 'error');
+          }
+        } else {
+          return;
+        }
+      } else {
+        // Criar novo cliente
+        try {
+          const clientRef = db.collection('clients').doc();
+          const birthDate = form.birthDate.value ? new Date(form.birthDate.value) : null;
+          
+          await clientRef.set({
+            id: clientRef.id,
+            psychologistId: state.psychologistId,
+            name: clientName,
+            phone: form.phone.value,
+            email: form.email.value || '',
+            birthDate: birthDate ? firebase.firestore.Timestamp.fromDate(birthDate) : null,
+            notes: form.notes.value || '',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          
+          // Adicionar ao estado local
+          state.clients.push({
+            id: clientRef.id,
+            name: clientName,
+            phone: form.phone.value,
+            email: form.email.value || '',
+            birthDate: birthDate ? firebase.firestore.Timestamp.fromDate(birthDate) : null,
+            notes: form.notes.value || '',
+            createdAt: new Date()
+          });
+          
+          showToast('Paciente cadastrado com sucesso!', 'success');
+        } catch (error) {
+          console.error("Erro ao cadastrar paciente:", error);
+          showToast('Erro ao cadastrar paciente. Tente novamente.', 'error');
+        }
+      }
+      
+      // Resetar e fechar modal
+      form.reset();
+      closeClientModal();
+      
+      // Atualizar lista
+      renderClientList();
+    }
+    
+    async function updateClient(clientId, data) {
+      if (!clientId || !state.psychologistId) return;
+      
+      try {
+        const clientRef = db.collection('clients').doc(clientId);
+        
+        // Preparar dados para atualização
+        const updateData = {
+          ...data,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // Se birthDate for um objeto Date, converter para Timestamp
+        if (updateData.birthDate && updateData.birthDate instanceof Date) {
+          updateData.birthDate = firebase.firestore.Timestamp.fromDate(updateData.birthDate);
+        }
+        
+        // Remover campos vazios ou nulos
+        Object.keys(updateData).forEach(key => {
+          if (updateData[key] === null || updateData[key] === undefined || updateData[key] === '') {
+            delete updateData[key];
+          }
+        });
+        
+        // Atualizar no Firestore
+        await clientRef.update(updateData);
+        
+        // Atualizar no estado local
+        const clientIndex = state.clients.findIndex(c => c.id === clientId);
+        if (clientIndex !== -1) {
+          state.clients[clientIndex] = {
+            ...state.clients[clientIndex],
+            ...data,
+            updatedAt: new Date()
+          };
+        }
+      } catch (error) {
+        console.error("Erro ao atualizar paciente:", error);
+        throw error;
+      }
+    }
+    
+    async function deleteClient(clientId) {
+      if (!confirm('Tem certeza que deseja remover este paciente? Esta ação não pode ser desfeita.')) {
+        return;
+      }
+      
+      try {
+        // Remover do Firestore
+        await db.collection('clients').doc(clientId).delete();
+        
+        // Remover do estado local
+        state.clients = state.clients.filter(c => c.id !== clientId);
+        
+        // Remover também os agendamentos associados a este cliente
+        const clientBookings = state.bookings.filter(b => b.clientId === clientId);
+        for (const booking of clientBookings) {
+          try {
+            await db.collection('bookings').doc(booking.id).delete();
+          } catch (error) {
+            console.error(`Erro ao remover agendamento ${booking.id}:`, error);
+          }
+        }
+        
+        // Atualizar lista de agendamentos
+        state.bookings = state.bookings.filter(b => b.clientId !== clientId);
+        
+        // Atualizar UI
+        renderClientList();
+        renderCalendar();
+        initDashboard();
+        
+        showToast('Paciente removido com sucesso!', 'success');
+      } catch (error) {
+        console.error("Erro ao remover paciente:", error);
+        showToast('Erro ao remover paciente. Tente novamente.', 'error');
+      }
+    }
+
+    // ==== FUNÇÕES DE AGENDAMENTOS ====
+    async function deleteBooking(bookingId) {
+      if (!confirm('Tem certeza que deseja cancelar este agendamento? O cliente será notificado.')) {
+        return;
+      }
+      
+      try {
+        // Atualizar status para cancelado
+        await db.collection('bookings').doc(bookingId).update({
+          status: 'cancelled',
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Atualizar estado local
+        const bookingIndex = state.bookings.findIndex(b => b.id === bookingId);
+        if (bookingIndex !== -1) {
+          state.bookings[bookingIndex].status = 'cancelled';
+          state.bookings[bookingIndex].updatedAt = new Date();
+        }
+        
+        // Notificar cliente
+        const booking = state.bookings.find(b => b.id === bookingId);
+        if (booking) {
+          await sendWhatsApp(bookingId, 'cancelled');
+        }
+        
+        // Atualizar UI
+        renderDayBookings();
+        renderCalendar();
+        initDashboard();
+        
+        showToast('Agendamento cancelado com sucesso!', 'success');
+      } catch (error) {
+        console.error("Erro ao cancelar agendamento:", error);
+        showToast('Erro ao cancelar agendamento. Tente novamente.', 'error');
+      }
+    }
+    
+    async function submitBooking(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-submit');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Processando...';
+      
+      const formData = new FormData(e.target);
+      const clientPhone = formData.get('phone').replace(/\D/g, '');
+      
+      if (clientPhone.length < 10) {
+        showToast('Telefone inválido', 'error');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        return;
+      }
+      
+      try {
+        // Verificar se cliente já existe
+        let client = state.clients.find(c => c.phone.replace(/\D/g, '') === clientPhone);
+        let clientId;
+        
+        if (!client) {
+          // Criar novo cliente
+          const clientRef = db.collection('clients').doc();
+          clientId = clientRef.id;
+          
+          await clientRef.set({
+            id: clientId,
+            psychologistId: state.psychologistId,
+            name: formData.get('name'),
+            phone: formData.get('phone'),
+            email: formData.get('email') || '',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          
+          // Adicionar ao estado local
+          client = {
+            id: clientId,
+            name: formData.get('name'),
+            phone: formData.get('phone'),
+            email: formData.get('email') || '',
+            createdAt: new Date()
+          };
+          state.clients.push(client);
+        } else {
+          clientId = client.id;
+        }
+        
+        // Criar novo agendamento
+        const bookingRef = db.collection('bookings').doc();
+        const bookingId = bookingRef.id;
+        const value = parseFloat(state.settings.sessionValue) || 150;
+        
+        await bookingRef.set({
+          id: bookingId,
+          psychologistId: state.psychologistId,
+          clientId: clientId,
+          date: state.selectedDateISO,
+          time: state.selectedTimeSlot,
+          value: value,
+          status: 'confirmed',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Adicionar ao estado local
+        state.bookings.push({
+          id: bookingId,
+          psychologistId: state.psychologistId,
+          clientId: clientId,
+          date: state.selectedDateISO,
+          time: state.selectedTimeSlot,
+          value: value,
+          status: 'confirmed',
+          createdAt: new Date()
+        });
+        
+        // Enviar confirmação por WhatsApp
+        await sendWhatsApp(bookingId, 'confirm');
+        
+        // Resetar seleção
+        state.selectedDateISO = null;
+        state.selectedTimeSlot = null;
+        updateConfirmBar();
+        
+        // Mostrar feedback de sucesso
+        showToast('Agendamento confirmado com sucesso!', 'success');
+        setTimeout(() => {
+          showToast('Confirmação enviada por WhatsApp!', 'success');
+        }, 1000);
+        
+        // Fechar modal e resetar formulário
+        closeModal();
+        e.target.reset();
+        
+        // Redirecionar para o perfil após 2 segundos
+        setTimeout(() => {
+          navigateTo('view-profile');
+        }, 2000);
+      } catch (error) {
+        console.error("Erro ao criar agendamento:", error);
+        showToast('Erro ao confirmar agendamento. Tente novamente.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+
+    // ==== FUNÇÕES DE PRONTUÁRIO ====
+    async function openNotesModal(clientId, clientName, bookingId = null) {
+      state.currentClientId = clientId;
+      
+      // Atualizar nome do cliente no modal
+      document.getElementById('note-client-name').textContent = `Paciente: ${clientName}`;
+      
+      // Carregar histórico de anotações
+      await loadNotesHistory(clientId);
+      
+      // Carregar anotação da sessão atual se houver bookingId
+      if (bookingId) {
+        const booking = state.bookings.find(b => b.id === bookingId);
+        if (booking && booking.notes) {
+          document.getElementById('client-notes-area').value = booking.notes;
+        }
+      } else {
+        document.getElementById('client-notes-area').value = '';
+      }
+      
+      // Mostrar modal
+      document.getElementById('notes-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    async function loadNotesHistory(clientId) {
+      if (!clientId || !state.psychologistId) return;
+      
+      try {
+        const historyContainer = document.getElementById('notes-history');
+        historyContainer.innerHTML = '<div class="flex justify-center py-4"><i class="fa-solid fa-circle-notch fa-spin text-primary-500 text-2xl"></i></div>';
+        
+        // Buscar anotações do cliente
+        const notesSnapshot = await db.collection('sessionNotes')
+          .where('psychologistId', '==', state.psychologistId)
+          .where('clientId', '==', clientId)
+          .orderBy('createdAt', 'desc')
+          .limit(10)
+          .get();
+        
+        if (notesSnapshot.empty) {
+          historyContainer.innerHTML = `
+            <div class="text-center py-8 text-slate-400">
+              <i class="fa-solid fa-book-medical text-3xl mb-2"></i>
+              <p>Nenhuma anotação encontrada para este paciente</p>
+            </div>
+          `;
+          return;
+        }
+        
+        // Renderizar histórico
+        let html = '';
+        notesSnapshot.forEach(doc => {
+          const note = doc.data();
+          const createdAt = note.createdAt?.toDate ? note.createdAt.toDate() : new Date(note.createdAt);
+          
+          html += `
+            <div class="mb-4 p-3 bg-white rounded-lg border border-slate-200">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="font-bold text-slate-800">PsiPro</span>
+                <span class="text-slate-400">${createdAt.toLocaleDateString('pt-BR')} - ${createdAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <p class="text-sm text-slate-600 whitespace-pre-wrap">${note.content}</p>
+            </div>
+          `;
+        });
+        
+        historyContainer.innerHTML = html;
+      } catch (error) {
+        console.error("Erro ao carregar histórico de anotações:", error);
+        document.getElementById('notes-history').innerHTML = `
+          <div class="text-center py-8 text-red-500">
+            <i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i>
+            <p>Erro ao carregar histórico</p>
+          </div>
+        `;
+      }
+    }
+    
+    function closeNotesModal() {
+      document.getElementById('notes-modal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+      state.currentClientId = null;
+    }
+    
+    async function saveNotes() {
+      if (!state.currentClientId || !state.psychologistId) {
+        showToast('Erro: informações incompletas', 'error');
+        return;
+      }
+      
+      const notesText = document.getElementById('client-notes-area').value.trim();
+      if (!notesText) {
+        showToast('Nenhuma anotação para salvar', 'error');
+        return;
+      }
+      
+      try {
+        // Salvar no Firestore
+        const noteRef = db.collection('sessionNotes').doc();
+        await noteRef.set({
+          id: noteRef.id,
+          psychologistId: state.psychologistId,
+          clientId: state.currentClientId,
+          content: notesText,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Limpar área de texto
+        document.getElementById('client-notes-area').value = '';
+        
+        // Recarregar histórico
+        await loadNotesHistory(state.currentClientId);
+        
+        showToast('Anotações salvas com sucesso!', 'success');
+      } catch (error) {
+        console.error("Erro ao salvar anotações:", error);
+        showToast('Erro ao salvar anotações. Tente novamente.', 'error');
+      }
+    }
+
+    // ==== FUNÇÕES FINANCEIRAS ====
+    function renderFinancials() {
+      const now = new Date();
+      const currentMonthISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      
+      // Calcular total do mês atual
+      const monthBookings = state.bookings.filter(b => {
+        const bookingMonth = `${new Date(b.date).getFullYear()}-${String(new Date(b.date).getMonth() + 1).padStart(2, '0')}`;
+        return bookingMonth === currentMonthISO && b.status === 'confirmed';
+      });
+      
+      const total = monthBookings.reduce((sum, b) => sum + (b.value || state.settings.sessionValue), 0);
+      
+      // Atualizar total
+      document.getElementById('financial-total').textContent = total.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      });
+      
+      // Renderizar histórico
+      renderFinancialHistory();
+    }
+    
+    function renderFinancialHistory() {
+      const list = document.getElementById('financial-list');
+      if (!list) return;
+      
+      list.innerHTML = '';
+      
+      if (state.bookings.length === 0) {
+        list.innerHTML = `
+          <div class="text-center py-8 text-slate-400">
+            <i class="fa-solid fa-wallet text-3xl mb-2"></i>
+            <p>Nenhuma transação registrada</p>
+            <p class="text-xs mt-1">Seus ganhos serão exibidos aqui após os agendamentos</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Ordenar por data mais recente e pegar as últimas 10
+      const recent = [...state.bookings]
+        .filter(b => b.status === 'confirmed')
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 10);
+      
+      recent.forEach(booking => {
+        const date = new Date(booking.date);
+        const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+        
+        const client = state.clients.find(c => c.id === booking.clientId) || { name: 'Paciente' };
+        const value = booking.value || state.settings.sessionValue;
+        
+        const div = document.createElement('div');
+        div.className = 'flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl hover:shadow-sm transition';
+        div.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+              <span class="text-primary-700 font-bold text-sm">${client.name.charAt(0)}</span>
+            </div>
+            <div>
+              <p class="font-medium text-slate-800">${client.name}</p>
+              <p class="text-xs text-slate-500">${formattedDate} • ${booking.time}</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <p class="font-bold text-emerald-600">+ ${value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+            <span class="text-[11px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Pago</span>
+          </div>
+        `;
+        
+        list.appendChild(div);
+      });
+    }
+
+    // ==== FUNÇÕES DE CONFIGURAÇÕES ====
+    async function saveSettings() {
+      if (!state.psychologistId) return;
+      
+      try {
+        const videoLink = document.getElementById('conf-video-link').value;
+        const confirmMsg = document.getElementById('conf-msg-confirm').value;
+        const reminderMsg = document.getElementById('conf-msg-reminder').value;
+        const sessionValue = parseFloat(document.getElementById('conf-session-value').value);
+        const profName = document.getElementById('conf-prof-name').value;
+        const about = document.getElementById('conf-about').value;
+        
+        // Atualizar estado
+        state.settings = {
+          ...state.settings,
+          videoLink,
+          confirm: confirmMsg,
+          reminder: reminderMsg,
+          sessionValue
+        };
+        
+        // Atualizar dados do psicólogo no Firestore
+        await db.collection('psychologists').doc(state.psychologistId).update({
+          name: profName,
+          about: about,
+          sessionValue: sessionValue,
+          settings: {
+            videoLink: videoLink,
+            confirmMessage: confirmMsg,
+            reminderMessage: reminderMsg
+          },
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Atualizar estado local do psicólogo
+        if (state.psychologist) {
+          state.psychologist = {
+            ...state.psychologist,
+            name: profName,
+            about: about,
+            sessionValue: sessionValue,
+            settings: {
+              videoLink: videoLink,
+              confirmMessage: confirmMsg,
+              reminderMessage: reminderMsg
+            },
+            updatedAt: new Date()
+          };
+        }
+        
+        showToast('Configurações salvas com sucesso!', 'success');
+        
+        // Atualizar UI do perfil
+        document.getElementById('display-name').textContent = profName;
+        document.getElementById('display-price').textContent = `R$ ${sessionValue.toFixed(2).replace('.', ',')}`;
+        document.getElementById('about-text').textContent = about;
+      } catch (error) {
+        console.error("Erro ao salvar configurações:", error);
+        showToast('Erro ao salvar configurações. Tente novamente.', 'error');
+      }
+    }
+    
+    function addSpecialty() {
+      const input = document.getElementById('new-specialty');
+      const specialty = input.value.trim();
+      
+      if (!specialty || specialty.length < 2) {
+        showToast('Especialidade inválida', 'error');
+        return;
+      }
+      
+      if (state.settings.specialties.includes(specialty)) {
+        showToast('Esta especialidade já foi adicionada', 'error');
+        return;
+      }
+      
+      state.settings.specialties.push(specialty);
+      input.value = '';
+      
+      // Atualizar visualização
+      renderSpecialtiesList();
+      
+      showToast(`Especialidade "${specialty}" adicionada!`, 'success');
+    }
+    
+    async function removeSpecialty(specialty) {
+      if (!confirm(`Tem certeza que deseja remover a especialidade "${specialty}"?`)) {
+        return;
+      }
+      
+      state.settings.specialties = state.settings.specialties.filter(s => s !== specialty);
+      
+      // Atualizar no Firestore se necessário
+      if (state.psychologistId && state.psychologist) {
+        try {
+          await db.collection('psychologists').doc(state.psychologistId).update({
+            specialties: state.settings.specialties,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          
+          showToast('Especialidade removida com sucesso!', 'success');
+        } catch (error) {
+          console.error("Erro ao remover especialidade:", error);
+          showToast('Erro ao remover especialidade. Tente novamente.', 'error');
+        }
+      }
+      
+      // Atualizar visualização
+      renderSpecialtiesList();
+      renderSpecialties(state.settings.specialties);
+    }
+
+    // ==== INTEGRAÇÃO WHATSAPP ====
+    async function sendWhatsApp(bookingId, type) {
+      const booking = state.bookings.find(b => b.id === bookingId);
+      if (!booking) {
+        showToast('Agendamento não encontrado', 'error');
+        return;
+      }
+      
+      const client = state.clients.find(c => c.id === booking.clientId);
+      if (!client) {
+        showToast('Paciente não encontrado', 'error');
+        return;
+      }
+      
+      let messageTemplate = '';
+      let messageType = '';
+      
+      switch(type) {
+        case 'confirm':
+          messageTemplate = state.settings.confirm;
+          messageType = 'confirmação';
+          break;
+        case 'reminder':
+          messageTemplate = state.settings.reminder;
+          messageType = 'lembrete';
+          break;
+        case 'link':
+          messageTemplate = `Olá ${client.name}, aqui está o link para nossa sessão de hoje: ${state.settings.videoLink || '[LINK NÃO CONFIGURADO]'}`;
+          messageType = 'link de vídeo';
+          break;
+        case 'cancelled':
+          messageTemplate = `Olá ${client.name}, informo que seu agendamento para ${new Date(`${booking.date}T${booking.time}`).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })} às ${booking.time} foi cancelado. Por favor, entre em contato para remarcar.`;
+          messageType = 'cancelamento';
+          break;
+        default:
+          messageTemplate = state.settings.confirm;
+          messageType = 'confirmação';
+      }
+      
+      // Substituir variáveis no template
+      const sessionDate = new Date(`${booking.date}T${booking.time}`);
+      const formattedDate = sessionDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+      const formattedTime = sessionDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      
+      let message = messageTemplate
+        .replace(/{{nome}}/g, client.name)
+        .replace(/{{data}}/g, formattedDate)
+        .replace(/{{hora}}/g, formattedTime)
+        .replace(/{{link}}/g, state.settings.videoLink || '[LINK NÃO CONFIGURADO]');
+      
+      // Remover caracteres não permitidos na URL e formatar telefone
+      const phone = client.phone.replace(/\D/g, '');
+      const countryCode = phone.startsWith('55') ? '' : '55';
+      const cleanPhone = phone.startsWith('55') ? phone : `55${phone}`;
+      
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+      
+      // Abrir WhatsApp
+      window.open(whatsappUrl, '_blank');
+      
+      showToast(`Mensagem de ${messageType} enviada para ${client.name}!`, 'success');
+      
+      // Registrar no histórico de mensagens
+      if (type !== 'cancelled') {
+        try {
+          await db.collection('messages').add({
+            psychologistId: state.psychologistId,
+            clientId: client.id,
+            bookingId: bookingId,
+            type: type,
+            content: message,
+            sentAt: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'sent'
+          });
+        } catch (error) {
+          console.error("Erro ao salvar histórico de mensagem:", error);
+        }
+      }
+    }
+    
+    function sendWhatsAppToClient(phone, type = 'client') {
+      const cleanPhone = phone.replace(/\D/g, '');
+      const countryCode = cleanPhone.startsWith('55') ? '' : '55';
+      const fullPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+      
+      let message = '';
+      
+      switch(type) {
+        case 'client':
+          message = 'Olá! Como posso ajudar você hoje?';
+          break;
+        default:
+          message = 'Mensagem personalizada';
+      }
+      
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappUrl = `https://wa.me/${fullPhone}?text=${encodedMessage}`;
+      
+      window.open(whatsappUrl, '_blank');
+      showToast('WhatsApp aberto com sucesso!', 'success');
+    }
+    
+    function openVideoLink() {
+      if (state.settings.videoLink) {
+        window.open(state.settings.videoLink, '_blank');
+        showToast('Sala de videoconferência aberta!', 'success');
+      } else {
+        showToast('Link de vídeo não configurado. Configure em Configurações.', 'error');
+      }
+    }
+
+    // ==== UTILITÁRIOS ====
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      
+      const toast = document.createElement('div');
+      toast.className = `toast ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-slate-800'}`;
+      const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+      
+      toast.innerHTML = `
+        <div class="flex items-center gap-2">
+          <i class="fa-solid ${icon}"></i>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      container.appendChild(toast);
+      
+      // Remover toast após 3 segundos
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+    
+    function initCharts() {
+      // Verificar se Chart.js está disponível
+      if (typeof Chart === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        script.onload = setupDashboardChart;
+        document.head.appendChild(script);
+      } else {
+        setupDashboardChart();
+      }
+    }
+    
+    function setupDashboardChart() {
+      const ctx = document.getElementById('sessions-chart');
+      if (!ctx) return;
+      
+      // Dados simulados para o gráfico - em produção, buscar dados reais do Firestore
+      const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      const currentMonth = new Date().getMonth();
+      
+      // Gerar dados dos últimos 6 meses
+      const labels = [];
+      const data = [];
+      
+      for (let i = 5; i >= 0; i--) {
+        const monthIndex = (currentMonth - i + 12) % 12;
+        labels.push(months[monthIndex]);
+        
+        // Gerar número aleatório de sessões entre 10 e 40
+        data.push(Math.floor(Math.random() * 31) + 10);
+      }
+      
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Sessões por mês',
+             data,
+            borderColor: '#0d9488',
+            backgroundColor: 'rgba(13, 148, 136, 0.1)',
+            borderWidth: 3,
+            pointBackgroundColor: '#0f766e',
+            pointRadius: 4,
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
+            },
+            x: {
+              grid: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // ==== FUNÇÕES DO LADO CLIENTE (VIEWS) ====
+    function initClientCalendar() {
+      // Esta função seria implementada para inicializar o calendário do lado do cliente
+      renderClientMonthDays();
+    }
+    
+    function renderClientMonthDays() {
+      const container = document.getElementById('date-scroll-container');
+      if (!container) return;
+      
+      container.innerHTML = '';
+      const label = document.getElementById('current-month-label');
+      const now = new Date();
+      
+      // Atualizar label do mês atual
+      label.textContent = now.toLocaleDateString('pt-BR', { month: 'long' });
+      
+      // Gerar os próximos 30 dias
+      for (let i = 0; i < 30; i++) {
+        const d = new Date();
+        d.setDate(now.getDate() + i);
+        const iso = d.toISOString().split('T')[0];
+        const dayName = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+        const dayNumber = d.getDate();
+        const isToday = now.toDateString() === d.toDateString();
+        
+        const btn = document.createElement('button');
+        btn.className = `flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center border transition-all duration-200 snap-start
+          ${state.selectedDateISO === iso ? 
+            'bg-gradient-to-br from-primary-500 to-primary-600 text-white border-primary-500 shadow-lg scale-105' : 
+            'bg-white border-gray-100 text-gray-500 hover:border-primary-200 hover:shadow'}`;
+        
+        if (isToday) {
+          btn.className += ' ring-2 ring-primary-200 bg-primary-50 text-primary-700 font-medium';
+        }
+        
+        btn.onclick = () => selectClientDate(iso, btn);
+        btn.innerHTML = `
+          <span class="text-[10px] font-bold uppercase tracking-wider mb-1">${dayName}</span>
+          <span class="text-xl font-bold">${dayNumber}</span>
+        `;
+        
+        container.appendChild(btn);
+      }
+    }
+    
+    function selectClientDate(iso, btnElement) {
+      state.selectedDateISO = iso;
+      state.selectedTimeSlot = null; // Resetar horário
+      
+      // Atualizar visual dos botões de dia
+      const container = document.getElementById('date-scroll-container');
+      Array.from(container.children).forEach(child => {
+        child.className = 'flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center border transition-all duration-200 snap-start bg-white border-gray-100 text-gray-500 hover:border-primary-200 hover:shadow';
+        
+        const date = new Date(child.querySelector('span:last-child').textContent);
+        const today = new Date();
+        
+        if (date.getDate() === today.getDate() && date.getMonth() === today.getMonth()) {
+          child.className += ' ring-2 ring-primary-200 bg-primary-50 text-primary-700 font-medium';
+        }
+      });
+      
+      btnElement.className = 'flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center border transition-all duration-200 snap-start bg-gradient-to-br from-primary-500 to-primary-600 text-white border-primary-500 shadow-lg scale-105';
+      
+      renderClientSlots(iso);
+      updateConfirmBar();
+    }
+    
+    function renderClientSlots(iso) {
+      const grid = document.getElementById('slots-grid');
+      const loader = document.getElementById('slots-loader');
+      
+      grid.classList.add('opacity-50');
+      loader.classList.remove('hidden');
+      
+      // Simular delay de rede
+      setTimeout(async () => {
+        grid.innerHTML = '';
+        loader.classList.add('hidden');
+        grid.classList.remove('opacity-50');
+        
+        try {
+          // Carregar slots disponíveis para esta data
+          const slotsSnapshot = await db.collection('availability')
+            .where('psychologistId', '==', state.psychologistId)
+            .where('date', '==', iso)
+            .where('available', '==', true)
+            .get();
+          
+          const daySlots = [];
+          slotsSnapshot.forEach(doc => {
+            const slot = doc.data();
+            daySlots.push(slot.time);
+          });
+          
+          // Carregar agendamentos para esta data
+          const bookingsSnapshot = await db.collection('bookings')
+            .where('psychologistId', '==', state.psychologistId)
+            .where('date', '==', iso)
+            .where('status', '==', 'confirmed')
+            .get();
+          
+          const bookings = [];
+          bookingsSnapshot.forEach(doc => {
+            const booking = doc.data();
+            bookings.push(booking.time);
+          });
+          
+          // Filtrar horários já agendados
+          const availableSlots = daySlots.filter(slot => !bookings.includes(slot));
+          
+          if (daySlots.length === 0) {
+            grid.innerHTML = `<div class="col-span-2 text-center py-10 text-gray-400">Sem horários disponíveis para este dia</div>`;
+            return;
+          }
+          
+          if (availableSlots.length === 0) {
+            grid.innerHTML = `<div class="col-span-2 text-center py-10 text-gray-400">Todos os horários estão ocupados para este dia</div>`;
+            return;
+          }
+          
+          // Ordenar e renderizar slots
+          availableSlots.sort().forEach(time => {
+            const btn = document.createElement('button');
+            btn.className = 'time-slot py-3 rounded-xl border border-gray-200 text-base font-medium text-gray-700 bg-white hover:border-primary-300 hover:text-primary-600 transition-all duration-200';
+            btn.textContent = time;
+            btn.onclick = () => selectTimeSlot(time, btn);
+            grid.appendChild(btn);
+          });
+        } catch (error) {
+          console.error("Erro ao carregar horários:", error);
+          grid.innerHTML = `<div class="col-span-2 text-center py-10 text-red-500">Erro ao carregar horários. Tente novamente.</div>`;
+        }
+      }, 500);
+    }
+    
+    function selectTimeSlot(time, btnElement) {
+      state.selectedTimeSlot = time;
+      
+      // Remover classe active de todos os botões
+      document.querySelectorAll('.time-slot').forEach(el => {
+        el.classList.remove('active');
+        el.classList.remove('bg-primary-600');
+        el.classList.remove('text-white');
+        el.classList.add('bg-white');
+        el.classList.add('text-gray-700');
+      });
+      
+      // Adicionar classe active no selecionado
+      btnElement.classList.remove('bg-white');
+      btnElement.classList.remove('text-gray-700');
+      btnElement.classList.add('active');
+      btnElement.classList.add('bg-primary-600');
+      btnElement.classList.add('active');
+      btnElement.classList.add('bg-primary-600');
+      btnElement.classList.add('text-white');
+updateConfirmBar();
 }
 
 function updateConfirmBar() {
@@ -1284,7 +3021,7 @@ function updateConfirmBar() {
   }
 }
 
-//==== MODAL DE CHECKOUT====
+// ==== MODAL DE CHECKOUT ====
 function openModal() {
   if (!state.selectedDateISO || !state.selectedTimeSlot) {
     showToast('Selecione um horário primeiro', 'error');
@@ -1300,847 +3037,66 @@ function closeModal() {
   document.body.style.overflow = 'auto';
 }
 
-function submitBooking(e) {
-  e.preventDefault();
-  const btn = document.getElementById('btn-submit');
-  const originalText = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Processando...';
-  
-  const formData = new FormData(e.target);
-  
-  // Criar novo agendamento
-  const booking = {
-    id: Date.now(),
-    cliente: {
-      nome: formData.get('name'),
-      telefone: formData.get('phone'),
-      email: formData.get('email'),
-      id: Date.now() + 1
-    },
-    agendamento: {
-      dataISO: state.selectedDateISO,
-      hora: state.selectedTimeSlot,
-      valor: SESSION_PRICE
-    },
-    status: 'confirmado',
-    createdAt: new Date().toISOString()
-  };
-  
-  // Salvar no estado local
-  state.bookings.push(booking);
-  
-  // Salvar cliente na lista de clientes se não existir
-  const clientExists = state.clients.find(c => c.phone === booking.cliente.telefone);
-  if (!clientExists) {
-    state.clients.push({
-      id: booking.cliente.id,
-      name: booking.cliente.nome,
-      phone: booking.cliente.telefone,
-      email: booking.cliente.email,
-      createdAt: new Date().toISOString()
+// ==== INTEGRAÇÃO COM FIREBASE ====
+async function saveBookingToFirebase(booking) {
+  try {
+    // Salvar agendamento no Firestore
+    const bookingRef = db.collection('bookings').doc();
+    await bookingRef.set({
+      id: bookingRef.id,
+      psychologistId: state.psychologistId,
+      clientId: booking.cliente.id,
+      clientName: booking.cliente.nome,
+      clientPhone: booking.cliente.telefone,
+      clientEmail: booking.cliente.email || '',
+      date: state.selectedDateISO,
+      time: state.selectedTimeSlot,
+      value: booking.agendamento.valor,
+      status: 'confirmed',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    
+    return bookingRef.id;
+  } catch (error) {
+    console.error("Erro ao salvar agendamento no Firebase:", error);
+    throw error;
   }
-  
-  // Simular confirmação por WhatsApp
-  setTimeout(() => {
-    btn.innerHTML = originalText;
-    btn.disabled = false;
-    closeModal();
-    showToast('Agendamento confirmado com sucesso!', 'success');
-    
-    // Simular confirmação por WhatsApp
-    setTimeout(() => {
-      showToast('Confirmação enviada por WhatsApp!', 'success');
-    }, 1000);
-    
-    // Resetar seleção
-    state.selectedDateISO = null;
-    state.selectedTimeSlot = null;
-    updateConfirmBar();
-    
-    // Resetar formulário
-    e.target.reset();
-    
-    // Redirecionar para o perfil após 2 segundos
-    setTimeout(() => {
-      navigateTo('view-profile');
-    }, 2000);
-  }, 1500);
 }
 
-//==== LÓGICA DO ADMIN====
-function initDashboard() {
-  const bookings = getBookings();
-  const now = new Date();
-  
-  // Total de clientes
-  document.getElementById('dash-total-clients').textContent = state.clients.length;
-  
-  // Sessões do mês atual
-  const currentMonthISO = now.toISOString().slice(0, 7);
-  const monthSessions = bookings.filter(b => b.agendamento.dataISO.startsWith(currentMonthISO)).length;
-  document.getElementById('dash-month-sessions').textContent = monthSessions;
-  
-  // Próximo atendimento
-  const upcoming = bookings
-    .filter(b => new Date(`${b.agendamento.dataISO}T${b.agendamento.hora}`) > now)
-    .sort((a, b) => new Date(`${a.agendamento.dataISO}T${a.agendamento.hora}`) - new Date(`${b.agendamento.dataISO}T${b.agendamento.hora}`));
-  
-  const nextSessionDiv = document.getElementById('dash-next-session');
-  const noSessionDiv = document.getElementById('dash-no-session');
-  
-  if (upcoming.length > 0) {
-    const next = upcoming[0];
-    const sessionDate = new Date(`${next.agendamento.dataISO}T${next.agendamento.hora}`);
-    const formattedDate = sessionDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-    const formattedTime = sessionDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+async function saveClientToFirebase(client) {
+  try {
+    // Verificar se cliente já existe
+    const clientsSnapshot = await db.collection('clients')
+      .where('psychologistId', '==', state.psychologistId)
+      .where('phone', '==', client.phone)
+      .get();
     
-    nextSessionDiv.innerHTML = `
-      <p class="text-3xl font-bold">${formattedTime}</p>
-      <p class="text-primary-100 mb-1">${formattedDate}</p>
-      <p class="text-white font-semibold flex items-center gap-2">
-        <i class="fa-solid fa-user-doctor"></i>
-        ${next.cliente.nome}
-      </p>
-      <div class="mt-4 flex flex-wrap gap-3">
-        <button class="mt-3 bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-2 rounded-lg transition flex items-center gap-2" onclick="switchTab('calendar')">
-          <i class="fa-regular fa-calendar"></i> Ver Agenda Completa
-        </button>
-        <button class="mt-3 bg-primary-500 hover:bg-primary-600 text-white text-sm px-4 py-2 rounded-lg transition flex items-center gap-2" onclick="openVideoLink()">
-          <i class="fa-solid fa-video"></i> Entrar na Sala
-        </button>
-        <button class="mt-3 bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-2 rounded-lg transition flex items-center gap-2" onclick="sendWhatsApp(${next.id}, 'confirm')">
-          <i class="fa-brands fa-whatsapp"></i> Enviar Confirmação
-        </button>
-      </div>
-    `;
+    if (!clientsSnapshot.empty) {
+      // Cliente já existe, retornar ID existente
+      return clientsSnapshot.docs[0].id;
+    }
     
-    noSessionDiv.classList.add('hidden');
-    nextSessionDiv.classList.remove('hidden');
-  } else {
-    noSessionDiv.classList.remove('hidden');
-    nextSessionDiv.classList.add('hidden');
-  }
-  
-  // Renderizar sessões recentes
-  renderRecentSessions();
-}
-
-function renderRecentSessions() {
-  const container = document.getElementById('recent-sessions');
-  const bookings = getBookings();
-  
-  if (bookings.length === 0) {
-    container.innerHTML = `
-      <div class="text-center py-8 text-slate-400">
-        <i class="fa-solid fa-clock text-3xl mb-2"></i>
-        <p>Nenhuma sessão recente encontrada</p>
-        <p class="text-xs mt-1">Comece adicionando horários disponíveis na sua agenda</p>
-      </div>
-    `;
-    return;
-  }
-  
-  // Ordenar por data mais recente e pegar as últimas 5
-  const recent = [...bookings]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 5);
-  
-  container.innerHTML = '';
-  recent.forEach(booking => {
-    const date = new Date(`${booking.agendamento.dataISO}T${booking.agendamento.hora}`);
-    const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-    const formattedTime = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    
-    const div = document.createElement('div');
-    div.className = 'p-4 hover:bg-slate-50 transition';
-    div.innerHTML = `
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-            <span class="text-primary-700 font-bold">${booking.cliente.nome.charAt(0)}</span>
-          </div>
-          <div>
-            <p class="font-bold text-slate-800">${booking.cliente.nome}</p>
-            <p class="text-xs text-slate-500">${formattedDate} • ${formattedTime}</p>
-          </div>
-        </div>
-        <span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">${booking.status}</span>
-      </div>
-    `;
-    container.appendChild(div);
-  });
-}
-
-function renderCalendar() {
-  const year = state.dateCursor.getFullYear();
-  const month = state.dateCursor.getMonth();
-  
-  // Atualizar label do mês e ano
-  const label = document.getElementById('calendar-month-label');
-  if (label) {
-    label.textContent = state.dateCursor.toLocaleDateString('pt-BR', {
-      month: 'long',
-      year: 'numeric'
+    // Criar novo cliente
+    const clientRef = db.collection('clients').doc();
+    await clientRef.set({
+      id: clientRef.id,
+      psychologistId: state.psychologistId,
+      name: client.name,
+      phone: client.phone,
+      email: client.email || '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-  }
-  
-  const firstDay = new Date(year, month, 1);
-  const startDate = new Date(firstDay);
-  startDate.setDate(firstDay.getDate() - firstDay.getDay());
-  
-  const grid = document.getElementById('calendar-grid');
-  if (!grid) return;
-  
-  grid.innerHTML = '';
-  const bookings = getBookings();
-  const today = new Date().toISOString().split('T')[0];
-  
-  for (let i = 0; i < 42; i++) {
-    const d = new Date(startDate);
-    d.setDate(startDate.getDate() + i);
-    const iso = d.toISOString().split('T')[0];
-    const isCurrentMonth = d.getMonth() === month;
-    const isToday = iso === today;
     
-    const hasSlots = state.slots[iso] && state.slots[iso].length > 0;
-    const dayBookings = bookings.filter(b => b.agendamento.dataISO === iso);
-    const hasBookings = dayBookings.length > 0;
-    
-    // Determinar cor do ponto indicador
-    let dotClass = '';
-    if (hasBookings) dotClass = 'bg-primary-600'; // Com sessões agendadas
-    else if (hasSlots) dotClass = 'bg-blue-300'; // Com horários disponíveis
-    else if (!isCurrentMonth) dotClass = 'bg-slate-200'; // Mês fora do período
-    
-    const dayElement = document.createElement('button');
-    dayElement.className = `calendar-day w-full h-14 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition-all duration-200 relative overflow-hidden
-      ${!isCurrentMonth ? 'bg-slate-50 text-slate-300 border-transparent' : 'bg-white border-slate-100 text-slate-700 hover:border-primary-200 hover:shadow-sm'}
-      ${isToday ? 'today border-2 border-yellow-300 bg-yellow-50' : ''}
-      ${hasBookings ? 'booked' : ''}
-      ${hasSlots && !hasBookings ? 'has-sessions' : ''}
-    `;
-    
-    dayElement.innerHTML = `
-      <span class="font-medium text-sm z-10">${d.getDate()}</span>
-      ${dotClass ? `<div class="w-2 h-2 rounded-full mt-1 ${dotClass} z-10"></div>` : ''}
-    `;
-    
-    if (isCurrentMonth) {
-      dayElement.onclick = () => openDayModal(iso, d);
-    }
-    
-    grid.appendChild(dayElement);
+    return clientRef.id;
+  } catch (error) {
+    console.error("Erro ao salvar cliente no Firebase:", error);
+    throw error;
   }
 }
 
-function changeMonth(delta) {
-  state.dateCursor.setMonth(state.dateCursor.getMonth() + delta);
-  renderCalendar();
-}
-
-function openDayModal(iso, dateObj) {
-  state.selectedDateISO = iso;
-  
-  // Atualizar título e subtítulo do modal
-  document.getElementById('modal-day-title').textContent = dateObj.toLocaleDateString('pt-BR', {
-    weekday: 'long'
-  }).replace(/^\w/, c => c.toUpperCase());
-  
-  document.getElementById('modal-day-subtitle').textContent = dateObj.toLocaleDateString('pt-BR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
-  
-  // Resetar para aba de slots
-  switchDayTab('slots');
-  
-  // Renderizar conteúdo
-  renderDaySlots();
-  renderDayBookings();
-  
-  // Mostrar modal
-  document.getElementById('day-modal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeDayModal() {
-  document.getElementById('day-modal').classList.add('hidden');
-  document.body.style.overflow = 'auto';
-}
-
-function switchDayTab(tab) {
-  // Remover classe active de todos os tabs
-  document.querySelectorAll('.day-tab').forEach(t => {
-    t.classList.remove('active');
-  });
-  
-  // Esconder todos os conteúdos
-  document.querySelectorAll('.day-content').forEach(c => {
-    c.classList.add('hidden');
-  });
-  
-  // Mostrar tab e conteúdo selecionado
-  document.getElementById(`btn-tab-${tab}`).classList.add('active');
-  document.getElementById(`day-tab-${tab}`).classList.remove('hidden');
-}
-
-function renderDaySlots() {
-  const list = document.getElementById('slots-list');
-  if (!list) return;
-  
-  list.innerHTML = '';
-  
-  const slots = state.slots[state.selectedDateISO] || [];
-  
-  if (slots.length === 0) {
-    list.innerHTML = `
-      <div class="col-span-4 text-center py-8 text-slate-400">
-        <i class="fa-regular fa-clock text-2xl mb-2"></i>
-        <p>Nenhum horário disponível para este dia</p>
-        <p class="text-xs mt-1">Use o gerador rápido ou adicione manualmente</p>
-      </div>
-    `;
-    return;
-  }
-  
-  // Ordenar e renderizar slots
-  slots.sort().forEach(time => {
-    const slotElement = document.createElement('div');
-    slotElement.className = 'time-card bg-white border border-slate-100 rounded-xl p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group';
-    
-    slotElement.innerHTML = `
-      <span class="font-medium text-slate-700">${time}</span>
-      <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onclick="editSlot('${time}')" class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-primary-100 hover:text-primary-600 flex items-center justify-center transition">
-          <i class="fa-solid fa-pen text-[9px]"></i>
-        </button>
-        <button onclick="removeSlot('${time}')" class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition">
-          <i class="fa-solid fa-xmark text-[10px]"></i>
-        </button>
-      </div>
-    `;
-    
-    list.appendChild(slotElement);
-  });
-}
-
-function renderDayBookings() {
-  const list = document.getElementById('bookings-list');
-  if (!list) return;
-  
-  const bookings = getBookings().filter(b => b.agendamento.dataISO === state.selectedDateISO);
-  
-  if (bookings.length === 0) {
-    list.innerHTML = `
-      <div class="text-center py-8 text-slate-400">
-        <i class="fa-solid fa-calendar-check text-3xl mb-2"></i>
-        <p>Nenhum agendamento confirmado para este dia</p>
-        <p class="text-xs mt-1">Crie horários disponíveis na aba "Gerenciar Horários"</p>
-      </div>
-    `;
-    return;
-  }
-  
-  list.innerHTML = '';
-  
-  bookings.forEach(booking => {
-    const time = booking.agendamento.hora;
-    const clientName = booking.cliente.nome;
-    const clientId = booking.cliente.id;
-    
-    const bookingElement = document.createElement('div');
-    bookingElement.className = 'bg-white p-4 rounded-xl border border-slate-100 shadow-sm transition hover:shadow-md';
-    
-    bookingElement.innerHTML = `
-      <div class="flex justify-between items-start mb-3">
-        <div>
-          <h4 class="font-bold text-slate-800 text-lg">${clientName}</h4>
-          <div class="flex items-center gap-2 mt-1">
-            <span class="text-sm bg-primary-100 text-primary-700 px-2 py-0.5 rounded-md font-medium">${time}</span>
-            <span class="text-xs text-slate-400">• R$ ${booking.agendamento.valor.toFixed(2)}</span>
-          </div>
-        </div>
-        <button onclick="deleteBooking(${booking.id})" class="text-slate-300 hover:text-red-500 transition" title="Cancelar agendamento">
-          <i class="fa-solid fa-trash-can"></i>
-        </button>
-      </div>
-      <div class="flex gap-2 mt-3">
-        <button onclick="sendWhatsApp(${booking.id}, 'confirm')" class="flex-1 bg-green-50 text-green-700 text-xs py-2 rounded-lg border border-green-100 hover:bg-green-100 font-medium transition flex items-center justify-center gap-1">
-          <i class="fa-brands fa-whatsapp text-sm"></i> Confirmar
-        </button>
-        <button onclick="sendWhatsApp(${booking.id}, 'reminder')" class="flex-1 bg-amber-50 text-amber-700 text-xs py-2 rounded-lg border border-amber-100 hover:bg-amber-100 font-medium transition flex items-center justify-center gap-1">
-          <i class="fa-solid fa-bell text-sm"></i> Lembrete
-        </button>
-        <button onclick="sendWhatsApp(${booking.id}, 'link')" class="flex-1 bg-purple-50 text-purple-700 text-xs py-2 rounded-lg border border-purple-100 hover:bg-purple-100 font-medium transition flex items-center justify-center gap-1">
-          <i class="fa-solid fa-video text-sm"></i> Vídeo
-        </button>
-      </div>
-      <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
-        <button onclick="openNotesModal(${clientId}, '${clientName.replace(/'/g, "\\'")}')"
-          class="text-primary-600 hover:text-primary-800 text-sm font-medium flex items-center gap-1 transition">
-          <i class="fa-solid fa-notes-medical"></i> Prontuário
-        </button>
-        <span class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">${booking.status}</span>
-      </div>
-    `;
-    
-    list.appendChild(bookingElement);
-  });
-}
-
-function addSingleSlot() {
-  const timeInput = document.getElementById('new-slot-input');
-  const time = timeInput.value;
-  
-  if (!time) {
-    showToast('Selecione um horário válido', 'error');
-    return;
-  }
-  
-  saveSlots([time]);
-  timeInput.value = "09:00"; // Resetar para próximo horário comum
-  showToast('Horário adicionado com sucesso!', 'success');
-}
-
-function generateSlots(type) {
-  let newSlots = [];
-  switch (type) {
-    case 'morning':
-      newSlots = ["08:00", "09:00", "10:00", "11:00", "12:00"];
-      break;
-    case 'afternoon':
-      newSlots = ["13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-      break;
-    case 'full':
-      newSlots = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-      break;
-  }
-  
-  saveSlots(newSlots);
-  showToast(`Horários de ${type === 'morning' ? 'manhã' : type === 'afternoon' ? 'tarde' : 'dia todo'} gerados com sucesso!`, 'success');
-}
-
-function saveSlots(newTimes) {
-  if (!state.slots[state.selectedDateISO]) {
-    state.slots[state.selectedDateISO] = [];
-  }
-  
-  let slotsAdded = 0;
-  newTimes.forEach(time => {
-    if (!state.slots[state.selectedDateISO].includes(time)) {
-      state.slots[state.selectedDateISO].push(time);
-      slotsAdded++;
-    }
-  });
-  
-  if (slotsAdded > 0) {
-    // Ordenar os horários
-    state.slots[state.selectedDateISO].sort();
-    renderDaySlots();
-    renderCalendar();
-  }
-  
-  return slotsAdded;
-}
-
-function removeSlot(time) {
-  if (confirm(`Tem certeza que deseja remover o horário ${time}?`)) {
-    state.slots[state.selectedDateISO] = state.slots[state.selectedDateISO].filter(t => t !== time);
-    
-    if (state.slots[state.selectedDateISO].length === 0) {
-      delete state.slots[state.selectedDateISO];
-    }
-    
-    renderDaySlots();
-    renderCalendar();
-    showToast('Horário removido com sucesso!', 'success');
-  }
-}
-
-function deleteBooking(id) {
-  if (confirm('Tem certeza que deseja cancelar este agendamento? O cliente será notificado.')) {
-    state.bookings = state.bookings.filter(b => b.id !== id);
-    
-    renderDayBookings();
-    renderCalendar();
-    initDashboard();
-    showToast('Agendamento cancelado com sucesso!', 'success');
-  }
-}
-
-//==== GESTÃO DE CLIENTES====
-function renderClientList(filter = '') {
-  const list = document.getElementById('clients-list');
-  if (!list) return;
-  
-  list.innerHTML = '';
-  
-  const filtered = state.clients.filter(client =>
-    client.name.toLowerCase().includes(filter.toLowerCase()) ||
-    client.phone.includes(filter.replace(/\D/g, ''))
-  );
-  
-  if (filtered.length === 0) {
-    list.innerHTML = `
-      <div class="text-center py-12 text-slate-400">
-        <i class="fa-solid fa-users text-4xl mb-3"></i>
-        <p>Nenhum paciente encontrado</p>
-        <p class="text-sm mt-1 mb-4">Tente outra pesquisa ou adicione um novo paciente</p>
-        <button onclick="openClientModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 mx-auto">
-          <i class="fa-solid fa-plus"></i> Adicionar Paciente
-        </button>
-      </div>
-    `;
-    return;
-  }
-  
-  filtered.forEach(client => {
-    const clientElement = document.createElement('div');
-    clientElement.className = 'bg-white rounded-xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-shadow';
-    
-    clientElement.innerHTML = `
-      <div class="flex justify-between items-start">
-        <div class="flex-1">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
-              <span class="text-primary-700 font-bold text-lg">${client.name.charAt(0)}</span>
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="font-bold text-slate-800 truncate">${client.name}</h3>
-              <div class="flex gap-2 mt-0.5">
-                <span class="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">ID: ${client.id}</span>
-                <span class="text-xs bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">${new Date(client.createdAt).toLocaleDateString('pt-BR')}</span>
-              </div>
-            </div>
-          </div>
-          <div class="space-y-1.5 mt-2">
-            <div class="flex items-center gap-1.5 text-sm text-slate-600">
-              <i class="fa-brands fa-whatsapp text-green-500"></i>
-              <span>${client.phone}</span>
-            </div>
-            ${client.email ? `
-              <div class="flex items-center gap-1.5 text-sm text-slate-600">
-                <i class="fa-solid fa-envelope text-amber-500"></i>
-                <span class="truncate">${client.email}</span>
-              </div>` : ''}
-          </div>
-          <div class="mt-3 flex justify-between items-center">
-            <button onclick="openNotesModal(${client.id}, '${client.name.replace(/'/g, "\\'")}')"
-              class="text-sm text-primary-600 hover:text-primary-800 font-medium flex items-center gap-1 transition">
-              <i class="fa-solid fa-notes-medical mr-0.5"></i> Prontuário
-            </button>
-          </div>
-        </div>
-        <div class="flex flex-col gap-2 ml-2">
-          <button onclick="deleteClient(${client.id})" 
-            class="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition" 
-            title="Remover paciente">
-            <i class="fa-solid fa-trash-can text-sm"></i>
-          </button>
-          <button onclick="sendWhatsAppToClient('${client.phone}', 'client')" 
-            class="w-8 h-8 rounded-full bg-green-50 text-green-500 hover:bg-green-100 flex items-center justify-center transition" 
-            title="Enviar WhatsApp">
-            <i class="fa-brands fa-whatsapp text-sm"></i>
-          </button>
-        </div>
-      </div>
-    `;
-    
-    list.appendChild(clientElement);
-  });
-}
-
-function filterClients() {
-  const searchTerm = document.getElementById('client-search').value;
-  renderClientList(searchTerm);
-}
-
-function openClientModal() {
-  document.getElementById('client-modal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeClientModal() {
-  document.getElementById('client-modal').classList.add('hidden');
-  document.body.style.overflow = 'auto';
-}
-
-function saveClient(e) {
-  e.preventDefault();
-  const form = e.target;
-  const clientName = form.name.value.trim();
-  const clientPhone = form.phone.value.replace(/\D/g, '');
-  
-  if (!clientName || clientName.length < 3) {
-    showToast('Nome inválido', 'error');
-    return;
-  }
-  
-  if (clientPhone.length < 10) {
-    showToast('Telefone inválido', 'error');
-    return;
-  }
-  
-  // Verificar se cliente já existe
-  const clientExists = state.clients.some(c => c.phone === clientPhone);
-  if (clientExists) {
-    showToast('Este cliente já está cadastrado', 'error');
-    return;
-  }
-  
-  // Criar novo cliente
-  const newClient = {
-    id: Date.now(),
-    name: clientName,
-    phone: form.phone.value,
-    email: form.email.value || '',
-    createdAt: new Date().toISOString()
-  };
-  
-  state.clients.push(newClient);
-  
-  // Resetar e fechar modal
-  form.reset();
-  closeClientModal();
-  
-  // Atualizar lista
-  renderClientList();
-  showToast('Paciente cadastrado com sucesso!', 'success');
-}
-
-function deleteClient(id) {
-  if (confirm('Tem certeza que deseja remover este paciente? Esta ação não pode ser desfeita.')) {
-    state.clients = state.clients.filter(c => c.id !== id);
-    renderClientList();
-    showToast('Paciente removido com sucesso!', 'success');
-  }
-}
-
-//==== PRONTUÁRIO====
-function openNotesModal(clientId, clientName) {
-  state.currentClientId = clientId;
-  
-  // Atualizar nome do cliente no modal
-  document.getElementById('note-client-name').textContent = `Paciente: ${clientName}`;
-  
-  // Carregar anotações existentes
-  document.getElementById('client-notes-area').value = state.notes[clientId] || '';
-  
-  // Mostrar modal
-  document.getElementById('notes-modal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeNotesModal() {
-  document.getElementById('notes-modal').classList.add('hidden');
-  document.body.style.overflow = 'auto';
-  state.currentClientId = null;
-}
-
-function saveNotes() {
-  if (!state.currentClientId) return;
-  
-  const notesText = document.getElementById('client-notes-area').value.trim();
-  if (!notesText) {
-    showToast('Nenhuma anotação para salvar', 'error');
-    return;
-  }
-  
-  // Salvar anotações
-  state.notes[state.currentClientId] = notesText;
-  
-  closeNotesModal();
-  showToast('Anotações salvas com sucesso!', 'success');
-}
-
-//==== FINANCEIRO====
-function renderFinancials() {
-  const bookings = getBookings();
-  const now = new Date();
-  const currentMonthISO = now.toISOString().slice(0, 7);
-  
-  // Calcular total do mês atual
-  const monthBookings = bookings.filter(b => b.agendamento.dataISO.startsWith(currentMonthISO));
-  const total = monthBookings.reduce((sum, b) => sum + b.agendamento.valor, 0);
-  
-  // Atualizar total
-  document.getElementById('financial-total').textContent = total.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  });
-  
-  // Renderizar histórico
-  const list = document.getElementById('financial-list');
-  if (!list) return;
-  
-  list.innerHTML = '';
-  
-  if (bookings.length === 0) {
-    list.innerHTML = `
-      <div class="text-center py-8 text-slate-400">
-        <i class="fa-solid fa-wallet text-3xl mb-2"></i>
-        <p>Nenhuma transação registrada</p>
-        <p class="text-xs mt-1">Seus ganhos serão exibidos aqui após os agendamentos</p>
-      </div>
-    `;
-    return;
-  }
-  
-  // Ordenar por data mais recente e pegar as últimas 10
-  const recent = [...bookings]
-    .sort((a, b) => new Date(b.agendamento.dataISO) - new Date(a.agendamento.dataISO))
-    .slice(0, 10);
-  
-  recent.forEach(booking => {
-    const date = new Date(booking.agendamento.dataISO);
-    const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-    
-    const div = document.createElement('div');
-    div.className = 'flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl hover:shadow-sm transition';
-    div.innerHTML = `
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
-          <span class="text-primary-700 font-bold text-sm">${booking.cliente.nome.charAt(0)}</span>
-        </div>
-        <div>
-          <p class="font-medium text-slate-800">${booking.cliente.nome}</p>
-          <p class="text-xs text-slate-500">${formattedDate} • ${booking.agendamento.hora}</p>
-        </div>
-      </div>
-      <div class="text-right">
-        <p class="font-bold text-emerald-600">+ R$ ${booking.agendamento.valor.toFixed(2)}</p>
-        <span class="text-[11px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">${booking.status}</span>
-      </div>
-    `;
-    
-    list.appendChild(div);
-  });
-}
-
-//==== CONFIGURAÇÕES====
-function loadSettings() {
-  document.getElementById('conf-video-link').value = state.settings.videoLink || '';
-  document.getElementById('conf-msg-confirm').value = state.settings.confirm || '';
-  document.getElementById('conf-msg-reminder').value = state.settings.reminder || '';
-  document.getElementById('conf-session-value').value = state.settings.sessionValue || 150;
-  document.getElementById('conf-prof-name').value = state.settings.profName || 'PsiPro';
-  document.getElementById('conf-about').value = state.settings.about || '';
-}
-
-function saveSettings() {
-  state.settings = {
-    videoLink: document.getElementById('conf-video-link').value,
-    confirm: document.getElementById('conf-msg-confirm').value,
-    reminder: document.getElementById('conf-msg-reminder').value,
-    sessionValue: parseFloat(document.getElementById('conf-session-value').value),
-    profName: document.getElementById('conf-prof-name').value,
-    about: document.getElementById('conf-about').value,
-    specialties: state.settings.specialties || ['Ansiedade', 'Depressão', 'TDAH', 'Terapia de Casal']
-  };
-  
-  showToast('Configurações salvas com sucesso!', 'success');
-}
-
-function addSpecialty() {
-  const input = document.getElementById('new-specialty');
-  const specialty = input.value.trim();
-  
-  if (!specialty || specialty.length < 2) {
-    showToast('Especialidade inválida', 'error');
-    return;
-  }
-  
-  if (state.settings.specialties.includes(specialty)) {
-    showToast('Esta especialidade já foi adicionada', 'error');
-    return;
-  }
-  
-  if (!state.settings.specialties) {
-    state.settings.specialties = [];
-  }
-  
-  state.settings.specialties.push(specialty);
-  input.value = '';
-  
-  showToast(`Especialidade "${specialty}" adicionada!`, 'success');
-}
-
-//==== INTEGRAÇÃO WHATSAPP====
-function sendWhatsApp(bookingId, type) {
-  const booking = getBookings().find(b => b.id == bookingId);
-  if (!booking) {
-    showToast('Agendamento não encontrado', 'error');
-    return;
-  }
-  
-  let messageTemplate = '';
-  switch (type) {
-    case 'confirm':
-      messageTemplate = state.settings.confirm;
-      break;
-    case 'reminder':
-      messageTemplate = state.settings.reminder;
-      break;
-    case 'link':
-      messageTemplate = `Olá ${booking.cliente.nome}, aqui está o link para nossa sessão de hoje: ${state.settings.videoLink || '[LINK NÃO CONFIGURADO]'}`;
-      break;
-    default:
-      messageTemplate = state.settings.confirm;
-  }
-  
-  // Substituir variáveis no template
-  const sessionDate = new Date(`${booking.agendamento.dataISO}T${booking.agendamento.hora}`);
-  const formattedDate = sessionDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-  const formattedTime = sessionDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  
-  let message = messageTemplate
-    .replace(/{{nome}}/g, booking.cliente.nome)
-    .replace(/{{data}}/g, formattedDate)
-    .replace(/{{hora}}/g, formattedTime)
-    .replace(/{{link}}/g, state.settings.videoLink || '[LINK NÃO CONFIGURADO]');
-  
-  // Remover caracteres não permitidos na URL
-  const phone = booking.cliente.telefone.replace(/\D/g, '');
-  const encodedMessage = encodeURIComponent(message);
-  
-  // Abrir WhatsApp
-  const whatsappUrl = `https://wa.me/55${phone}?text=${encodedMessage}`;
-  window.open(whatsappUrl, '_blank');
-  
-  showToast(`Mensagem de ${type === 'confirm' ? 'confirmação' : type === 'reminder' ? 'lembrete' : 'link'} enviada para ${booking.cliente.nome}!`, 'success');
-}
-
-function sendWhatsAppToClient(phone, type = 'client') {
-  const cleanPhone = phone.replace(/\D/g, '');
-  let message = '';
-  
-  switch (type) {
-    case 'client':
-      message = 'Olá! Como posso ajudar você hoje?';
-      break;
-    default:
-      message = 'Mensagem personalizada';
-  }
-  
-  const encodedMessage = encodeURIComponent(message);
-  const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodedMessage}`;
-  window.open(whatsappUrl, '_blank');
-  showToast('WhatsApp aberto com sucesso!', 'success');
-}
-
-function openVideoLink() {
-  if (state.settings.videoLink) {
-    window.open(state.settings.videoLink, '_blank');
-    showToast('Sala de videoconferência aberta!', 'success');
-  } else {
-    showToast('Link de vídeo não configurado. Configure em Configurações.', 'error');
-  }
-}
-
-//==== MÁSCARAS E UTILITÁRIOS DO FORMULÁRIO====
+// ==== MÁSCARAS E UTILITÁRIOS DO FORMULÁRIO ====
 document.addEventListener('DOMContentLoaded', function() {
   // Máscara para telefone
   const phoneInputs = document.querySelectorAll('input[type="tel"]');
@@ -2164,126 +3120,75 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
+
+// Configurar Firebase quando o DOM estiver carregado
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    console.log("Inicializando em modo de teste...");
-    state.psychologistId = "test-psychologist-id"; // ID de teste fixo
-    
-    // Carregar dados do psicólogo de teste
-    const psychologistDoc = await db.collection('psychologists').doc(state.psychologistId).get();
-    if (psychologistDoc.exists) {
-      state.psychologist = psychologistDoc.data();
-      
-      // Atualizar UI com informações do psicólogo
-      document.getElementById('display-name').textContent = state.psychologist.name || 'PsiPro';
-      document.getElementById('conf-prof-name').value = state.psychologist.name || '';
-      document.getElementById('display-price').textContent = `R$ ${state.psychologist.sessionValue || 150},00`;
-      
-      // Atualizar especialidades
-      if (state.psychologist.specialties && state.psychologist.specialties.length > 0) {
-        renderSpecialties(state.psychologist.specialties);
-      }
-    } else {
-      // Criar dados de teste se não existirem
-      await createTestData();
-      state.psychologist = {
-        name: "Dra. Teste Psicóloga",
-        sessionValue: 150,
-        specialties: ["Ansiedade", "Depressão", "TDAH"],
-        about: "Olá! Sou uma psicóloga dedicada a ajudar meus pacientes em sua jornada de autoconhecimento e bem-estar emocional.",
-        settings: {
-          videoLink: "https://meet.google.com/teste",
-          confirmMessage: "Olá {{nome}}, confirmo seu agendamento para {{data}} às {{hora}}. Link da chamada: {{link}}",
-          reminderMessage: "Oi {{nome}}! Lembrando nosso atendimento amanhã, {{data}} às {{hora}}. Te espero!"
+    // Verificar autenticação
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        console.log("Usuário autenticado:", user.uid);
+        state.psychologistId = user.uid;
+        
+        // Carregar dados do psicólogo
+        const psychologistDoc = await db.collection('psychologists').doc(user.uid).get();
+        if (psychologistDoc.exists) {
+          state.psychologist = psychologistDoc.data();
+          
+          // Atualizar UI com informações do psicólogo
+          document.getElementById('display-name').textContent = state.psychologist.name || 'PsiPro';
+          document.getElementById('conf-prof-name').value = state.psychologist.name || '';
+          document.getElementById('display-price').textContent = `R$ ${state.psychologist.sessionValue || 150},00`;
+          
+          // Atualizar especialidades
+          if (state.psychologist.specialties && state.psychologist.specialties.length > 0) {
+            renderSpecialties(state.psychologist.specialties);
+          }
         }
-      };
-      
-      // Atualizar UI com dados de teste
-      document.getElementById('display-name').textContent = state.psychologist.name;
-      document.getElementById('conf-prof-name').value = state.psychologist.name;
-      document.getElementById('display-price').textContent = `R$ ${state.psychologist.sessionValue},00`;
-      renderSpecialties(state.psychologist.specialties);
+      }
+    });
+    
+    // Carregar dados iniciais se estiver no modo admin
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('view') === 'admin') {
+      if (state.psychologistId) {
+        await loadInitialData();
+      }
     }
-    
-    // Carregar dados iniciais
-    await loadInitialData();
-    
-    // Mostrar painel admin diretamente
-    navigateTo('view-admin');
-    initDashboard();
-    
   } catch (error) {
     console.error("Erro na inicialização:", error);
     showToast("Erro ao inicializar o sistema. Verifique sua conexão.", "error");
   }
 });
 
-// Função para criar dados de teste se não existirem
-async function createTestData() {
+async function loadInitialData() {
   try {
-    // Criar psicólogo de teste
-    await db.collection('psychologists').doc("test-psychologist-id").set({
-      name: "Dra. Teste Psicóloga",
-      email: "teste@psicologa.com",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      specialties: ["Ansiedade", "Depressão", "TDAH", "Terapia de Casal"],
-      about: "Olá! Sou uma psicóloga dedicada a ajudar meus pacientes em sua jornada de autoconhecimento e bem-estar emocional. Ofereço um ambiente seguro e acolhedor para nossas sessões.",
-      sessionValue: 150,
-      settings: {
-        videoLink: "https://meet.google.com/teste-link",
-        confirmMessage: "Olá {{nome}}, confirmo seu agendamento para {{data}} às {{hora}}. Link da cham
-
-
-      },
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    // Carregar clientes
+    await loadClients();
     
-    // Criar alguns clientes de teste
-    const clients = [
-      { name: "João Silva", phone: "(11) 98765-4321", email: "joao@email.com" },
-      { name: "Maria Santos", phone: "(21) 99887-7665", email: "maria@email.com" },
-      { name: "Pedro Souza", phone: "(31) 97654-3210", email: "pedro@email.com" }
-    ];
+    // Carregar horários disponíveis
+    await loadSlots();
     
-    for (const client of clients) {
-      const clientRef = db.collection('clients').doc();
-      await clientRef.set({
-        id: clientRef.id,
-        psychologistId: "test-psychologist-id",
-        name: client.name,
-        phone: client.phone,
-        email: client.email,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    }
+    // Carregar agendamentos
+    await loadBookings();
     
-    // Criar alguns horários disponíveis para os próximos dias
-    const today = new Date();
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      const isoDate = date.toISOString().split('T')[0];
-      
-      const slots = ["09:00", "10:00", "14:00", "15:00", "16:00"];
-      
-      for (const time of slots) {
-        const slotRef = db.collection('availability').doc();
-        await slotRef.set({
-          psychologistId: "test-psychologist-id",
-          date: isoDate,
-          time: time,
-          available: true,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      }
-    }
+    // Carregar configurações
+    await loadSettings();
     
-    console.log("Dados de teste criados com sucesso!");
-    showToast("Dados de teste criados com sucesso!", "success");
+    // Inicializar dashboard
+    initDashboard();
     
+    // Renderizar calendário
+    renderCalendar();
+    
+    // Renderizar lista de pacientes
+    renderClientList();
+    
+    // Renderizar dados financeiros
+    renderFinancials();
   } catch (error) {
-    console.error("Erro ao criar dados de teste:", error);
+    console.error("Erro ao carregar dados iniciais:", error);
+    showToast("Erro ao carregar dados do sistema", "error");
   }
 }
 
