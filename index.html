@@ -1,1603 +1,953 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Painel PsiPro - Gestão Completa de Consultório</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: {
-              50: '#f0fdfa',
-              100: '#ccfbf1',
-              200: '#99f6e4',
-              300: '#5eead4',
-              400: '#2dd4bf',
-              500: '#14b8a6',
-              600: '#0d9488',
-              700: '#0f766e',
-              800: '#115e59',
-              900: '#134e4a'
-            }
-          },
-          animation: {
-            fadeIn: 'fadeIn 0.3s ease-out',
-            slideUp: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-            slideDown: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-            pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-          },
-          keyframes: {
-            fadeIn: {
-              '0%': { opacity: 0, transform: 'translateY(10px)' },
-              '100%': { opacity: 1, transform: 'translateY(0)' }
-            },
-            slideUp: {
-              '0%': { transform: 'translateY(100%)' },
-              '100%': { transform: 'translateY(0)' }
-            },
-            slideDown: {
-              '0%': { transform: 'translateY(-100%)' },
-              '100%': { transform: 'translateY(0)' }
-            },
-            pulse: {
-              '0%, 100%': { opacity: 1 },
-              '50%': { opacity: 0.5 }
-            }
-          }
-        }
-      }
-    }
-  </script>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #F3F4F6;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-    .time-slot {
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .time-slot.active {
-      background-color: #22c55e;
-      color: white;
-      border-color: #22c55e;
-      font-weight: 600;
-      box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.3);
-    }
-    .view-section {
-      display: none;
-      animation: fadeIn 0.3s ease-in-out;
-    }
-    .view-section.active {
-      display: block;
-    }
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background-color: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(2px);
-      z-index: 50;
-      display: none;
-      justify-content: center;
-      align-items: flex-end;
-      padding: 0;
-    }
-    @media (min-width: 640px) {
-      .modal-overlay {
-        align-items: center;
-        padding: 20px;
-      }
-    }
-    .modal-content {
-      background: white;
-      width: 100%;
-      max-width: 448px;
-      border-radius: 20px 20px 0 0;
-      padding: 24px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    @media (min-width: 640px) {
-      .modal-content {
-        border-radius: 20px;
-      }
-    }
-    .nav-tab {
-      flex: 0 0 auto;
-      padding: 12px 16px;
-      font-size: 13px;
-      font-weight: 500;
-      color: #64748b;
-      border-bottom: 2px solid transparent;
-      white-space: nowrap;
-      transition: all 0.2s;
-    }
-    .nav-tab.active {
-      color: #0d9488;
-      border-bottom-color: #0d9488;
-      background-color: #f0fdfa;
-    }
-    .day-tab {
-      flex: 1;
-      padding: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      color: #94a3b8;
-      border-bottom: 2px solid transparent;
-    }
-    .day-tab.active {
-      color: #0d9488;
-      border-bottom-color: #0d9488;
-    }
-    .input-field {
-      width: 100%;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 10px 16px;
-      font-size: 14px;
-      transition: all 0.2s;
-    }
-    .input-field:focus {
-      outline: none;
-      border-color: #0d9488;
-      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
-    }
-    .label-text {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: #475569;
-      margin-bottom: 4px;
-    }
-    .btn-primary {
-      background-color: #0d9488;
-      color: white;
-      padding: 10px;
-      border-radius: 12px;
-      font-weight: 500;
-      transition: background 0.2s;
-    }
-    .btn-primary:hover {
-      background-color: #0f766e;
-    }
-    .btn-secondary {
-      background-color: #f1f5f9;
-      color: #475569;
-      padding: 10px;
-      border-radius: 12px;
-      font-weight: 500;
-    }
-    .toast {
-      background: #334155;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 50px;
-      font-size: 13px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      animation: slideDown 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1000;
-      pointer-events: none;
-    }
-    .confetti {
-      position: fixed;
-      width: 10px;
-      height: 10px;
-      background-color: #f00;
-      animation: fall 5s linear forwards;
-    }
-    @keyframes fall {
-      to { transform: translateY(100vh) rotate(360deg); opacity: 0; }
-    }
-    .status-dot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-right: 4px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agendamento - Vinicius Ravagnani</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F3F4F6; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Animações e Transições */
+        .view-section { display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.3s ease-out, transform 0.3s ease-out; }
+        .view-section.active { display: block; opacity: 1; transform: translateY(0); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+        .modal-overlay.hidden { display: none; }
+        .modal-content { background: white; width: 100%; max-width: 450px; border-radius: 20px 20px 0 0; padding: 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); max-height: 85vh; overflow-y: auto; }
+        @media(min-width: 640px) { .modal-overlay { align-items: center; } .modal-content { border-radius: 20px; } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* Estilos Específicos */
+        .time-slot { transition: all 0.2s; border: 1px solid #E5E7EB; }
+        .time-slot.selected { background-color: #22c55e; color: white; border-color: #22c55e; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3); }
+        .time-slot.booked { background-color: #F3F4F6; color: #9CA3AF; text-decoration: line-through; pointer-events: none; border-color: transparent; }
+        
+        .nav-tab { white-space: nowrap; padding: 12px 16px; font-size: 0.85rem; font-weight: 600; color: #64748B; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .nav-tab.active { color: #0D9488; border-bottom-color: #0D9488; }
+        
+        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; font-size: 0.9rem; position: relative; cursor: pointer; transition: all 0.2s; }
+        .calendar-day:hover { background-color: #F1F5F9; }
+        .calendar-day.has-slots { font-weight: 700; color: #0F172A; }
+        .calendar-day.has-slots::after { content: ''; width: 4px; height: 4px; background: #22c55e; border-radius: 50%; position: absolute; bottom: 6px; }
+        .calendar-day.full { color: #EF4444; }
+        .calendar-day.selected { background-color: #0D9488; color: white; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3); }
+        .calendar-day.selected::after { background: white; }
+
+        .input-field { width: 100%; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; border-radius: 12px; font-size: 0.9rem; outline: none; transition: all 0.2s; }
+        .input-field:focus { border-color: #0D9488; background: white; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
+        
+        .fab { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 40; transition: transform 0.2s; }
+        .fab:active { transform: scale(0.95); }
+    </style>
 </head>
-<body class="text-gray-800 antialiased pb-24">
-  <!-- Toast Container -->
-  <div id="toast-container" class="fixed top-4 left-0 right-0 z-[60] flex flex-col items-center pointer-events-none gap-2"></div>
-  
-  <!-- PERFIL DO PSICÓLOGO (CLIENTE) -->
-  <div id="view-profile" class="view-section max-w-md mx-auto bg-white min-h-screen shadow-xl overflow-hidden relative">
-    <div class="relative">
-      <div class="h-24 bg-gradient-to-r from-primary-600 to-primary-400"></div>
-      <div class="px-5">
-        <div class="relative -mt-12 mb-3">
-          <div class="w-24 h-24 rounded-full border-4 border-white overflow-hidden shadow-md bg-white">
-            <div class="w-full h-full bg-gradient-to-r from-primary-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
-              VR
-            </div>
-          </div>
-        </div>
-        <div class="flex justify-between items-start">
-          <div>
-            <h1 class="text-xl font-bold text-gray-900 leading-tight">Vinicius Ravagnani</h1>
-            <p class="text-xs text-gray-500 font-medium mt-1">Psicólogo Clínico • CRP 06/123456</p>
-          </div>
-          <div class="text-right">
-            <p class="text-sm font-bold text-gray-900">R$ 150,00</p>
-            <p class="text-[10px] text-gray-500">/ 50 min</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-1 mt-2 mb-4">
-          <div class="flex text-yellow-400 text-xs">
-            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-          </div>
-          <span class="text-xs text-gray-400 font-medium ml-1">(24 avaliações)</span>
-        </div>
-      </div>
-    </div>
-    <hr class="border-gray-100" />
-    <div class="px-5 py-4">
-      <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-        <i class="fas fa-shapes text-primary-500"></i> Abordagens
-      </h3>
-      <div class="flex flex-wrap gap-2">
-        <span class="px-3 py-1 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full">TCC</span>
-        <span class="px-3 py-1 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full">Ansiedade</span>
-        <span class="px-3 py-1 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full">Desenvolvimento Pessoal</span>
-      </div>
-    </div>
-    <div class="h-2 bg-gray-50"></div>
-    <div class="px-5 py-4">
-      <h3 class="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-        <i class="far fa-user text-primary-500"></i> Sobre mim
-      </h3>
-      <p class="text-sm text-gray-600 leading-relaxed text-justify">
-        Olá! Sou o Vinicius. Meu foco é ajudar você a compreender seus padrões de comportamento e encontrar caminhos para uma vida mais leve e autêntica. Atendo adolescentes e adultos com foco em Terapia Cognitivo-Comportamental, integrando técnicas modernas para promover o autoconhecimento e o bem-estar emocional.
-      </p>
-    </div>
-    <div class="h-2 bg-gray-50"></div>
-    <div class="px-5 py-4 mb-20">
-      <h3 class="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-        <i class="fas fa-graduation-cap text-primary-500"></i> Formação
-      </h3>
-      <ul class="space-y-4">
-        <li class="flex gap-3">
-          <div class="mt-1 w-2 h-2 rounded-full bg-gray-300 shrink-0"></div>
-          <div>
-            <p class="text-sm font-semibold text-gray-800">Psicologia</p>
-            <p class="text-xs text-gray-500">Universidade de São Paulo (2018)</p>
-          </div>
-        </li>
-        <li class="flex gap-3">
-          <div class="mt-1 w-2 h-2 rounded-full bg-gray-300 shrink-0"></div>
-          <div>
-            <p class="text-sm font-semibold text-gray-800">Especialização em TCC</p>
-            <p class="text-xs text-gray-500">Instituto de Psicologia da USP (2020)</p>
-          </div>
-        </li>
-      </ul>
-    </div>
-    <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 max-w-md mx-auto z-10">
-      <button onclick="navigateTo('view-calendar')" class="w-full bg-primary-600 hover:bg-primary-700 active:scale-[0.98] transition text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary-500/30 flex justify-center items-center gap-2">
-        <i class="far fa-calendar-check"></i> Ver Horários Disponíveis
-      </button>
-    </div>
-  </div>
+<body class="text-gray-800 antialiased pb-safe">
 
-  <!-- AGENDAMENTO (CLIENTE) -->
-  <div id="view-calendar" class="view-section max-w-md mx-auto bg-gray-50 min-h-screen relative">
-    <div class="bg-white px-4 py-3 shadow-sm sticky top-0 z-20 flex items-center gap-3">
-      <button onclick="navigateTo('view-profile')" class="text-gray-600 p-1 hover:bg-gray-100 rounded-full transition">
-        <i class="fas fa-arrow-left"></i>
-      </button>
-      <h2 class="font-semibold text-gray-800">Selecionar Horário</h2>
-    </div>
-    
-    <div class="bg-white pb-2 pt-2 shadow-sm mb-4">
-      <div class="px-4 mb-2 flex justify-between items-end">
-        <div>
-          <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Próximos 30 dias</p>
-          <h3 id="current-month-label" class="text-lg font-bold text-gray-800 capitalize">Janeiro</h3>
+    <div id="view-profile" class="view-section active max-w-md mx-auto bg-white min-h-screen shadow-2xl relative z-10">
+        <div class="h-32 bg-gradient-to-br from-blue-600 to-indigo-600 relative">
+            <button onclick="checkAdmin()" class="absolute top-4 right-4 text-white/50 hover:text-white p-2"><i class="fa-solid fa-lock"></i></button>
         </div>
-        <i class="far fa-calendar text-gray-300 text-xl"></i>
-      </div>
-      <div id="date-scroll-container" class="flex overflow-x-auto px-4 gap-3 py-2 no-scrollbar snap-x"></div>
-    </div>
-    
-    <div class="px-4">
-      <div id="slots-loader" class="hidden flex justify-center py-8">
-        <i class="fas fa-circle-notch fa-spin text-primary-500 text-2xl"></i>
-      </div>
-      <div id="slots-grid" class="grid grid-cols-4 gap-3 pb-32 transition-opacity duration-300">
-        <div class="col-span-4 text-center py-10 text-gray-400 text-sm">
-          Selecione uma data acima para carregar a agenda.
-        </div>
-      </div>
-    </div>
-    
-    <div id="confirm-bar" class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 max-w-md mx-auto transform translate-y-full transition-transform duration-300 z-30">
-      <div class="flex justify-between items-center mb-3">
-        <div class="text-xs text-gray-500">Selecionado:</div>
-        <div id="selected-summary" class="text-sm font-bold text-gray-800 text-right">--/-- às --:--</div>
-      </div>
-      <button onclick="openModal('booking-modal')" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-green-600/20 flex justify-center items-center gap-2">
-        <i class="fas fa-whatsapp"></i> Confirmar Agendamento
-      </button>
-    </div>
-  </div>
-
-  <!-- CHECKOUT (CLIENTE) -->
-  <div id="booking-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <div class="flex justify-between items-center mb-6">
-        <h3 class="text-lg font-bold text-gray-900">Finalizar Agendamento</h3>
-        <button onclick="closeModal('booking-modal')" class="text-gray-400 hover:text-gray-600">
-          <i class="fas fa-times text-xl"></i>
-        </button>
-      </div>
-      <form id="booking-form" onsubmit="submitBooking(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-gray-600 mb-1 uppercase">Nome Completo</label>
-          <input type="text" name="name" required class="input-field" placeholder="Ex: Ana Silva">
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1 uppercase">Celular</label>
-            <input type="tel" name="phone" required class="input-field" placeholder="(11) 99999-9999" id="phone-input">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1 uppercase">E-mail</label>
-            <input type="email" name="email" required class="input-field" placeholder="seu@email.com">
-          </div>
-        </div>
-        <div class="bg-blue-50 p-3 rounded-lg flex items-start gap-3 mt-2">
-          <i class="fas fa-info-circle text-blue-600 mt-1"></i>
-          <p class="text-xs text-blue-800 leading-snug">
-            Ao continuar, sua solicitação será enviada ao psicólogo. Você receberá confirmação via WhatsApp.
-          </p>
-        </div>
-        <button type="submit" id="btn-submit" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-xl mt-4 flex justify-center items-center gap-3 transition-all">
-          <span>Solicitar Agendamento</span>
-          <i class="fas fa-arrow-right"></i>
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- PAINEL ADMINISTRATIVO COMPLETO -->
-  <div id="view-admin" class="view-section max-w-md mx-auto bg-slate-50 min-h-screen relative font-sans text-slate-800 pb-20">
-    <div class="bg-white px-5 py-4 shadow-sm sticky top-0 z-20 flex justify-between items-center">
-      <div>
-        <h2 class="font-bold text-lg text-slate-800">Painel Psi<span class="text-primary-600">Pro</span></h2>
-        <p class="text-xs text-slate-500">Gestão de Consultório</p>
-      </div>
-      <button onclick="navigateTo('view-profile')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-full text-xs font-semibold transition">
-        <i class="fas fa-arrow-left mr-1"></i> Perfil Público
-      </button>
-    </div>
-    
-    <div class="bg-white border-b border-slate-100 flex overflow-x-auto sticky top-[70px] z-10 hide-scrollbar">
-      <button onclick="switchTab('dashboard')" class="nav-tab active" data-tab="dashboard">Visão Geral</button>
-      <button onclick="switchTab('calendar')" class="nav-tab" data-tab="calendar">Agenda</button>
-      <button onclick="switchTab('clients')" class="nav-tab" data-tab="clients">Pacientes</button>
-      <button onclick="switchTab('financial')" class="nav-tab" data-tab="financial">Financeiro</button>
-      <button onclick="switchTab('settings')" class="nav-tab" data-tab="settings">Config</button>
-    </div>
-    
-    <div class="p-4 space-y-6">
-      <!-- Dashboard Tab -->
-      <div id="tab-dashboard" class="tab-content active">
-        <div class="bg-primary-600 text-white rounded-2xl p-5 shadow-lg shadow-primary-200 mb-6 relative overflow-hidden">
-          <div class="absolute right-4 top-4 bg-white/10 w-24 h-24 rounded-full blur-xl"></div>
-          <h3 class="text-primary-50 font-medium text-sm mb-1">Próximo Atendimento</h3>
-          <div id="dash-next-session">
-            <p class="text-2xl font-bold" id="next-session-time">14:00</p>
-            <p class="text-primary-100" id="next-session-date">Sexta-feira, 25 de outubro</p>
-            <p class="text-white font-semibold flex items-center gap-2 mt-1">
-              <i class="fas fa-user"></i>
-              <span id="next-session-client">Ana Silva</span>
-            </p>
-            <div class="mt-3 flex gap-2">
-              <button onclick="openWhatsApp('confirm')" class="bg-white text-primary-700 text-xs px-3 py-1.5 rounded-lg font-bold shadow-sm hover:bg-primary-50 transition">
-                <i class="fab fa-whatsapp mr-1"></i> Confirmar
-              </button>
-              <button onclick="openVideoCall()" class="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg transition">
-                <i class="fas fa-video mr-1"></i> Sala Virtual
-              </button>
+        <div class="px-6 -mt-16 relative">
+            <div class="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-white overflow-hidden">
+                <img src="https://ui-avatars.com/api/?name=Vinicius+Ravagnani&background=0D8ABC&color=fff&size=256" alt="Vinicius" class="w-full h-full object-cover">
             </div>
-          </div>
-          <div id="dash-no-session" class="hidden">
-            <p class="text-lg font-bold">Sem agendamentos futuros</p>
-            <p class="text-primary-100 text-sm mt-1">Aproveite para organizar sua agenda.</p>
-            <button class="mt-3 bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-lg transition" onclick="switchTab('calendar')">
-              <i class="fas fa-calendar-plus mr-1"></i> Gerenciar Horários
-            </button>
-          </div>
-        </div>
-        
-        <div class="grid grid-cols-2 gap-3">
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <div class="text-slate-400 text-xs font-bold uppercase mb-1">Pacientes</div>
-            <div class="text-2xl font-bold text-slate-800" id="dash-total-clients">0</div>
-          </div>
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-            <div class="text-slate-400 text-xs font-bold uppercase mb-1">Sessões (Mês)</div>
-            <div class="text-2xl font-bold text-primary-600" id="dash-month-sessions">0</div>
-          </div>
-        </div>
-        
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-          <div class="flex justify-between items-center mb-3">
-            <h3 class="font-bold text-slate-800">Faturamento Estimado (Mês)</h3>
-            <i class="fas fa-chart-line text-green-500"></i>
-          </div>
-          <p class="text-3xl font-bold text-green-600" id="dash-financial-total">R$ 0,00</p>
-          <p class="text-xs text-green-600 bg-green-50 inline-block px-2 py-1 rounded mt-1">
-            Baseado nos agendamentos confirmados
-          </p>
-        </div>
-      </div>
-      
-      <!-- Calendar Tab -->
-      <div id="tab-calendar" class="tab-content hidden">
-        <div class="flex justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-slate-100 mb-4">
-          <button onclick="changeMonth(-1)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 transition">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <h3 id="calendar-month-label" class="font-bold text-slate-800 capitalize text-lg">Janeiro 2026</h3>
-          <button onclick="changeMonth(1)" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 transition">
-            <i class="fas fa-chevron-right"></i>
-          </button>
-        </div>
-        
-        <div class="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-bold text-slate-400">
-          <div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div>
-        </div>
-        
-        <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
-        
-        <div class="flex gap-3 justify-center mt-4 text-[10px] text-slate-500">
-          <div class="flex items-center gap-1"><span class="status-dot bg-primary-500"></span> Com Sessão</div>
-          <div class="flex items-center gap-1"><span class="status-dot bg-blue-200 border border-blue-300"></span> Horários Livres</div>
-          <div class="flex items-center gap-1"><span class="status-dot bg-yellow-100 border border-yellow-300"></span> Hoje</div>
-        </div>
-      </div>
-      
-      <!-- Clients Tab -->
-      <div id="tab-clients" class="tab-content hidden">
-        <div class="sticky top-0 bg-slate-50 pb-4 z-10">
-          <div class="flex gap-2 mb-3">
-            <div class="relative flex-1">
-              <i class="fas fa-search absolute left-3 top-3 text-slate-400 text-sm"></i>
-              <input type="text" id="client-search" onkeyup="filterClients()" placeholder="Buscar paciente..." class="w-full pl-9 pr-4 py-2.5 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-primary-500 text-sm">
-            </div>
-            <button onclick="openClientModal()" class="bg-primary-600 text-white w-10 h-10 rounded-xl shadow-sm flex items-center justify-center hover:bg-primary-700 transition">
-              <i class="fas fa-plus"></i>
-            </button>
-          </div>
-        </div>
-        
-        <div id="clients-list" class="space-y-3 pb-20"></div>
-      </div>
-      
-      <!-- Financial Tab -->
-      <div id="tab-financial" class="tab-content hidden">
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-4 text-center">
-          <p class="text-slate-500 text-xs font-bold uppercase tracking-wider">Previsão (Mês Atual)</p>
-          <h2 class="text-3xl font-bold text-slate-800 mt-1" id="fin-total">R$ 0,00</h2>
-          <p class="text-xs text-green-600 bg-green-50 inline-block px-2 py-1 rounded mt-2">
-            Baseado em <span id="fin-total-sessions">0</span> agendamentos
-          </p>
-        </div>
-        
-        <h3 class="font-bold text-slate-700 mb-3 text-sm">Histórico Recente</h3>
-        <div id="fin-list" class="space-y-2"></div>
-      </div>
-      
-      <!-- Settings Tab -->
-      <div id="tab-settings" class="tab-content hidden">
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-          <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <i class="fab fa-whatsapp text-green-500"></i> Automação de Mensagens
-          </h3>
-          <div class="space-y-4">
-            <div>
-              <label class="label-text">Seu Link de Vídeo Padrão</label>
-              <input type="url" id="conf-video" placeholder="Ex: meet.google.com/abc-defg-hij" class="input-field" value="https://meet.google.com/abc-defg-hij">
-              <p class="text-[10px] text-slate-400 mt-1">Usado no botão "Link da Chamada".</p>
+            <div class="mt-4 flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Vinicius Ravagnani</h1>
+                    <p class="text-sm text-blue-600 font-medium">Psicólogo Clínico &bull; CRP 06/12345</p>
+                </div>
+                <div class="text-right bg-blue-50 px-3 py-1 rounded-lg">
+                    <p class="text-lg font-bold text-blue-700">R$ 150</p>
+                    <p class="text-[10px] text-blue-400 font-bold uppercase">Sessão 50min</p>
+                </div>
             </div>
             
+            <div class="mt-6 space-y-6">
+                <div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Especialidades</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">Terapia Cognitivo-Comportamental</span>
+                        <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">Ansiedade</span>
+                        <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">Autoconhecimento</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Sobre</h3>
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        Olá! Sou o Vinicius. Meu objetivo é oferecer um espaço seguro e acolhedor para que você possa explorar seus sentimentos e desenvolver ferramentas para lidar com os desafios da vida.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 max-w-md mx-auto">
+            <button onclick="navigateTo('view-client-calendar')" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-[0.98] flex justify-center items-center gap-2">
+                <i class="fa-regular fa-calendar"></i> Agendar Sessão
+            </button>
+        </div>
+    </div>
+
+    <div id="view-client-calendar" class="view-section max-w-md mx-auto bg-gray-50 min-h-screen relative">
+        <div class="bg-white px-4 py-4 shadow-sm sticky top-0 z-20 flex items-center gap-4">
+            <button onclick="navigateTo('view-profile')" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2 class="font-bold text-gray-800 text-lg">Escolha um horário</h2>
+        </div>
+
+        <div class="p-4">
+            <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-gray-700" id="client-month-display">Janeiro</h3>
+                    <div class="flex gap-2">
+                         <button onclick="clientChangeDate(-1)" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+                         <button onclick="clientChangeDate(1)" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+                    </div>
+                </div>
+                <div id="client-date-scroll" class="flex overflow-x-auto gap-3 pb-2 no-scrollbar snap-x">
+                    </div>
+            </div>
+
+            <div id="client-slots-container">
+                <div id="client-slots-grid" class="grid grid-cols-3 gap-3">
+                    </div>
+                <div id="client-empty-state" class="hidden text-center py-10">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
+                        <i class="fa-regular fa-calendar-xmark text-2xl"></i>
+                    </div>
+                    <p class="text-gray-500 text-sm">Nenhum horário disponível nesta data.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="client-confirm-bar" class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-100 max-w-md mx-auto transform translate-y-full transition-transform duration-300 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <p class="text-xs text-gray-500 font-medium uppercase">Horário Selecionado</p>
+                    <p id="client-selected-info" class="text-sm font-bold text-gray-900">--/-- às --:--</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-gray-500 font-medium uppercase">Valor</p>
+                    <p class="text-sm font-bold text-blue-600">R$ 150,00</p>
+                </div>
+            </div>
+            <button onclick="openBookingModal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-600/20">
+                Confirmar Agendamento
+            </button>
+        </div>
+    </div>
+
+    <div id="view-admin" class="view-section max-w-md mx-auto bg-slate-50 min-h-screen pb-24">
+        <div class="bg-white px-5 py-4 shadow-sm sticky top-0 z-30 flex justify-between items-center">
             <div>
-              <label class="label-text">Confirmação de Agendamento</label>
-              <textarea id="conf-msg-confirm" rows="3" class="input-field resize-none">Olá {{nome}}, confirmo seu agendamento para {{data}} às {{hora}}. Link: {{link}}</textarea>
+                <h2 class="font-bold text-lg text-slate-800">Painel <span class="text-teal-600">PsiPro</span></h2>
+            </div>
+            <button onclick="navigateTo('view-profile')" class="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full hover:bg-slate-200">
+                <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Sair
+            </button>
+        </div>
+
+        <div class="bg-white border-b border-slate-100 flex overflow-x-auto sticky top-[60px] z-20 hide-scrollbar px-2">
+            <button onclick="switchTab('dashboard')" class="nav-tab active" data-tab="dashboard">Visão Geral</button>
+            <button onclick="switchTab('calendar')" class="nav-tab" data-tab="calendar">Agenda</button>
+            <button onclick="switchTab('clients')" class="nav-tab" data-tab="clients">Pacientes</button>
+            <button onclick="switchTab('financial')" class="nav-tab" data-tab="financial">Financeiro</button>
+            <button onclick="switchTab('settings')" class="nav-tab" data-tab="settings">Config</button>
+        </div>
+
+        <div class="p-4">
+            
+            <div id="tab-dashboard" class="tab-content block">
+                <div class="bg-gradient-to-r from-teal-600 to-teal-500 text-white rounded-2xl p-5 shadow-lg shadow-teal-500/20 mb-6 relative overflow-hidden">
+                    <div class="absolute -right-6 -top-6 bg-white/20 w-32 h-32 rounded-full blur-2xl"></div>
+                    <div class="relative z-10">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-teal-50 font-medium text-xs uppercase tracking-wider">Próxima Sessão</h3>
+                            <span id="dash-next-badge" class="bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold">HOJE</span>
+                        </div>
+                        <div id="dash-next-content">
+                            <p id="dash-next-time" class="text-3xl font-bold mb-1">--:--</p>
+                            <p id="dash-next-client" class="text-teal-50 font-medium text-lg truncate">Nenhum agendamento</p>
+                            <div class="mt-4 flex gap-2">
+                                <button onclick="sendQuickMsg()" class="bg-white text-teal-700 text-xs font-bold px-3 py-2 rounded-lg flex-1 shadow-sm active:scale-95 transition"><i class="fa-brands fa-whatsapp mr-1"></i> Confirmar</button>
+                                <button onclick="openNextClientDetails()" class="bg-teal-700/50 text-white text-xs font-bold px-3 py-2 rounded-lg flex-1 hover:bg-teal-700 active:scale-95 transition">Ver Detalhes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-2"><i class="fa-solid fa-users"></i></div>
+                        <div class="text-slate-400 text-[10px] font-bold uppercase">Total Pacientes</div>
+                        <div class="text-2xl font-bold text-slate-800" id="dash-total-clients">0</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <div class="w-8 h-8 rounded-full bg-green-50 text-green-600 flex items-center justify-center mb-2"><i class="fa-solid fa-calendar-check"></i></div>
+                        <div class="text-slate-400 text-[10px] font-bold uppercase">Sessões (Mês)</div>
+                        <div class="text-2xl font-bold text-slate-800" id="dash-month-count">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-calendar" class="tab-content hidden">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="p-4 flex justify-between items-center border-b border-slate-100">
+                        <button onclick="changeAdminMonth(-1)" class="w-8 h-8 hover:bg-slate-50 rounded-full flex items-center justify-center text-slate-500"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h3 id="admin-calendar-month" class="font-bold text-slate-800 capitalize">Janeiro 2026</h3>
+                        <button onclick="changeAdminMonth(1)" class="w-8 h-8 hover:bg-slate-50 rounded-full flex items-center justify-center text-slate-500"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                    <div class="grid grid-cols-7 gap-px bg-slate-100 border-b border-slate-100">
+                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">D</div>
+                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">S</div>
+                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">T</div>
+                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">Q</div>
+                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">Q</div>
+                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">S</div>
+                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">S</div>
+                    </div>
+                    <div id="admin-calendar-grid" class="grid grid-cols-7 gap-px bg-slate-100 p-px">
+                        </div>
+                </div>
+                <div class="mt-4 flex justify-center gap-4 text-xs text-slate-500">
+                    <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-teal-600"></span> Com Sessão</div>
+                    <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-300"></span> Vazio</div>
+                    <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Cheio</div>
+                </div>
+            </div>
+
+            <div id="tab-clients" class="tab-content hidden">
+                <div class="relative mb-4">
+                    <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="client-search" onkeyup="renderClients()" placeholder="Buscar por nome..." class="w-full bg-white pl-10 pr-4 py-3 rounded-xl shadow-sm border-none focus:ring-2 focus:ring-teal-500 text-sm">
+                </div>
+                <div id="clients-list" class="space-y-3">
+                    </div>
+            </div>
+
+            <div id="tab-financial" class="tab-content hidden">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 text-center mb-6">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Estimativa Mensal</p>
+                    <h2 class="text-4xl font-bold text-slate-800" id="fin-total">R$ 0,00</h2>
+                    <p class="text-xs text-green-600 bg-green-50 inline-block px-3 py-1 rounded-full mt-3 font-medium">
+                        <i class="fa-solid fa-arrow-trend-up mr-1"></i> Baseado em agendamentos
+                    </p>
+                </div>
+                <h3 class="font-bold text-slate-700 text-sm mb-3">Histórico de Receita</h3>
+                <div id="fin-history" class="space-y-3">
+                    </div>
+            </div>
+
+            <div id="tab-settings" class="tab-content hidden">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-5">
+                    <h3 class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">Automação WhatsApp</h3>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Mensagem de Confirmação</label>
+                        <textarea id="setting-msg-confirm" rows="3" class="input-field text-xs"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Link da Vídeo Chamada</label>
+                        <input type="text" id="setting-video-link" placeholder="https://meet.google.com/..." class="input-field">
+                    </div>
+
+                    <button onclick="saveSettings()" class="w-full bg-teal-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-teal-500/20 active:scale-95 transition">Salvar Configurações</button>
+                </div>
+                <div class="mt-6 text-center">
+                    <button onclick="resetApp()" class="text-red-500 text-xs font-bold hover:underline">Resetar Dados do Aplicativo</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="modal-booking" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-lg text-gray-900">Finalizar Agendamento</h3>
+                <button onclick="closeModal('modal-booking')" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <form onsubmit="confirmBooking(event)" class="space-y-4">
+                <input type="text" id="book-name" placeholder="Seu Nome Completo" required class="input-field">
+                <input type="tel" id="book-phone" placeholder="Seu WhatsApp (11) 99999-9999" required class="input-field">
+                <div class="bg-blue-50 p-3 rounded-xl flex gap-3">
+                    <i class="fa-solid fa-circle-info text-blue-600 mt-0.5"></i>
+                    <p class="text-xs text-blue-800">Ao confirmar, você receberá os detalhes da sessão via WhatsApp.</p>
+                </div>
+                <button type="submit" class="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl">Confirmar</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-day" class="modal-overlay hidden">
+        <div class="modal-content h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 id="modal-day-title" class="font-bold text-xl text-slate-800">--</h3>
+                    <p id="modal-day-date" class="text-xs text-slate-500">Gerenciar Dia</p>
+                </div>
+                <button onclick="closeModal('modal-day')" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500"><i class="fa-solid fa-times"></i></button>
             </div>
             
-            <div>
-              <label class="label-text">Lembrete (24h antes)</label>
-              <textarea id="conf-msg-reminder" rows="3" class="input-field resize-none">Oi {{nome}}! Lembrando nosso atendimento amanhã, {{data}} às {{hora}}. Te espero!</textarea>
-              <div class="flex flex-wrap gap-2 text-[10px] text-slate-500 bg-slate-100 p-2 rounded-lg mt-2">
-                <span>Variáveis:</span>
-                <span class="bg-white px-1 rounded border border-slate-200">{{nome}}</span>
-                <span class="bg-white px-1 rounded border border-slate-200">{{data}}</span>
-                <span class="bg-white px-1 rounded border border-slate-200">{{hora}}</span>
-                <span class="bg-white px-1 rounded border border-slate-200">{{link}}</span>
-              </div>
+            <div class="flex border-b border-slate-100 mb-4">
+                <button onclick="switchDayTab('slots')" id="btn-tab-day-slots" class="flex-1 pb-2 text-sm font-bold text-teal-600 border-b-2 border-teal-600">Horários</button>
+                <button onclick="switchDayTab('bookings')" id="btn-tab-day-bookings" class="flex-1 pb-2 text-sm font-bold text-slate-400 border-b-2 border-transparent">Agendamentos</button>
             </div>
-            
-            <button onclick="saveSettings()" class="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-xl font-medium transition shadow-lg shadow-primary-200">
-              Salvar Alterações
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Day Modal (Admin Calendar) -->
-  <div id="day-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <div class="flex justify-between items-start mb-4">
-        <div>
-          <h3 id="modal-day-title" class="text-xl font-bold text-slate-800">Segunda</h3>
-          <p id="modal-day-subtitle" class="text-sm text-slate-500">20 de Janeiro</p>
-        </div>
-        <button onclick="closeModal('day-modal')" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      
-      <div class="flex border-b border-slate-100 mb-4">
-        <button onclick="switchDayTab('slots')" id="btn-tab-slots" class="day-tab active">Gerenciar Horários</button>
-        <button onclick="switchDayTab('bookings')" id="btn-tab-bookings" class="day-tab">Agendamentos</button>
-      </div>
-      
-      <div id="day-tab-slots" class="day-content">
-        <div class="bg-slate-50 p-3 rounded-xl mb-4 border border-slate-100">
-          <p class="text-xs font-bold text-slate-600 mb-2">Gerador Rápido</p>
-          <div class="flex gap-2">
-            <button onclick="generateSlots('morning')" class="flex-1 bg-white border border-slate-200 text-xs py-2 rounded-lg hover:border-primary-500 hover:text-primary-600 transition">Manhã</button>
-            <button onclick="generateSlots('afternoon')" class="flex-1 bg-white border border-slate-200 text-xs py-2 rounded-lg hover:border-primary-500 hover:text-primary-600 transition">Tarde</button>
-            <button onclick="generateSlots('full')" class="flex-1 bg-white border border-slate-200 text-xs py-2 rounded-lg hover:border-primary-500 hover:text-primary-600 transition">Dia Todo</button>
-          </div>
-        </div>
-        
-        <div class="flex gap-2 mb-3">
-          <input type="time" id="new-slot-input" class="flex-1 input-field py-2 text-center" value="09:00">
-          <button onclick="addSingleSlot()" class="bg-primary-600 text-white px-4 rounded-xl">
-            <i class="fas fa-plus"></i>
-          </button>
-        </div>
-        
-        <div id="slots-list" class="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto"></div>
-      </div>
-      
-      <div id="day-tab-bookings" class="day-content hidden space-y-3 max-h-60 overflow-y-auto"></div>
-    </div>
-  </div>
+            <div id="day-content-slots" class="flex-1 overflow-y-auto">
+                <div class="bg-slate-50 p-3 rounded-xl mb-4 border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Gerador em Massa</p>
+                    <div class="flex gap-2">
+                        <button onclick="bulkGenerate('morning')" class="flex-1 bg-white border border-slate-200 text-xs py-2 rounded-lg hover:border-teal-500 hover:text-teal-600 transition">Manhã (08-12)</button>
+                        <button onclick="bulkGenerate('afternoon')" class="flex-1 bg-white border border-slate-200 text-xs py-2 rounded-lg hover:border-teal-500 hover:text-teal-600 transition">Tarde (13-18)</button>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2 mb-4">
+                    <input type="time" id="new-slot-time" class="input-field py-2">
+                    <button onclick="addSlot()" class="bg-teal-600 text-white px-4 rounded-xl shadow-lg shadow-teal-500/30"><i class="fa-solid fa-plus"></i></button>
+                </div>
 
-  <!-- Client Modal -->
-  <div id="client-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <div class="flex justify-between items-center mb-4">
-        <h3 id="client-modal-title" class="font-bold text-lg text-slate-800">Novo Paciente</h3>
-        <button onclick="closeModal('client-modal')" class="text-slate-400">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      
-      <form id="client-form" onsubmit="saveClient(event)" class="space-y-4">
-        <input type="text" name="name" id="client-name" placeholder="Nome completo" required class="input-field">
-        <input type="tel" name="phone" id="client-phone" placeholder="WhatsApp (11) 99999-9999" required class="input-field">
-        <input type="email" name="email" id="client-email" placeholder="Email (opcional)" class="input-field">
-        
-        <div class="flex gap-2">
-          <button type="button" onclick="closeModal('client-modal')" class="btn-secondary flex-1">Cancelar</button>
-          <button type="submit" class="btn-primary flex-1">Salvar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Notes Modal -->
-  <div id="notes-modal" class="modal-overlay hidden">
-    <div class="modal-content h-[80vh] flex flex-col">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold text-lg text-slate-800">Prontuário</h3>
-        <button onclick="closeModal('notes-modal')" class="text-slate-400">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      
-      <p id="note-client-name" class="text-sm text-primary-600 font-semibold mb-2">Ana Silva</p>
-      
-      <textarea id="client-notes-area" class="flex-1 w-full border border-slate-200 rounded-xl p-4 text-sm resize-none focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Escreva as anotações da sessão aqui..."></textarea>
-      
-      <button onclick="saveNotes()" class="btn-primary mt-4 w-full">Salvar Anotações</button>
-    </div>
-  </div>
-
-  <!-- WhatsApp Button (Client View) -->
-  <div id="whatsapp-access" class="fixed bottom-4 right-4 z-50 hidden">
-    <button onclick="openWhatsApp()" class="bg-green-500 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-green-600 transition transform hover:scale-110 animate-pulse">
-      <i class="fab fa-whatsapp text-3xl"></i>
-    </button>
-  </div>
-
-  <!-- Admin Access Button -->
-  <div id="admin-access" class="fixed bottom-4 right-4 z-50">
-    <button onclick="navigateTo('view-admin')" class="bg-purple-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center hover:bg-purple-700 transition transform hover:scale-110">
-      <i class="fas fa-cog text-xl"></i>
-    </button>
-  </div>
-
-  <script>
-    // Mock data for demonstration (in a real app, this would come from a server)
-    const mockData = {
-      psychologist: {
-        name: "Vinicius Ravagnani",
-        title: "Psicólogo Clínico • CRP 06/123456",
-        price: 150,
-        approaches: ["TCC", "Ansiedade", "Desenvolvimento Pessoal"],
-        bio: "Olá! Sou o Vinicius. Meu foco é ajudar você a compreender seus padrões de comportamento e encontrar caminhos para uma vida mais leve e autêntica. Atendo adolescentes e adultos com foco em Terapia Cognitivo-Comportamental, integrando técnicas modernas para promover o autoconhecimento e o bem-estar emocional.",
-        education: [
-          { degree: "Psicologia", institution: "Universidade de São Paulo (2018)" },
-          { degree: "Especialização em TCC", institution: "Instituto de Psicologia da USP (2020)" }
-        ],
-        rating: 5,
-        reviews: 24
-      },
-      clients: [
-        { id: 1, name: "Ana Silva", phone: "(11) 98765-4321", email: "ana.silva@email.com" },
-        { id: 2, name: "Carlos Souza", phone: "(11) 97654-3210", email: "carlos.souza@email.com" },
-        { id: 3, name: "Mariana Costa", phone: "(11) 96543-2109", email: "mariana.costa@email.com" },
-        { id: 4, name: "João Pereira", phone: "(11) 95432-1098", email: "joao.pereira@email.com" }
-      ],
-      bookings: [
-        { id: 1, date: "2026-10-25", time: "14:00", client: { id: 1, name: "Ana Silva", phone: "(11) 98765-4321", email: "ana.silva@email.com" }, value: 150, status: "confirmed" },
-        { id: 2, date: "2026-10-26", time: "10:00", client: { id: 2, name: "Carlos Souza", phone: "(11) 97654-3210", email: "carlos.souza@email.com" }, value: 150, status: "confirmed" },
-        { id: 3, date: "2026-10-27", time: "16:00", client: { id: 3, name: "Mariana Costa", phone: "(11) 96543-2109", email: "mariana.costa@email.com" }, value: 150, status: "confirmed" },
-        { id: 4, date: "2026-10-28", time: "09:00", client: { id: 4, name: "João Pereira", phone: "(11) 95432-1098", email: "joao.pereira@email.com" }, value: 150, status: "confirmed" }
-      ],
-      settings: {
-        videoLink: "https://meet.google.com/abc-defg-hij",
-        confirmMessage: "Olá {{nome}}, confirmo seu agendamento para {{data}} às {{hora}}. Link: {{link}}",
-        reminderMessage: "Oi {{nome}}! Lembrando nosso atendimento amanhã, {{data}} às {{hora}}. Te espero!"
-      },
-      notes: {
-        "1": "Paciente relatou ansiedade em ambientes sociais. Iniciamos técnicas de respiração e identificação de pensamentos automáticos.",
-        "2": "Primeira sessão. Paciente busca ajuda para lidar com estresse no trabalho. Discutimos objetivos terapêuticos.",
-        "3": "Paciente apresenta melhoras significativas na autoconfiança. Continuaremos com exercícios de exposição gradual."
-      }
-    };
-
-    // State management
-    let state = {
-      currentView: 'view-profile',
-      selectedDate: new Date(),
-      selectedTimeSlot: null,
-      selectedDayISO: null,
-      currentMonth: new Date(),
-      currentClientId: null,
-      activeAdminTab: 'dashboard',
-      slots: {},
-      clients: [...mockData.clients],
-      bookings: [...mockData.bookings],
-      settings: { ...mockData.settings },
-      notes: { ...mockData.notes }
-    };
-
-    // Initialize the application
-    document.addEventListener('DOMContentLoaded', () => {
-      // Initialize slots for the next 30 days
-      initSlots();
-      
-      // Navigate to profile view by default
-      navigateTo('view-profile');
-      
-      // Format phone input
-      const phoneInput = document.getElementById('phone-input');
-      if (phoneInput) {
-        phoneInput.addEventListener('input', formatPhone);
-      }
-      
-      // Show confetti animation on first load
-      setTimeout(showConfetti, 1000);
-    });
-
-    // Initialize slots for the next 30 days
-    function initSlots() {
-      const today = new Date();
-      const daysToGenerate = 30;
-      
-      for (let i = 0; i < daysToGenerate; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
-        
-        // Skip weekends
-        if (date.getDay() === 0 || date.getDay() === 6) continue;
-        
-        const isoDate = date.toISOString().split('T')[0];
-        state.slots[isoDate] = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-      }
-    }
-
-    // Navigation functions
-    function navigateTo(viewId) {
-      // Hide all views
-      document.querySelectorAll('.view-section').forEach(el => {
-        el.classList.remove('active');
-        el.style.display = 'none';
-      });
-      
-      // Show the selected view
-      const targetView = document.getElementById(viewId);
-      if (targetView) {
-        targetView.style.display = 'block';
-        setTimeout(() => {
-          targetView.classList.add('active');
-        }, 10);
-        
-        state.currentView = viewId;
-        
-        // Show/hide WhatsApp button
-        document.getElementById('whatsapp-access').style.display = viewId === 'view-calendar' ? 'block' : 'none';
-        
-        // Initialize view-specific functions
-        if (viewId === 'view-calendar') {
-          renderCalendarDates();
-        } else if (viewId === 'view-admin') {
-          initDashboard();
-          renderCalendar();
-        }
-      }
-    }
-
-    // Show toast notification
-    function showToast(message, type = 'success') {
-      const container = document.getElementById('toast-container');
-      if (!container) return;
-      
-      // Remove existing toasts
-      container.innerHTML = '';
-      
-      const toast = document.createElement('div');
-      toast.className = `toast bg-${type === 'success' ? 'green' : 'blue'}-600`;
-      toast.innerHTML = `
-        <div class="flex items-center gap-2">
-          <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
-          <span>${message}</span>
-        </div>
-      `;
-      
-      container.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(-50%) translateY(-20px)';
-        setTimeout(() => {
-          toast.remove();
-        }, 300);
-      }, 3000);
-    }
-
-    // Calendar functions for client view
-    function renderCalendarDates() {
-      const container = document.getElementById('date-scroll-container');
-      const label = document.getElementById('current-month-label');
-      
-      if (!container || !label) return;
-      
-      container.innerHTML = '';
-      
-      const today = new Date();
-      label.textContent = today.toLocaleDateString('pt-BR', { month: 'long' });
-      
-      // Generate next 30 days
-      for (let i = 0; i < 30; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
-        
-        const isoDate = date.toISOString().split('T')[0];
-        const isToday = isoDate === new Date().toISOString().split('T')[0];
-        const isSelected = state.selectedDate.toISOString().split('T')[0] === isoDate;
-        const dayName = date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
-        const dayNumber = date.getDate();
-        
-        const button = document.createElement('button');
-        button.innerHTML = `
-          <span class="text-[10px] font-bold uppercase tracking-wider mb-1">${dayName}</span>
-          <span class="text-xl font-bold">${dayNumber}</span>
-        `;
-        button.className = `flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center border transition snap-start ${
-          isSelected
-            ? "bg-gray-900 text-white border-gray-900 shadow-lg transform scale-105"
-            : isToday
-            ? "border-primary-300 bg-primary-50 text-primary-700"
-            : "bg-white border-gray-100 text-gray-500 hover:border-primary-200"
-        }`;
-        button.onclick = () => selectDate(date);
-        
-        container.appendChild(button);
-      }
-      
-      // Render slots for today by default
-      const todayISO = new Date().toISOString().split('T')[0];
-      state.selectedDate = new Date();
-      renderTimeSlots(todayISO);
-    }
-
-    function selectDate(date) {
-      state.selectedDate = date;
-      const isoDate = date.toISOString().split('T')[0];
-      
-      // Update UI to show selected date
-      document.querySelectorAll('#date-scroll-container button').forEach(btn => {
-        btn.className = btn.className.replace('bg-gray-900 text-white border-gray-900 shadow-lg transform scale-105', 'bg-white border-gray-100 text-gray-500');
-      });
-      
-      event.target.className = event.target.className.replace('bg-white border-gray-100 text-gray-500', 'bg-gray-900 text-white border-gray-900 shadow-lg transform scale-105');
-      
-      renderTimeSlots(isoDate);
-    }
-
-    function renderTimeSlots(isoDate) {
-      const grid = document.getElementById('slots-grid');
-      const loader = document.getElementById('slots-loader');
-      
-      grid.classList.add('hidden');
-      loader.classList.remove('hidden');
-      
-      setTimeout(() => {
-        grid.innerHTML = '';
-        loader.classList.add('hidden');
-        
-        const daySlots = state.slots[isoDate] || [];
-        const bookedSlots = state.bookings
-          .filter(booking => booking.date === isoDate)
-          .map(booking => booking.time);
-        
-        const availableSlots = daySlots.filter(slot => !bookedSlots.includes(slot));
-        
-        if (availableSlots.length === 0) {
-          grid.innerHTML = `
-            <div class="col-span-4 text-center py-10 text-gray-400 text-sm">
-              Nenhum horário disponível para esta data.
+                <div id="admin-slots-list" class="grid grid-cols-4 gap-2">
+                    </div>
             </div>
-          `;
-        } else {
-          availableSlots.sort().forEach(time => {
-            const button = document.createElement('button');
-            button.textContent = time;
-            button.className = `time-slot py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 bg-white hover:border-blue-500 hover:text-blue-600`;
-            button.onclick = () => selectTimeSlot(time, button);
-            
-            grid.appendChild(button);
-          });
-        }
-        
-        grid.classList.remove('hidden');
-      }, 300);
-    }
 
-    function selectTimeSlot(time, button) {
-      state.selectedTimeSlot = time;
-      
-      // Reset all buttons
-      document.querySelectorAll('.time-slot').forEach(btn => {
-        btn.classList.remove('active');
-        btn.classList.add('bg-white', 'text-gray-600');
-      });
-      
-      // Highlight selected button
-      button.classList.remove('bg-white', 'text-gray-600');
-      button.classList.add('active');
-      
-      // Show confirmation bar
-      document.getElementById('confirm-bar').classList.remove('translate-y-full');
-      document.getElementById('selected-summary').textContent = `${state.selectedDate.getDate().toString().padStart(2, '0')}/${(state.selectedDate.getMonth() + 1).toString().padStart(2, '0')} às ${time}`;
-    }
+            <div id="day-content-bookings" class="hidden flex-1 overflow-y-auto space-y-3">
+                </div>
+        </div>
+    </div>
 
-    // Admin functions
-    function initDashboard() {
-      // Update client count
-      document.getElementById('dash-total-clients').textContent = state.clients.length;
-      
-      // Update month sessions count
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-      
-      const monthSessions = state.bookings.filter(booking => {
-        const bookingDate = new Date(booking.date);
-        return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
-      }).length;
-      
-      document.getElementById('dash-month-sessions').textContent = monthSessions;
-      
-      // Update financial total
-      const financialTotal = monthSessions * mockData.psychologist.price;
-      document.getElementById('dash-financial-total').textContent = `R$ ${financialTotal.toLocaleString('pt-BR')},00`;
-      
-      // Next session
-      const upcomingSessions = state.bookings.filter(booking => {
-        const bookingDate = new Date(`${booking.date}T${booking.time}`);
-        return bookingDate > new Date();
-      }).sort((a, b) => {
-        return new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`);
-      });
-      
-      if (upcomingSessions.length > 0) {
-        const nextSession = upcomingSessions[0];
-        const sessionDate = new Date(`${nextSession.date}T${nextSession.time}`);
-        
-        document.getElementById('next-session-time').textContent = nextSession.time;
-        document.getElementById('next-session-date').textContent = sessionDate.toLocaleDateString('pt-BR', { 
-          weekday: 'long', 
-          day: 'numeric', 
-          month: 'long' 
-        }).replace(/^\w/, c => c.toUpperCase());
-        document.getElementById('next-session-client').textContent = nextSession.client.name;
-        
-        document.getElementById('dash-no-session').classList.add('hidden');
-        document.getElementById('dash-next-session').classList.remove('hidden');
-      } else {
-        document.getElementById('dash-next-session').classList.add('hidden');
-        document.getElementById('dash-no-session').classList.remove('hidden');
-      }
-    }
-
-    function renderCalendar() {
-      const year = state.currentMonth.getFullYear();
-      const month = state.currentMonth.getMonth();
-      
-      // Update month label
-      document.getElementById('calendar-month-label').textContent = 
-        state.currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-      
-      // Generate calendar grid
-      const firstDay = new Date(year, month, 1);
-      const startDate = new Date(firstDay);
-      startDate.setDate(firstDay.getDate() - firstDay.getDay());
-      
-      const grid = document.getElementById('calendar-grid');
-      grid.innerHTML = '';
-      
-      for (let i = 0; i < 42; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        
-        const isoDate = date.toISOString().split('T')[0];
-        const isCurrentMonth = date.getMonth() === month;
-        const isToday = isoDate === new Date().toISOString().split('T')[0];
-        
-        // Determine day status
-        const hasBookings = state.bookings.some(b => b.date === isoDate);
-        const hasSlots = state.slots[isoDate] && state.slots[isoDate].length > 0;
-        
-        // Create day element
-        const dayElement = document.createElement('div');
-        dayElement.className = `
-          h-14 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition relative
-          ${!isCurrentMonth ? 'bg-slate-50 text-slate-300 border-transparent' : 'bg-white border-slate-100 text-slate-700 hover:border-primary-200 hover:shadow-sm'}
-          ${isToday ? 'ring-2 ring-yellow-200 bg-yellow-50' : ''}
-        `;
-        
-        dayElement.innerHTML = `
-          <span class="font-medium text-sm">${date.getDate()}</span>
-          ${hasBookings || hasSlots ? `<div class="w-1.5 h-1.5 rounded-full mt-1 ${hasBookings ? 'bg-primary-500' : 'bg-blue-200'}"></div>` : ''}
-        `;
-        
-        if (isCurrentMonth) {
-          dayElement.onclick = () => openDayModal(date);
-        }
-        
-        grid.appendChild(dayElement);
-      }
-    }
-
-    function changeMonth(delta) {
-      state.currentMonth.setMonth(state.currentMonth.getMonth() + delta);
-      renderCalendar();
-    }
-
-    function openDayModal(date) {
-      const isoDate = date.toISOString().split('T')[0];
-      state.selectedDayISO = isoDate;
-      
-      // Update modal title
-      document.getElementById('modal-day-title').textContent = 
-        date.toLocaleDateString('pt-BR', { weekday: 'long' }).replace(/^\w/, c => c.toUpperCase());
-      document.getElementById('modal-day-subtitle').textContent = 
-        date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
-      
-      // Switch to slots tab by default
-      switchDayTab('slots');
-      
-      // Render content
-      renderDaySlots();
-      renderDayBookings();
-      
-      // Show modal
-      document.getElementById('day-modal').classList.remove('hidden');
-    }
-
-    function closeDayModal() {
-      document.getElementById('day-modal').classList.add('hidden');
-    }
-
-    function switchDayTab(tab) {
-      // Update tab buttons
-      document.getElementById('btn-tab-slots').classList.toggle('active', tab === 'slots');
-      document.getElementById('btn-tab-bookings').classList.toggle('active', tab === 'bookings');
-      
-      // Show/hide content
-      document.getElementById('day-tab-slots').classList.toggle('hidden', tab !== 'slots');
-      document.getElementById('day-tab-bookings').classList.toggle('hidden', tab !== 'bookings');
-    }
-
-    function renderDaySlots() {
-      const slotsList = document.getElementById('slots-list');
-      slotsList.innerHTML = '';
-      
-      const slots = state.slots[state.selectedDayISO] || [];
-      
-      if (slots.length === 0) {
-        slotsList.innerHTML = `
-          <div class="col-span-4 text-center py-4 text-slate-400 text-sm">
-            Nenhum horário disponível para este dia.
-          </div>
-        `;
-        return;
-      }
-      
-      slots.sort().forEach(time => {
-        const button = document.createElement('button');
-        button.className = "bg-slate-100 text-slate-600 rounded-lg py-2 text-xs font-medium hover:bg-red-50 hover:text-red-600 transition relative group";
-        button.innerHTML = `
-          ${time}
-          <span class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-[8px]">
-            <i class="fas fa-times"></i>
-          </span>
-        `;
-        button.onclick = () => removeSlot(time);
-        
-        slotsList.appendChild(button);
-      });
-    }
-
-    function renderDayBookings() {
-      const bookingsList = document.getElementById('day-tab-bookings');
-      bookingsList.innerHTML = '';
-      
-      const dayBookings = state.bookings.filter(booking => booking.date === state.selectedDayISO);
-      
-      if (dayBookings.length === 0) {
-        bookingsList.innerHTML = `
-          <div class="text-center py-6 text-slate-400 text-sm">
-            Nenhum agendamento para este dia.
-          </div>
-        `;
-        return;
-      }
-      
-      dayBookings.forEach(booking => {
-        const bookingElement = document.createElement('div');
-        bookingElement.className = "bg-white p-3 border border-slate-200 rounded-xl shadow-sm";
-        bookingElement.innerHTML = `
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <h4 class="font-bold text-slate-800">${booking.client.name}</h4>
-              <span class="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-md font-bold">${booking.time}</span>
+    <div id="modal-notes" class="modal-overlay hidden">
+        <div class="modal-content h-[70vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg">Prontuário Rápido</h3>
+                <button onclick="closeModal('modal-notes')" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500"><i class="fa-solid fa-times"></i></button>
             </div>
-            <button onclick="deleteBooking(${booking.id})" class="text-slate-300 hover:text-red-500">
-              <i class="fas fa-trash-alt"></i>
-            </button>
-          </div>
-          <div class="flex gap-2 mt-2">
-            <button onclick="sendWhatsApp(${booking.id}, 'confirm')" class="flex-1 bg-green-50 text-green-700 text-[10px] py-1.5 rounded border border-green-100 hover:bg-green-100 font-medium">
-              <i class="fab fa-whatsapp mr-1"></i> Confirmar
-            </button>
-            <button onclick="sendWhatsApp(${booking.id}, 'video')" class="flex-1 bg-purple-50 text-purple-700 text-[10px] py-1.5 rounded border border-purple-100 hover:bg-purple-100 font-medium">
-              <i class="fas fa-video mr-1"></i> Vídeo
-            </button>
-          </div>
-        `;
-        
-        bookingsList.appendChild(bookingElement);
-      });
-    }
-
-    function addSingleSlot() {
-      const timeInput = document.getElementById('new-slot-input');
-      const time = timeInput.value;
-      
-      if (!time) return;
-      
-      if (!state.slots[state.selectedDayISO]) {
-        state.slots[state.selectedDayISO] = [];
-      }
-      
-      if (!state.slots[state.selectedDayISO].includes(time)) {
-        state.slots[state.selectedDayISO].push(time);
-        state.slots[state.selectedDayISO].sort();
-        renderDaySlots();
-        showToast('Horário adicionado com sucesso!');
-      } else {
-        showToast('Este horário já existe!', 'info');
-      }
-    }
-
-    function removeSlot(time) {
-      if (state.slots[state.selectedDayISO]) {
-        state.slots[state.selectedDayISO] = state.slots[state.selectedDayISO].filter(slot => slot !== time);
-        
-        if (state.slots[state.selectedDayISO].length === 0) {
-          delete state.slots[state.selectedDayISO];
-        }
-        
-        renderDaySlots();
-        showToast('Horário removido com sucesso!');
-      }
-    }
-
-    function generateSlots(type) {
-      let newSlots = [];
-      
-      if (type === 'morning') {
-        newSlots = ["08:00", "09:00", "10:00", "11:00"];
-      } else if (type === 'afternoon') {
-        newSlots = ["13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-      } else if (type === 'full') {
-        newSlots = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-      }
-      
-      if (!state.slots[state.selectedDayISO]) {
-        state.slots[state.selectedDayISO] = [];
-      }
-      
-      newSlots.forEach(slot => {
-        if (!state.slots[state.selectedDayISO].includes(slot)) {
-          state.slots[state.selectedDayISO].push(slot);
-        }
-      });
-      
-      state.slots[state.selectedDayISO].sort();
-      renderDaySlots();
-      showToast('Horários gerados com sucesso!');
-    }
-
-    function switchTab(tabId) {
-      // Hide all tabs
-      document.querySelectorAll('.tab-content').forEach(el => {
-        el.classList.add('hidden');
-      });
-      
-      // Deactivate all nav tabs
-      document.querySelectorAll('.nav-tab').forEach(el => {
-        el.classList.remove('active');
-      });
-      
-      // Show selected tab
-      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-      
-      // Activate selected nav tab
-      document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-      
-      state.activeAdminTab = tabId;
-      
-      // Initialize tab-specific functions
-      if (tabId === 'dashboard') {
-        initDashboard();
-      } else if (tabId === 'financial') {
-        renderFinancials();
-      }
-    }
-
-    function renderFinancials() {
-      const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
-      
-      const monthBookings = state.bookings.filter(booking => {
-        const bookingDate = new Date(booking.date);
-        return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
-      });
-      
-      const total = monthBookings.length * mockData.psychologist.price;
-      
-      // Update total display
-      document.getElementById('fin-total').textContent = `R$ ${total.toLocaleString('pt-BR')},00`;
-      document.getElementById('fin-total-sessions').textContent = monthBookings.length;
-      
-      // Render recent history
-      const finList = document.getElementById('fin-list');
-      finList.innerHTML = '';
-      
-      if (monthBookings.length === 0) {
-        finList.innerHTML = `
-          <div class="text-center py-8 text-slate-400">
-            Nenhum agendamento registrado ainda neste mês.
-          </div>
-        `;
-        return;
-      }
-      
-      // Show last 5 bookings
-      monthBookings.slice(0, 5).forEach(booking => {
-        const bookingDate = new Date(booking.date);
-        const bookingElement = document.createElement('div');
-        bookingElement.className = "flex justify-between items-center text-sm p-3 bg-white border border-slate-100 rounded-lg";
-        bookingElement.innerHTML = `
-          <div>
-            <div class="font-medium">${booking.client.name}</div>
-            <div class="text-xs text-slate-500">${bookingDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} • ${booking.time}</div>
-          </div>
-          <div class="font-bold text-green-600">+ R$ ${booking.value}</div>
-        `;
-        
-        finList.appendChild(bookingElement);
-      });
-    }
-
-    // Client management functions
-    function renderClientList(filter = '') {
-      const clientsList = document.getElementById('clients-list');
-      if (!clientsList) return;
-      
-      clientsList.innerHTML = '';
-      
-      const filteredClients = state.clients.filter(client => 
-        client.name.toLowerCase().includes(filter.toLowerCase()) || 
-        client.phone.includes(filter)
-      );
-      
-      if (filteredClients.length === 0) {
-        clientsList.innerHTML = `
-          <div class="text-center py-12 text-slate-400">
-            ${filter ? 'Nenhum paciente encontrado com esses critérios.' : 'Nenhum paciente cadastrado ainda.'}
-          </div>
-        `;
-        return;
-      }
-      
-      filteredClients.forEach(client => {
-        const clientElement = document.createElement('div');
-        clientElement.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center";
-        clientElement.innerHTML = `
-          <div>
-            <div class="font-bold text-slate-800">${client.name}</div>
-            <div class="text-xs text-slate-500">${client.phone}</div>
-          </div>
-          <div class="flex gap-2">
-            <button onclick="openNotesModal(${client.id}, '${client.name}')" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center">
-              <i class="fas fa-notes-medical text-xs"></i>
-            </button>
-            <button onclick="editClient(${client.id})" class="w-8 h-8 rounded-full bg-yellow-50 text-yellow-600 hover:bg-yellow-100 flex items-center justify-center">
-              <i class="fas fa-edit text-xs"></i>
-            </button>
-            <button onclick="deleteClient(${client.id})" class="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center">
-              <i class="fas fa-trash text-xs"></i>
-            </button>
-          </div>
-        `;
-        
-        clientsList.appendChild(clientElement);
-      });
-    }
-
-    function filterClients() {
-      const searchQuery = document.getElementById('client-search').value;
-      renderClientList(searchQuery);
-    }
-
-    function openClientModal(clientId = null) {
-      state.currentClientId = clientId;
-      
-      const modalTitle = document.getElementById('client-modal-title');
-      const nameInput = document.getElementById('client-name');
-      const phoneInput = document.getElementById('client-phone');
-      const emailInput = document.getElementById('client-email');
-      
-      if (clientId) {
-        // Edit existing client
-        const client = state.clients.find(c => c.id === clientId);
-        if (client) {
-          modalTitle.textContent = "Editar Paciente";
-          nameInput.value = client.name;
-          phoneInput.value = client.phone;
-          emailInput.value = client.email || '';
-        }
-      } else {
-        // New client
-        modalTitle.textContent = "Novo Paciente";
-        nameInput.value = '';
-        phoneInput.value = '';
-        emailInput.value = '';
-      }
-      
-      document.getElementById('client-modal').classList.remove('hidden');
-    }
-
-    function closeClientModal() {
-      document.getElementById('client-modal').classList.add('hidden');
-      state.currentClientId = null;
-    }
-
-    function saveClient(event) {
-      event.preventDefault();
-      
-      const name = document.getElementById('client-name').value;
-      const phone = document.getElementById('client-phone').value;
-      const email = document.getElementById('client-email').value;
-      
-      if (state.currentClientId) {
-        // Update existing client
-        const clientIndex = state.clients.findIndex(c => c.id === state.currentClientId);
-        if (clientIndex !== -1) {
-          state.clients[clientIndex] = {
-            ...state.clients[clientIndex],
-            name,
-            phone,
-            email
-          };
-          showToast('Paciente atualizado com sucesso!');
-        }
-      } else {
-        // Create new client
-        const newClient = {
-          id: Date.now(),
-          name,
-          phone,
-          email
+            <h4 id="notes-client-name" class="text-sm font-bold text-teal-600 mb-2">Cliente</h4>
+            <textarea id="client-notes-area" class="flex-1 input-field mb-4 resize-none" placeholder="Escreva as anotações aqui..."></textarea>
+            <button onclick="saveNotes()" class="w-full bg-teal-600 text-white font-bold py-3 rounded-xl">Salvar Anotação</button>
+        </div>
+    </div>
+    <script>
+        // --- ESTADO & DADOS ---
+        const DB_PREFIX = 'psi_app_v1_';
+        let state = {
+            currentDate: new Date(),
+            selectedDate: null, // YYYY-MM-DD
+            adminDate: new Date(),
+            selectedSlot: null,
+            settings: JSON.parse(localStorage.getItem(DB_PREFIX + 'settings')) || {
+                confirmMsg: "Olá, confirmo seu agendamento para o dia {data} às {hora}.",
+                videoLink: ""
+            }
         };
-        
-        state.clients.push(newClient);
-        showToast('Novo paciente cadastrado com sucesso!');
-        
-        // Show confetti animation
-        showConfetti();
-      }
-      
-      closeClientModal();
-      renderClientList();
-      initDashboard();
-    }
 
-    function editClient(clientId) {
-      openClientModal(clientId);
-    }
-
-    function deleteClient(clientId) {
-      if (confirm('Tem certeza que deseja excluir este paciente? Esta ação não pode ser desfeita.')) {
-        // Remove client
-        state.clients = state.clients.filter(client => client.id !== clientId);
-        
-        // Remove notes
-        delete state.notes[clientId];
-        
-        showToast('Paciente removido com sucesso!');
-        renderClientList();
-        initDashboard();
-      }
-    }
-
-    function openNotesModal(clientId, clientName) {
-      state.currentClientId = clientId;
-      
-      document.getElementById('note-client-name').textContent = clientName;
-      document.getElementById('client-notes-area').value = state.notes[clientId] || '';
-      
-      document.getElementById('notes-modal').classList.remove('hidden');
-    }
-
-    function closeNotesModal() {
-      document.getElementById('notes-modal').classList.add('hidden');
-      state.currentClientId = null;
-    }
-
-    function saveNotes() {
-      if (!state.currentClientId) return;
-      
-      const notesText = document.getElementById('client-notes-area').value;
-      state.notes[state.currentClientId] = notesText;
-      
-      showToast('Anotações salvas com sucesso!');
-      closeNotesModal();
-    }
-
-    // Modal functions
-    function openModal(modalId) {
-      document.getElementById(modalId).classList.remove('hidden');
-    }
-
-    function closeModal(modalId) {
-      document.getElementById(modalId).classList.add('hidden');
-    }
-
-    // WhatsApp functions
-    function openWhatsApp(type = 'general') {
-      let message = '';
-      
-      if (type === 'confirm' && state.selectedDayISO && state.selectedTimeSlot) {
-        const date = new Date(state.selectedDayISO);
-        const dateString = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        message = `Olá, gostaria de confirmar meu agendamento para ${dateString} às ${state.selectedTimeSlot}.`;
-      } else if (type === 'general') {
-        message = 'Olá, gostaria de agendar uma consulta.';
-      }
-      
-      const phoneNumber = '5511987654321'; // Example number
-      window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
-    }
-
-    function sendWhatsApp(bookingId, type) {
-      const booking = state.bookings.find(b => b.id === bookingId);
-      if (!booking) return;
-      
-      let messageTemplate = '';
-      if (type === 'confirm') messageTemplate = state.settings.confirmMessage;
-      if (type === 'video') messageTemplate = `Olá ${booking.client.name}, aqui está o link da nossa sessão: ${state.settings.videoLink}`;
-      
-      const date = new Date(booking.date);
-      const dateString = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      
-      let message = messageTemplate
-        .replace(/{{nome}}/g, booking.client.name)
-        .replace(/{{data}}/g, dateString)
-        .replace(/{{hora}}/g, booking.time)
-        .replace(/{{link}}/g, state.settings.videoLink);
-      
-      const phone = booking.client.phone.replace(/\D/g, '');
-      window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(message)}`, '_blank');
-      
-      showToast(type === 'confirm' ? 'Mensagem de confirmação enviada!' : 'Link da chamada enviado!');
-    }
-
-    function openVideoCall() {
-      if (state.settings.videoLink) {
-        window.open(state.settings.videoLink, '_blank');
-      } else {
-        showToast('Configure seu link de vídeo primeiro!', 'info');
-      }
-    }
-
-    // Settings functions
-    function saveSettings() {
-      state.settings = {
-        videoLink: document.getElementById('conf-video').value,
-        confirmMessage: document.getElementById('conf-msg-confirm').value,
-        reminderMessage: document.getElementById('conf-msg-reminder').value
-      };
-      
-      showToast('Configurações atualizadas com sucesso!');
-    }
-
-    // Booking functions
-    function submitBooking(event) {
-      event.preventDefault();
-      
-      if (!state.selectedDate || !state.selectedTimeSlot) {
-        showToast('Selecione uma data e horário primeiro!', 'info');
-        return;
-      }
-      
-      const form = event.target;
-      const name = form.name.value;
-      const phone = form.phone.value;
-      const email = form.email.value;
-      
-      const isoDate = state.selectedDate.toISOString().split('T')[0];
-      
-      // Create new booking
-      const newBooking = {
-        id: Date.now(),
-        date: isoDate,
-        time: state.selectedTimeSlot,
-        client: {
-          id: Date.now() + 1,
-          name,
-          phone,
-          email
-        },
-        value: mockData.psychologist.price,
-        status: 'pending'
-      };
-      
-      state.bookings.push(newBooking);
-      
-      // Add client if not exists
-      const clientExists = state.clients.some(client => client.phone === phone);
-      if (!clientExists) {
-        state.clients.push({
-          id: newBooking.client.id,
-          name,
-          phone,
-          email
+        // --- INICIALIZAÇÃO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initApp();
         });
-      }
-      
-      closeModal('booking-modal');
-      
-      // Show success message
-      showToast('Agendamento realizado com sucesso! Você receberá uma confirmação via WhatsApp.');
-      
-      // Reset state
-      state.selectedTimeSlot = null;
-      document.getElementById('confirm-bar').classList.add('translate-y-full');
-      
-      // Show confetti animation
-      showConfetti();
-      
-      // Reset form
-      form.reset();
-      
-      // Refresh calendar slots
-      renderTimeSlots(isoDate);
-    }
 
-    function deleteBooking(bookingId) {
-      if (confirm('Tem certeza que deseja cancelar este agendamento?')) {
-        state.bookings = state.bookings.filter(booking => booking.id !== bookingId);
-        showToast('Agendamento cancelado com sucesso!');
-        renderDayBookings();
-        initDashboard();
-        renderFinancials();
-      }
-    }
+        function initApp() {
+            // Define data de hoje como padrão
+            const todayISO = new Date().toISOString().split('T')[0];
+            state.selectedDate = todayISO;
+            
+            // Renderizações Iniciais
+            renderClientDates();
+            renderClientSlots();
+            
+            // Carrega Configs
+            document.getElementById('setting-msg-confirm').value = state.settings.confirmMsg;
+            document.getElementById('setting-video-link').value = state.settings.videoLink;
 
-    // Utility functions
-    function formatPhone(e) {
-      let value = e.target.value.replace(/\D/g, '');
-      
-      if (value.length > 11) {
-        value = value.slice(0, 11);
-      }
-      
-      if (value.length > 2) {
-        value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
-      }
-      
-      if (value.length > 9) {
-        value = `${value.slice(0, 9)}-${value.slice(9)}`;
-      }
-      
-      e.target.value = value;
-    }
+            // Atualiza Dashboard Admin
+            updateDashboard();
+        }
 
-    function showConfetti() {
-      const colors = ['#ff0', '#f0f', '#0ff', '#f80', '#0f0', '#00f'];
-      const confettiCount = 50;
-      
-      for (let i = 0; i < confettiCount; i++) {
-        const confetti = document.createElement('div');
-        confetti.className = 'confetti';
-        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.left = `${Math.random() * 100}%`;
-        confetti.style.top = '-10px';
-        confetti.style.width = `${Math.random() * 10 + 5}px`;
-        confetti.style.height = confetti.style.width;
-        confetti.style.animationDuration = `${Math.random() * 3 + 2}s`;
-        confetti.style.animationDelay = `${Math.random() * 2}s`;
+        // --- SISTEMA DE DADOS (LOCALSTORAGE) ---
+        const DataManager = {
+            getSlots: () => JSON.parse(localStorage.getItem(DB_PREFIX + 'slots')) || {},
+            saveSlots: (data) => localStorage.setItem(DB_PREFIX + 'slots', JSON.stringify(data)),
+            
+            getBookings: () => JSON.parse(localStorage.getItem(DB_PREFIX + 'bookings')) || [],
+            saveBookings: (data) => localStorage.setItem(DB_PREFIX + 'bookings', JSON.stringify(data)),
+            
+            getNotes: () => JSON.parse(localStorage.getItem(DB_PREFIX + 'notes')) || {},
+            saveNotes: (data) => localStorage.setItem(DB_PREFIX + 'notes', JSON.stringify(data)),
+        };
+
+        // --- NAVEGAÇÃO ---
+        function navigateTo(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            window.scrollTo(0,0);
+            
+            if(viewId === 'view-admin') {
+                renderAdminCalendar();
+                updateDashboard();
+            }
+        }
+
+        function switchTab(tabId) {
+            // UI Abas
+            document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+            document.querySelector(`button[data-tab="${tabId}"]`).classList.add('active');
+            
+            // Conteúdo
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            if(tabId === 'dashboard') updateDashboard();
+            if(tabId === 'calendar') renderAdminCalendar();
+            if(tabId === 'clients') renderClients();
+            if(tabId === 'financial') renderFinancial();
+        }
+
+        function checkAdmin() {
+            const pass = prompt("Senha do Admin:");
+            if(pass === "admin") { // Senha simples para demo
+                navigateTo('view-admin');
+            } else {
+                alert("Senha incorreta");
+            }
+        }
+
+        // --- LÓGICA DO CLIENTE ---
+        function clientChangeDate(days) {
+            const current = new Date(state.selectedDate + 'T00:00:00'); // Fix fuso horário básico
+            current.setDate(current.getDate() + days);
+            state.selectedDate = current.toISOString().split('T')[0];
+            renderClientDates();
+            renderClientSlots();
+        }
+
+        function setClientDate(dateIso) {
+            state.selectedDate = dateIso;
+            renderClientDates();
+            renderClientSlots();
+        }
+
+        function renderClientDates() {
+            const container = document.getElementById('client-date-scroll');
+            const monthDisplay = document.getElementById('client-month-display');
+            container.innerHTML = '';
+
+            const baseDate = new Date(state.selectedDate + 'T00:00:00');
+            monthDisplay.innerText = baseDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+            // Gera 7 dias ao redor da data selecionada
+            for (let i = -3; i <= 3; i++) {
+                const d = new Date(baseDate);
+                d.setDate(baseDate.getDate() + i);
+                const iso = d.toISOString().split('T')[0];
+                const dayNum = d.getDate();
+                const weekDay = d.toLocaleDateString('pt-BR', { weekday: 'short' }).slice(0,3);
+                
+                // Checa disponibilidade visual
+                const allSlots = DataManager.getSlots()[iso] || [];
+                const bookings = DataManager.getBookings().filter(b => b.date === iso).map(b => b.time);
+                const available = allSlots.filter(s => !bookings.includes(s)).length > 0;
+
+                const btn = document.createElement('div');
+                btn.className = `calendar-day flex-shrink-0 w-14 h-16 bg-white border border-gray-100 snap-center ${iso === state.selectedDate ? 'selected' : ''} ${available ? 'has-slots' : ''}`;
+                btn.onclick = () => setClientDate(iso);
+                btn.innerHTML = `
+                    <span class="text-[10px] uppercase opacity-60">${weekDay}</span>
+                    <span class="text-xl font-medium">${dayNum}</span>
+                `;
+                container.appendChild(btn);
+            }
+        }
+
+        function renderClientSlots() {
+            const grid = document.getElementById('client-slots-grid');
+            const empty = document.getElementById('client-empty-state');
+            const confirmBar = document.getElementById('client-confirm-bar');
+            
+            grid.innerHTML = '';
+            state.selectedSlot = null;
+            confirmBar.classList.remove('translate-y-0');
+            confirmBar.classList.add('translate-y-full');
+
+            const allSlots = DataManager.getSlots()[state.selectedDate] || [];
+            // Filtra agendados
+            const bookings = DataManager.getBookings().filter(b => b.date === state.selectedDate).map(b => b.time);
+            
+            // Ordena horários
+            allSlots.sort();
+
+            if(allSlots.length === 0 || allSlots.length === bookings.length) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            allSlots.forEach(time => {
+                const isBooked = bookings.includes(time);
+                const btn = document.createElement('button');
+                btn.className = `time-slot p-3 rounded-xl font-medium text-sm text-center ${isBooked ? 'booked' : 'bg-white text-gray-700 hover:border-teal-500'}`;
+                btn.innerText = time;
+                
+                if(!isBooked) {
+                    btn.onclick = () => selectSlot(btn, time);
+                }
+                grid.appendChild(btn);
+            });
+        }
+
+        function selectSlot(el, time) {
+            document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected', 'bg-teal-600', 'text-white', 'border-teal-600'));
+            el.classList.add('selected');
+            
+            state.selectedSlot = time;
+            
+            const dateFmt = new Date(state.selectedDate + 'T00:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+            document.getElementById('client-selected-info').innerText = `${dateFmt} às ${time}`;
+            
+            document.getElementById('client-confirm-bar').classList.remove('translate-y-full');
+            document.getElementById('client-confirm-bar').classList.add('translate-y-0');
+        }
+
+        function openBookingModal() {
+            document.getElementById('modal-booking').classList.remove('hidden');
+        }
+
+        function confirmBooking(e) {
+            e.preventDefault();
+            const name = document.getElementById('book-name').value;
+            const phone = document.getElementById('book-phone').value;
+
+            if(!name || !phone) return alert('Preencha todos os dados');
+
+            const bookings = DataManager.getBookings();
+            const newBooking = {
+                id: Date.now(),
+                date: state.selectedDate,
+                time: state.selectedSlot,
+                clientName: name,
+                clientPhone: phone,
+                value: 150, // Valor fixo conforme HTML
+                createdAt: new Date().toISOString()
+            };
+
+            bookings.push(newBooking);
+            DataManager.saveBookings(bookings);
+
+            // Geração de Link WhatsApp Automático
+            const msg = state.settings.confirmMsg
+                .replace('{data}', state.selectedDate.split('-').reverse().join('/'))
+                .replace('{hora}', state.selectedSlot);
+            
+            const waLink = `https://wa.me/55${phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
+            
+            closeModal('modal-booking');
+            
+            // Sucesso e Redirecionamento
+            alert('Agendamento Confirmado! Você será redirecionado para o WhatsApp.');
+            window.open(waLink, '_blank');
+            
+            // Reset UI
+            renderClientSlots();
+            renderClientDates(); // Atualiza indicadores
+            navigateTo('view-profile');
+        }
+
+
+        // --- LÓGICA DO ADMIN ---
+
+        // 1. Calendário Admin
+        function changeAdminMonth(delta) {
+            state.adminDate.setMonth(state.adminDate.getMonth() + delta);
+            renderAdminCalendar();
+        }
+
+        function renderAdminCalendar() {
+            const grid = document.getElementById('admin-calendar-grid');
+            const title = document.getElementById('admin-calendar-month');
+            grid.innerHTML = '';
+
+            const year = state.adminDate.getFullYear();
+            const month = state.adminDate.getMonth();
+            
+            title.innerText = state.adminDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Padding dias vazios
+            for(let i=0; i<firstDay; i++) {
+                grid.innerHTML += `<div class="bg-slate-50 h-24"></div>`;
+            }
+
+            const slotsMap = DataManager.getSlots();
+            const bookings = DataManager.getBookings();
+
+            for(let d=1; d<=daysInMonth; d++) {
+                const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                
+                const slots = slotsMap[iso] || [];
+                const dayBookings = bookings.filter(b => b.date === iso);
+                
+                // Lógica de Cores/Status
+                let statusClass = '';
+                if(slots.length === 0) statusClass = 'text-slate-400'; // Vazio
+                else if(dayBookings.length >= slots.length) statusClass = 'text-red-500 font-bold bg-red-50'; // Cheio
+                else if(dayBookings.length > 0) statusClass = 'text-teal-600 font-bold bg-teal-50'; // Parcial
+                else statusClass = 'text-slate-700 bg-white'; // Livre
+
+                // Dots
+                let dots = '';
+                if(dayBookings.length > 0) dots = `<span class="w-1.5 h-1.5 bg-teal-500 rounded-full mx-auto mt-1 block"></span>`;
+
+                const dayEl = document.createElement('div');
+                dayEl.className = `h-24 border border-slate-50 p-1 cursor-pointer hover:bg-slate-100 transition relative flex flex-col items-center justify-center ${statusClass}`;
+                dayEl.onclick = () => openDayModal(iso);
+                dayEl.innerHTML = `
+                    <span class="text-sm">${d}</span>
+                    ${dots}
+                    <span class="text-[9px] mt-1 opacity-70">${slots.length > 0 ? `${dayBookings.length}/${slots.length}` : ''}</span>
+                `;
+                grid.appendChild(dayEl);
+            }
+        }
+
+        // 2. Modal do Dia (Gestão)
+        let currentModalDate = null;
         
-        document.body.appendChild(confetti);
-        
-        setTimeout(() => {
-          confetti.remove();
-        }, 5000);
-      }
-    }
-  </script>
+        function openDayModal(iso) {
+            currentModalDate = iso;
+            const d = new Date(iso + 'T00:00:00');
+            document.getElementById('modal-day-title').innerText = d.getDate();
+            document.getElementById('modal-day-date').innerText = d.toLocaleDateString('pt-BR', {weekday: 'long', month:'long'});
+            
+            document.getElementById('modal-day').classList.remove('hidden');
+            
+            // Default tab
+            switchDayTab('slots');
+            renderAdminDaySlots();
+            renderAdminDayBookings();
+        }
+
+        function switchDayTab(tab) {
+            if(tab === 'slots') {
+                document.getElementById('day-content-slots').classList.remove('hidden');
+                document.getElementById('day-content-bookings').classList.add('hidden');
+                document.getElementById('btn-tab-day-slots').className = "flex-1 pb-2 text-sm font-bold text-teal-600 border-b-2 border-teal-600";
+                document.getElementById('btn-tab-day-bookings').className = "flex-1 pb-2 text-sm font-bold text-slate-400 border-b-2 border-transparent";
+            } else {
+                document.getElementById('day-content-slots').classList.add('hidden');
+                document.getElementById('day-content-bookings').classList.remove('hidden');
+                document.getElementById('btn-tab-day-slots').className = "flex-1 pb-2 text-sm font-bold text-slate-400 border-b-2 border-transparent";
+                document.getElementById('btn-tab-day-bookings').className = "flex-1 pb-2 text-sm font-bold text-teal-600 border-b-2 border-teal-600";
+            }
+        }
+
+        // 3. Gestão de Slots
+        function addSlot() {
+            const time = document.getElementById('new-slot-time').value;
+            if(!time) return;
+
+            const slotsMap = DataManager.getSlots();
+            if(!slotsMap[currentModalDate]) slotsMap[currentModalDate] = [];
+            
+            if(!slotsMap[currentModalDate].includes(time)) {
+                slotsMap[currentModalDate].push(time);
+                slotsMap[currentModalDate].sort();
+                DataManager.saveSlots(slotsMap);
+                renderAdminDaySlots();
+                renderAdminCalendar(); // Atualiza contador na view mensal
+            }
+        }
+
+        function removeSlot(time) {
+            const slotsMap = DataManager.getSlots();
+            const bookings = DataManager.getBookings().filter(b => b.date === currentModalDate && b.time === time);
+            
+            if(bookings.length > 0) {
+                alert("Não é possível remover um horário que já possui agendamento. Cancele o agendamento primeiro.");
+                return;
+            }
+
+            slotsMap[currentModalDate] = slotsMap[currentModalDate].filter(t => t !== time);
+            DataManager.saveSlots(slotsMap);
+            renderAdminDaySlots();
+            renderAdminCalendar();
+        }
+
+        function bulkGenerate(period) {
+            if(!confirm("Isso adicionará vários horários. Confirmar?")) return;
+            
+            const slotsMap = DataManager.getSlots();
+            if(!slotsMap[currentModalDate]) slotsMap[currentModalDate] = [];
+
+            let start, end;
+            if(period === 'morning') { start = 8; end = 12; }
+            if(period === 'afternoon') { start = 13; end = 18; }
+
+            for(let h = start; h <= end; h++) {
+                const timeStr = `${String(h).padStart(2,'0')}:00`;
+                if(!slotsMap[currentModalDate].includes(timeStr)) {
+                    slotsMap[currentModalDate].push(timeStr);
+                }
+            }
+            slotsMap[currentModalDate].sort();
+            DataManager.saveSlots(slotsMap);
+            renderAdminDaySlots();
+            renderAdminCalendar();
+        }
+
+        function renderAdminDaySlots() {
+            const list = document.getElementById('admin-slots-list');
+            list.innerHTML = '';
+            
+            const slotsMap = DataManager.getSlots();
+            const daySlots = slotsMap[currentModalDate] || [];
+            const bookings = DataManager.getBookings().filter(b => b.date === currentModalDate).map(b => b.time);
+
+            daySlots.forEach(time => {
+                const isBooked = bookings.includes(time);
+                const el = document.createElement('div');
+                el.className = `flex items-center justify-between p-2 rounded-lg text-xs font-bold border ${isBooked ? 'bg-teal-50 border-teal-200 text-teal-700' : 'bg-white border-slate-200 text-slate-600'}`;
+                el.innerHTML = `
+                    <span>${time}</span>
+                    ${!isBooked ? `<button onclick="removeSlot('${time}')" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>` : '<i class="fa-solid fa-check text-teal-500"></i>'}
+                `;
+                list.appendChild(el);
+            });
+        }
+
+        // 4. Gestão de Agendamentos (Dentro do dia)
+        function renderAdminDayBookings() {
+            const container = document.getElementById('day-content-bookings');
+            container.innerHTML = '';
+
+            const bookings = DataManager.getBookings()
+                .filter(b => b.date === currentModalDate)
+                .sort((a,b) => a.time.localeCompare(b.time));
+
+            if(bookings.length === 0) {
+                container.innerHTML = '<p class="text-center text-slate-400 text-sm py-4">Nenhum agendamento para este dia.</p>';
+                return;
+            }
+
+            bookings.forEach(booking => {
+                const card = document.createElement('div');
+                card.className = "bg-white p-3 rounded-xl border border-slate-100 shadow-sm relative";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="bg-teal-100 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded">${booking.time}</span>
+                            <h4 class="font-bold text-slate-800 text-sm mt-1">${booking.clientName}</h4>
+                        </div>
+                        <button onclick="deleteBooking(${booking.id})" class="text-red-400 hover:text-red-600 text-xs"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="https://wa.me/55${booking.clientPhone.replace(/\D/g,'')}" target="_blank" class="flex-1 bg-green-50 text-green-600 text-center py-1.5 rounded-lg text-xs font-bold"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+                        <button onclick="openNotesModal('${booking.clientPhone}', '${booking.clientName}')" class="flex-1 bg-slate-100 text-slate-600 py-1.5 rounded-lg text-xs font-bold">Prontuário</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function deleteBooking(id) {
+            if(!confirm('Tem certeza que deseja cancelar este agendamento?')) return;
+            
+            let bookings = DataManager.getBookings().filter(b => b.id !== id);
+            DataManager.saveBookings(bookings);
+            
+            renderAdminDayBookings();
+            renderAdminDaySlots(); // Atualiza status visual dos slots
+            renderAdminCalendar(); // Atualiza dots
+            updateDashboard(); // Atualiza stats
+        }
+
+        // 5. Dashboard
+        function updateDashboard() {
+            const bookings = DataManager.getBookings();
+            const now = new Date();
+            const currentMonthISO = now.toISOString().slice(0,7); // YYYY-MM
+
+            // Filtra próximo atendimento (Data >= Hoje e Hora > Agora se for hoje)
+            const upcoming = bookings.filter(b => {
+                const bDate = new Date(b.date + 'T' + b.time + ':00');
+                return bDate >= now;
+            }).sort((a,b) => {
+                const dateA = new Date(a.date + 'T' + a.time);
+                const dateB = new Date(b.date + 'T' + b.time);
+                return dateA - dateB;
+            });
+
+            // Update UI Próximo
+            if(upcoming.length > 0) {
+                const next = upcoming[0];
+                const isToday = next.date === now.toISOString().split('T')[0];
+                
+                document.getElementById('dash-next-badge').innerText = isToday ? 'HOJE' : next.date.split('-').reverse().join('/');
+                document.getElementById('dash-next-time').innerText = next.time;
+                document.getElementById('dash-next-client').innerText = next.clientName;
+                
+                // Salva ID para ações rápidas
+                document.getElementById('dash-next-content').dataset.nextPhone = next.clientPhone;
+                document.getElementById('dash-next-content').dataset.nextName = next.clientName;
+            } else {
+                document.getElementById('dash-next-time').innerText = "--:--";
+                document.getElementById('dash-next-client').innerText = "Sem próximos agendamentos";
+            }
+
+            // Stats
+            const uniqueClients = [...new Set(bookings.map(b => b.clientPhone))].length;
+            const monthSessions = bookings.filter(b => b.date.startsWith(currentMonthISO)).length;
+
+            document.getElementById('dash-total-clients').innerText = uniqueClients;
+            document.getElementById('dash-month-count').innerText = monthSessions;
+        }
+
+        // Ações Rápidas Dashboard
+        function sendQuickMsg() {
+            const el = document.getElementById('dash-next-content');
+            const phone = el.dataset.nextPhone;
+            if(phone) {
+                window.open(`https://wa.me/55${phone.replace(/\D/g,'')}`, '_blank');
+            }
+        }
+        function openNextClientDetails() {
+            const el = document.getElementById('dash-next-content');
+            const phone = el.dataset.nextPhone;
+            const name = el.dataset.nextName;
+            if(phone) openNotesModal(phone, name);
+        }
+
+        // 6. Clientes e Prontuários
+        let currentNoteClient = null; // Chave é o telefone
+
+        function renderClients() {
+            const search = document.getElementById('client-search').value.toLowerCase();
+            const list = document.getElementById('clients-list');
+            list.innerHTML = '';
+
+            const bookings = DataManager.getBookings();
+            // Agrupar por telefone (ID único neste sistema simples)
+            const clientsMap = {};
+            bookings.forEach(b => {
+                if(!clientsMap[b.clientPhone]) {
+                    clientsMap[b.clientPhone] = { name: b.clientName, phone: b.clientPhone, lastDate: b.date };
+                } else {
+                    // Atualiza última data se for mais recente
+                    if(b.date > clientsMap[b.clientPhone].lastDate) clientsMap[b.clientPhone].lastDate = b.date;
+                }
+            });
+
+            const clients = Object.values(clientsMap).filter(c => c.name.toLowerCase().includes(search));
+
+            clients.forEach(c => {
+                const el = document.createElement('div');
+                el.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center";
+                el.innerHTML = `
+                    <div>
+                        <h4 class="font-bold text-slate-800">${c.name}</h4>
+                        <p class="text-xs text-slate-500">Última sessão: ${c.lastDate.split('-').reverse().join('/')}</p>
+                    </div>
+                    <button onclick="openNotesModal('${c.phone}', '${c.name}')" class="w-8 h-8 bg-teal-50 text-teal-600 rounded-lg flex items-center justify-center hover:bg-teal-100">
+                        <i class="fa-solid fa-file-medical"></i>
+                    </button>
+                `;
+                list.appendChild(el);
+            });
+        }
+
+        function openNotesModal(phone, name) {
+            currentNoteClient = phone;
+            document.getElementById('modal-notes').classList.remove('hidden');
+            document.getElementById('notes-client-name').innerText = name;
+            
+            const notes = DataManager.getNotes();
+            document.getElementById('client-notes-area').value = notes[phone] || '';
+        }
+
+        function saveNotes() {
+            const text = document.getElementById('client-notes-area').value;
+            const notes = DataManager.getNotes();
+            notes[currentNoteClient] = text;
+            DataManager.saveNotes(notes);
+            
+            closeModal('modal-notes');
+            // Toast simulado
+            const btn = document.querySelector('#modal-notes button');
+            const originalText = btn.innerText;
+            btn.innerText = "Salvo!";
+            setTimeout(() => btn.innerText = originalText, 1000);
+        }
+
+        // 7. Financeiro
+        function renderFinancial() {
+            const history = document.getElementById('fin-history');
+            const totalEl = document.getElementById('fin-total');
+            history.innerHTML = '';
+
+            const bookings = DataManager.getBookings();
+            
+            // Agrupar por Mês
+            const monthsMap = {};
+            bookings.forEach(b => {
+                const key = b.date.slice(0,7); // YYYY-MM
+                if(!monthsMap[key]) monthsMap[key] = 0;
+                monthsMap[key] += (b.value || 150);
+            });
+
+            // Total estimado do mês ATUAL
+            const currentMonth = new Date().toISOString().slice(0,7);
+            const total = monthsMap[currentMonth] || 0;
+            totalEl.innerText = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            // Histórico
+            Object.keys(monthsMap).sort().reverse().forEach(key => {
+                const [y, m] = key.split('-');
+                const dateObj = new Date(parseInt(y), parseInt(m)-1);
+                const monthName = dateObj.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                
+                const row = document.createElement('div');
+                row.className = "flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100";
+                row.innerHTML = `
+                    <span class="text-sm text-slate-600 capitalize font-medium">${monthName}</span>
+                    <span class="text-sm font-bold text-slate-800">${monthsMap[key].toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                `;
+                history.appendChild(row);
+            });
+        }
+
+        // 8. Configurações
+        function saveSettings() {
+            state.settings.confirmMsg = document.getElementById('setting-msg-confirm').value;
+            state.settings.videoLink = document.getElementById('setting-video-link').value;
+            
+            localStorage.setItem(DB_PREFIX + 'settings', JSON.stringify(state.settings));
+            alert('Configurações salvas com sucesso!');
+        }
+
+        function resetApp() {
+            if(confirm("ATENÇÃO: Isso apagará TODOS os dados (agendamentos, clientes, anotações). Deseja continuar?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // Helpers UI
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Fechar modal ao clicar fora
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if(e.target === overlay) overlay.classList.add('hidden');
+            });
+        });
+
+    </script>
 </body>
 </html>
+
