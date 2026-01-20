@@ -3002,4 +3002,676 @@ body {
       btnElement.classList.remove('text-gray-700');
       btnElement.classList.add('active');
       btnElement.classList.add('bg-primary-600');
-      btnElement.classList.add('
+      btnElement.classList.add('active');
+      btnElement.classList.add('bg-primary-600');
+      btnElement.classList.add('text-white');
+updateConfirmBar();
+}
+
+function updateConfirmBar() {
+  const bar = document.getElementById('confirm-bar');
+  const summary = document.getElementById('selected-summary');
+  
+  if (state.selectedDateISO && state.selectedTimeSlot) {
+    const dateParts = state.selectedDateISO.split('-');
+    summary.textContent = `${dateParts[2]}/${dateParts[1]} às ${state.selectedTimeSlot}`;
+    bar.classList.remove('translate-y-full');
+  } else {
+    bar.classList.add('translate-y-full');
+  }
+}
+
+// ==== MODAL DE CHECKOUT ====
+function openModal() {
+  if (!state.selectedDateISO || !state.selectedTimeSlot) {
+    showToast('Selecione um horário primeiro', 'error');
+    return;
+  }
+  
+  document.getElementById('checkout-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('checkout-modal').classList.add('hidden');
+  document.body.style.overflow = 'auto';
+}
+
+// ==== INTEGRAÇÃO COM FIREBASE ====
+async function saveBookingToFirebase(booking) {
+  try {
+    // Salvar agendamento no Firestore
+    const bookingRef = db.collection('bookings').doc();
+    await bookingRef.set({
+      id: bookingRef.id,
+      psychologistId: state.psychologistId,
+      clientId: booking.cliente.id,
+      clientName: booking.cliente.nome,
+      clientPhone: booking.cliente.telefone,
+      clientEmail: booking.cliente.email || '',
+      date: state.selectedDateISO,
+      time: state.selectedTimeSlot,
+      value: booking.agendamento.valor,
+      status: 'confirmed',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    return bookingRef.id;
+  } catch (error) {
+    console.error("Erro ao salvar agendamento no Firebase:", error);
+    throw error;
+  }
+}
+
+async function saveClientToFirebase(client) {
+  try {
+    // Verificar se cliente já existe
+    const clientsSnapshot = await db.collection('clients')
+      .where('psychologistId', '==', state.psychologistId)
+      .where('phone', '==', client.phone)
+      .get();
+    
+    if (!clientsSnapshot.empty) {
+      // Cliente já existe, retornar ID existente
+      return clientsSnapshot.docs[0].id;
+    }
+    
+    // Criar novo cliente
+    const clientRef = db.collection('clients').doc();
+    await clientRef.set({
+      id: clientRef.id,
+      psychologistId: state.psychologistId,
+      name: client.name,
+      phone: client.phone,
+      email: client.email || '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    return clientRef.id;
+  } catch (error) {
+    console.error("Erro ao salvar cliente no Firebase:", error);
+    throw error;
+  }
+}
+
+// ==== MÁSCARAS E UTILITÁRIOS DO FORMULÁRIO ====
+document.addEventListener('DOMContentLoaded', function() {
+  // Máscara para telefone
+  const phoneInputs = document.querySelectorAll('input[type="tel"]');
+  phoneInputs.forEach(input => {
+    input.addEventListener('input', function() {
+      this.value = this.value.replace(/\D/g, '')
+        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{5})(\d)/, '$1-$2')
+        .replace(/(-\d{4})\d+?$/, '$1');
+    });
+  });
+  
+  // Formatação de valor monetário
+  const currencyInputs = document.querySelectorAll('input[type="number"]');
+  currencyInputs.forEach(input => {
+    input.addEventListener('blur', function() {
+      if (this.value) {
+        const value = parseFloat(this.value);
+        this.value = value.toFixed(2);
+      }
+    });
+  });
+});
+
+// Configurar Firebase quando o DOM estiver carregado
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    // Verificar autenticação
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        console.log("Usuário autenticado:", user.uid);
+        state.psychologistId = user.uid;
+        
+        // Carregar dados do psicólogo
+        const psychologistDoc = await db.collection('psychologists').doc(user.uid).get();
+        if (psychologistDoc.exists) {
+          state.psychologist = psychologistDoc.data();
+          
+          // Atualizar UI com informações do psicólogo
+          document.getElementById('display-name').textContent = state.psychologist.name || 'PsiPro';
+          document.getElementById('conf-prof-name').value = state.psychologist.name || '';
+          document.getElementById('display-price').textContent = `R$ ${state.psychologist.sessionValue || 150},00`;
+          
+          // Atualizar especialidades
+          if (state.psychologist.specialties && state.psychologist.specialties.length > 0) {
+            renderSpecialties(state.psychologist.specialties);
+          }
+        }
+      }
+    });
+    
+    // Carregar dados iniciais se estiver no modo admin
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('view') === 'admin') {
+      if (state.psychologistId) {
+        await loadInitialData();
+      }
+    }
+  } catch (error) {
+    console.error("Erro na inicialização:", error);
+    showToast("Erro ao inicializar o sistema. Verifique sua conexão.", "error");
+  }
+});
+
+async function loadInitialData() {
+  try {
+    // Carregar clientes
+    await loadClients();
+    
+    // Carregar horários disponíveis
+    await loadSlots();
+    
+    // Carregar agendamentos
+    await loadBookings();
+    
+    // Carregar configurações
+    await loadSettings();
+    
+    // Inicializar dashboard
+    initDashboard();
+    
+    // Renderizar calendário
+    renderCalendar();
+    
+    // Renderizar lista de pacientes
+    renderClientList();
+    
+    // Renderizar dados financeiros
+    renderFinancials();
+  } catch (error) {
+    console.error("Erro ao carregar dados iniciais:", error);
+    showToast("Erro ao carregar dados do sistema", "error");
+  }
+}
+
+function renderSpecialties(specialties) {
+  const container = document.getElementById('specialties-container');
+  container.innerHTML = '';
+  
+  specialties.forEach(specialty => {
+    const span = document.createElement('span');
+    span.className = 'px-3 py-1 bg-primary-50 text-primary-700 text-sm font-semibold rounded-full';
+    span.textContent = specialty;
+    container.appendChild(span);
+  });
+}
+
+// Carregar dados dos clientes
+async function loadClients() {
+  try {
+    const snapshot = await db.collection('clients')
+      .where('psychologistId', '==', state.psychologistId)
+      .orderBy('name', 'asc')
+      .get();
+    
+    state.clients = [];
+    snapshot.forEach(doc => {
+      const client = doc.data();
+      client.id = doc.id;
+      state.clients.push(client);
+    });
+    
+    // Salvar no localStorage para offline
+    localStorage.setItem('adminClients', JSON.stringify(state.clients));
+  } catch (error) {
+    console.error("Erro ao carregar clientes:", error);
+    // Tentar carregar do localStorage se houver falha
+    const localClients = localStorage.getItem('adminClients');
+    if (localClients) {
+      state.clients = JSON.parse(localClients);
+      showToast("Dados carregados offline. Verifique sua conexão.", "info");
+    }
+  }
+}
+
+// Carregar horários disponíveis
+async function loadSlots() {
+  try {
+    const snapshot = await db.collection('availability')
+      .where('psychologistId', '==', state.psychologistId)
+      .get();
+    
+    state.slots = {};
+    snapshot.forEach(doc => {
+      const slot = doc.data();
+      if (!state.slots[slot.date]) {
+        state.slots[slot.date] = [];
+      }
+      state.slots[slot.date].push({
+        id: doc.id,
+        time: slot.time,
+        available: slot.available !== false // Default é true
+      });
+    });
+    
+    // Ordenar slots por horário para cada data
+    Object.keys(state.slots).forEach(date => {
+      state.slots[date].sort((a, b) => a.time.localeCompare(b.time));
+    });
+    
+    // Salvar no localStorage para offline
+    localStorage.setItem('availableSlots', JSON.stringify(state.slots));
+  } catch (error) {
+    console.error("Erro ao carregar horários:", error);
+    // Tentar carregar do localStorage se houver falha
+    const localSlots = localStorage.getItem('availableSlots');
+    if (localSlots) {
+      state.slots = JSON.parse(localSlots);
+      showToast("Horários carregados offline. Verifique sua conexão.", "info");
+    }
+  }
+}
+
+// Carregar agendamentos
+async function loadBookings() {
+  try {
+    const snapshot = await db.collection('bookings')
+      .where('psychologistId', '==', state.psychologistId)
+      .orderBy('date', 'desc')
+      .limit(50) // Limitar para performance
+      .get();
+    
+    state.bookings = [];
+    snapshot.forEach(doc => {
+      const booking = doc.data();
+      booking.id = doc.id;
+      state.bookings.push(booking);
+    });
+    
+    // Salvar no localStorage para offline
+    localStorage.setItem('bookings', JSON.stringify(state.bookings));
+  } catch (error) {
+    console.error("Erro ao carregar agendamentos:", error);
+    // Tentar carregar do localStorage se houver falha
+    const localBookings = localStorage.getItem('bookings');
+    if (localBookings) {
+      state.bookings = JSON.parse(localBookings);
+      showToast("Agendamentos carregados offline. Verifique sua conexão.", "info");
+    }
+  }
+}
+
+// Carregar configurações
+async function loadSettings() {
+  try {
+    const snapshot = await db.collection('settings')
+      .where('psychologistId', '==', state.psychologistId)
+      .limit(1)
+      .get();
+    
+    if (!snapshot.empty) {
+      state.settings = snapshot.docs[0].data();
+      state.settings.id = snapshot.docs[0].id;
+    } else {
+      // Configurações padrão se não existirem
+      state.settings = {
+        videoLink: 'https://meet.google.com/exemplo',
+        confirm: 'Olá {{nome}}, confirmo seu agendamento para {{data}} às {{hora}}. Link da chamada: {{link}}',
+        reminder: 'Oi {{nome}}! Lembrando nosso atendimento amanhã, {{data}} às {{hora}}. Te espero!',
+        sessionValue: 150,
+        specialties: ['Ansiedade', 'Depressão', 'TDAH', 'Terapia de Casal'],
+        about: 'Bem-vindo à PsiPro, sua plataforma completa para agendamento de consultas psicológicas. Oferecemos um ambiente seguro e confidencial para suas sessões, com profissionais qualificados prontos para ajudar você em sua jornada de autoconhecimento e bem-estar emocional.'
+      };
+    }
+    
+    // Atualizar UI das configurações
+    document.getElementById('conf-video-link').value = state.settings.videoLink || '';
+    document.getElementById('conf-msg-confirm').value = state.settings.confirm || '';
+    document.getElementById('conf-msg-reminder').value = state.settings.reminder || '';
+    document.getElementById('conf-session-value').value = state.settings.sessionValue || 150;
+    document.getElementById('conf-prof-name').value = state.psychologist?.name || '';
+    document.getElementById('conf-about').value = state.settings.about || '';
+    
+    // Salvar no localStorage para offline
+    localStorage.setItem('adminSettings', JSON.stringify(state.settings));
+  } catch (error) {
+    console.error("Erro ao carregar configurações:", error);
+    // Tentar carregar do localStorage se houver falha
+    const localSettings = localStorage.getItem('adminSettings');
+    if (localSettings) {
+      state.settings = JSON.parse(localSettings);
+      showToast("Configurações carregadas offline. Verifique sua conexão.", "info");
+      
+      // Atualizar UI das configurações
+      document.getElementById('conf-video-link').value = state.settings.videoLink || '';
+      document.getElementById('conf-msg-confirm').value = state.settings.confirm || '';
+      document.getElementById('conf-msg-reminder').value = state.settings.reminder || '';
+      document.getElementById('conf-session-value').value = state.settings.sessionValue || 150;
+      document.getElementById('conf-prof-name').value = state.psychologist?.name || '';
+      document.getElementById('conf-about').value = state.settings.about || '';
+    }
+  }
+}
+
+// Autenticação
+function login() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  
+  if (!email || !password) {
+    showToast('Preencha todos os campos', 'error');
+    return;
+  }
+  
+  auth.signInWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      // Login bem-sucedido
+      const user = userCredential.user;
+      console.log("Usuário logado:", user.uid);
+      state.psychologistId = user.uid;
+      
+      // Redirecionar para painel admin
+      navigateTo('view-admin');
+      
+      // Carregar dados iniciais
+      loadInitialData();
+      
+      showToast('Login realizado com sucesso!', 'success');
+    })
+    .catch((error) => {
+      let errorMessage = 'Erro ao fazer login. ';
+      switch (error.code) {
+        case 'auth/user-not-found':
+          errorMessage += 'Usuário não encontrado.';
+          break;
+        case 'auth/wrong-password':
+          errorMessage += 'Senha incorreta.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage += 'Email inválido.';
+          break;
+        default:
+          errorMessage += error.message;
+      }
+      showToast(errorMessage, 'error');
+      console.error("Erro de autenticação:", error);
+    });
+}
+
+function register() {
+  const name = document.getElementById('register-name').value;
+  const email = document.getElementById('register-email').value;
+  const password = document.getElementById('register-password').value;
+  const confirmPassword = document.getElementById('register-confirm-password').value;
+  
+  if (!name || !email || !password || !confirmPassword) {
+    showToast('Preencha todos os campos', 'error');
+    return;
+  }
+  
+  if (password !== confirmPassword) {
+    showToast('As senhas não coincidem', 'error');
+    return;
+  }
+  
+  if (password.length < 6) {
+    showToast('A senha deve ter pelo menos 6 caracteres', 'error');
+    return;
+  }
+  
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(async (userCredential) => {
+      // Usuário criado com sucesso
+      const user = userCredential.user;
+      
+      // Salvar dados adicionais no Firestore
+      await db.collection('psychologists').doc(user.uid).set({
+        name: name,
+        email: email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        specialties: ['Ansiedade', 'Depressão'],
+        about: 'Psicólogo dedicado a ajudar pacientes em sua jornada de autocuidado.',
+        sessionValue: 150,
+        settings: {
+          videoLink: '',
+          confirmMessage: 'Olá {{nome}}, seu agendamento foi confirmado para {{data}} às {{hora}}.',
+          reminderMessage: 'Lembrete: sua sessão é amanhã, {{data}} às {{hora}}.'
+        }
+      });
+      
+      // Configurações iniciais
+      await db.collection('settings').add({
+        psychologistId: user.uid,
+        videoLink: '',
+        confirm: 'Olá {{nome}}, seu agendamento foi confirmado para {{data}} às {{hora}}.',
+        reminder: 'Lembrete: sua sessão é amanhã, {{data}} às {{hora}}.',
+        sessionValue: 150,
+        specialties: ['Ansiedade', 'Depressão'],
+        about: 'Psicólogo dedicado a ajudar pacientes em sua jornada de autocuidado.',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      showToast('Conta criada com sucesso! Faça login para continuar.', 'success');
+      document.getElementById('register-section').classList.add('hidden');
+      document.getElementById('login-section').classList.remove('hidden');
+    })
+    .catch((error) => {
+      let errorMessage = 'Erro ao criar conta. ';
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage += 'Este email já está em uso.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage += 'Email inválido.';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage += 'Operação não permitida.';
+          break;
+        case 'auth/weak-password':
+          errorMessage += 'Senha fraca. Use pelo menos 6 caracteres.';
+          break;
+        default:
+          errorMessage += error.message;
+      }
+      showToast(errorMessage, 'error');
+      console.error("Erro no registro:", error);
+    });
+}
+
+function logout() {
+  auth.signOut().then(() => {
+    state.psychologistId = null;
+    state.psychologist = null;
+    state.clients = [];
+    state.slots = {};
+    state.bookings = [];
+    state.settings = {};
+    
+    // Limpar dados do localStorage
+    localStorage.removeItem('adminClients');
+    localStorage.removeItem('availableSlots');
+    localStorage.removeItem('bookings');
+    localStorage.removeItem('adminSettings');
+    
+    navigateTo('auth-screen');
+    showToast('Logout realizado com sucesso!', 'success');
+  }).catch((error) => {
+    console.error("Erro ao fazer logout:", error);
+    showToast('Erro ao fazer logout. Tente novamente.', 'error');
+  });
+}
+
+// Event listeners para autenticação
+document.getElementById('login-btn').addEventListener('click', login);
+document.getElementById('register-btn').addEventListener('click', register);
+document.getElementById('logout-btn').addEventListener('click', logout);
+
+document.getElementById('show-register-btn').addEventListener('click', () => {
+  document.getElementById('login-section').classList.add('hidden');
+  document.getElementById('register-section').classList.remove('hidden');
+});
+
+document.getElementById('show-login-btn').addEventListener('click', () => {
+  document.getElementById('register-section').classList.add('hidden');
+  document.getElementById('login-section').classList.remove('hidden');
+});
+
+// Inicializar sistema
+document.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const view = urlParams.get('view');
+  
+  if (view === 'admin') {
+    // Verificar se usuário está autenticado
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        state.psychologistId = user.uid;
+        navigateTo('view-admin');
+        loadInitialData();
+      } else {
+        navigateTo('auth-screen');
+      }
+    });
+  } else {
+    // Versão cliente (pública)
+    navigateTo('view-profile');
+    initClientCalendar();
+  }
+});
+
+// ==== FUNÇÕES DE SINCRONIZAÇÃO PARA OFFLINE ====
+window.addEventListener('online', () => {
+  showToast('Conexão restabelecida! Sincronizando dados...', 'success');
+  if (state.psychologistId) {
+    loadInitialData();
+  }
+});
+
+window.addEventListener('offline', () => {
+  showToast('Você está offline. Funcionalidades limitadas.', 'info');
+});
+
+// Detectar quando a aba volta para o foco
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && navigator.onLine && state.psychologistId) {
+    // Quando a aba volta para o foco e tem conexão, recarregar dados
+    loadInitialData();
+  }
+});
+
+// Adicionar evento para botão de salvar configurações
+document.getElementById('save-settings-btn')?.addEventListener('click', async () => {
+  if (!state.psychologistId) {
+    showToast('Você precisa estar logado para salvar configurações', 'error');
+    return;
+  }
+  
+  const videoLink = document.getElementById('conf-video-link').value;
+  const confirmMsg = document.getElementById('conf-msg-confirm').value;
+  const reminderMsg = document.getElementById('conf-msg-reminder').value;
+  const sessionValue = parseFloat(document.getElementById('conf-session-value').value);
+  const profName = document.getElementById('conf-prof-name').value;
+  const about = document.getElementById('conf-about').value;
+  
+  try {
+    // Atualizar configurações no Firestore
+    if (state.settings.id) {
+      await db.collection('settings').doc(state.settings.id).update({
+        videoLink: videoLink,
+        confirm: confirmMsg,
+        reminder: reminderMsg,
+        sessionValue: sessionValue,
+        about: about,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } else {
+      // Se não tiver ID, criar novo documento
+      const settingsRef = db.collection('settings').doc();
+      await settingsRef.set({
+        psychologistId: state.psychologistId,
+        videoLink: videoLink,
+        confirm: confirmMsg,
+        reminder: reminderMsg,
+        sessionValue: sessionValue,
+        about: about,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      state.settings.id = settingsRef.id;
+    }
+    
+    // Atualizar dados do psicólogo
+    await db.collection('psychologists').doc(state.psychologistId).update({
+      name: profName,
+      about: about,
+      sessionValue: sessionValue,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // Atualizar estado local
+    state.settings = {
+      ...state.settings,
+      videoLink,
+      confirm: confirmMsg,
+      reminder: reminderMsg,
+      sessionValue,
+      about
+    };
+    
+    // Atualizar psicólogo no estado
+    if (state.psychologist) {
+      state.psychologist = {
+        ...state.psychologist,
+        name: profName,
+        about: about,
+        sessionValue: sessionValue
+      };
+    }
+    
+    // Salvar no localStorage para offline
+    localStorage.setItem('adminSettings', JSON.stringify(state.settings));
+    
+    showToast('Configurações salvas com sucesso!', 'success');
+  } catch (error) {
+    console.error("Erro ao salvar configurações:", error);
+    showToast('Erro ao salvar configurações. Tente novamente.', 'error');
+  }
+});
+
+// ==== CONFIGURAÇÃO DO SERVICE WORKER PARA PWA ====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('ServiceWorker registrado com sucesso:', registration.scope);
+      })
+      .catch(error => {
+        console.error('Erro ao registrar ServiceWorker:', error);
+      });
+  });
+}
+
+// ==== NOTIFICAÇÕES ====
+function requestNotificationPermission() {
+  if (!('Notification' in window)) {
+    console.log('Este navegador não suporta notificações');
+    return;
+  }
+  
+  Notification.requestPermission().then(permission => {
+    if (permission === 'granted') {
+      console.log('Permissão para notificações concedida');
+    }
+  });
+}
+
+// Solicitar permissão para notificações quando o usuário fizer login
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    requestNotificationPermission();
+  }
+});
+
+// ==== FINALIZAÇÃO DO SCRIPT ====
+console.log('PsiPro Admin inicializado com sucesso');
+</script>
+</body>
+</html>
