@@ -3,951 +3,2060 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Agendamento - Vinicius Ravagnani</title>
+    <title>Agendamento - PsiPro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #F3F4F6; -webkit-tap-highlight-color: transparent; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
-        /* Animações e Transições */
-        .view-section { display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.3s ease-out, transform 0.3s ease-out; }
-        .view-section.active { display: block; opacity: 1; transform: translateY(0); }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
-        .modal-overlay.hidden { display: none; }
-        .modal-content { background: white; width: 100%; max-width: 450px; border-radius: 20px 20px 0 0; padding: 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); max-height: 85vh; overflow-y: auto; }
-        @media(min-width: 640px) { .modal-overlay { align-items: center; } .modal-content { border-radius: 20px; } }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F3F4F6;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .time-slot {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .time-slot.active {
+            background-color: #22c55e;
+            color: white;
+            border-color: #22c55e;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.3);
+        }
+        
+        .time-slot:disabled {
+            background-color: #f3f4f6;
+            color: #d1d5db;
+            border-color: #e5e7eb;
+            text-decoration: line-through;
+            cursor: not-allowed;
+        }
+        
+        .view-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .view-section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Novos estilos para o dashboard */
+        .stat-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .session-card {
+            background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .session-card:hover {
+            transform: scale(1.01);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Estilos para as abas do calendário */
+        .nav-tab {
+            flex: 0 0 auto;
+            padding: 12px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        
+        .nav-tab.active {
+            color: #0d9488;
+            border-bottom-color: #0d9488;
+            background-color: #f0fdfa;
+        }
+        
+        /* Estilos para o modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            z-index: 50;
+            display: none;
+            justify-content: center;
+            align-items: flex-end;
+            padding: 0;
+        }
+        
+        @media (min-width: 640px) {
+            .modal-overlay {
+                align-items: center;
+                padding: 20px;
+            }
+        }
+        
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 448px;
+            border-radius: 20px 20px 0 0;
+            padding: 24px;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        @media (min-width: 640px) {
+            .modal-content {
+                border-radius: 20px;
+            }
+        }
 
-        /* Estilos Específicos */
-        .time-slot { transition: all 0.2s; border: 1px solid #E5E7EB; }
-        .time-slot.selected { background-color: #22c55e; color: white; border-color: #22c55e; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3); }
-        .time-slot.booked { background-color: #F3F4F6; color: #9CA3AF; text-decoration: line-through; pointer-events: none; border-color: transparent; }
+        /* Estilo para o calendário */
+        .calendar-day {
+            height: 14;
+            transition: all 0.2s ease;
+        }
         
-        .nav-tab { white-space: nowrap; padding: 12px 16px; font-size: 0.85rem; font-weight: 600; color: #64748B; border-bottom: 2px solid transparent; transition: all 0.2s; }
-        .nav-tab.active { color: #0D9488; border-bottom-color: #0D9488; }
+        .calendar-day:hover {
+            transform: scale(1.02);
+            z-index: 10;
+        }
         
-        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; font-size: 0.9rem; position: relative; cursor: pointer; transition: all 0.2s; }
-        .calendar-day:hover { background-color: #F1F5F9; }
-        .calendar-day.has-slots { font-weight: 700; color: #0F172A; }
-        .calendar-day.has-slots::after { content: ''; width: 4px; height: 4px; background: #22c55e; border-radius: 50%; position: absolute; bottom: 6px; }
-        .calendar-day.full { color: #EF4444; }
-        .calendar-day.selected { background-color: #0D9488; color: white; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3); }
-        .calendar-day.selected::after { background: white; }
-
-        .input-field { width: 100%; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; border-radius: 12px; font-size: 0.9rem; outline: none; transition: all 0.2s; }
-        .input-field:focus { border-color: #0D9488; background: white; box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
+        .calendar-day.current-month {
+            background-color: white;
+            border-color: #e2e8f0;
+        }
         
-        .fab { position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 40; transition: transform 0.2s; }
-        .fab:active { transform: scale(0.95); }
+        .calendar-day.today {
+            box-shadow: 0 0 0 2px #fbbf24, 0 0 0 4px rgba(251, 191, 36, 0.2);
+        }
+        
+        .calendar-day.has-sessions {
+            background-color: #f0fdfa;
+            border-color: #6ee7b7;
+        }
+        
+        .calendar-day.booked {
+            background-color: #dbeafe;
+            border-color: #93c5fd;
+        }
+        
+        .day-tab {
+            flex: 1;
+            padding: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #94a3b8;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .day-tab.active {
+            color: #0d9488;
+            border-bottom-color: #0d9488;
+        }
+        
+        .toast {
+            background: #334155;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 13px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: all;
+        }
+        
+        @keyframes toastIn {
+            from {
+                transform: translateY(-20px) scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+        
+        /* Animações para os cards */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Efeito hover para os cards de horário */
+        .time-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
     </style>
 </head>
-<body class="text-gray-800 antialiased pb-safe">
-
-    <div id="view-profile" class="view-section active max-w-md mx-auto bg-white min-h-screen shadow-2xl relative z-10">
-        <div class="h-32 bg-gradient-to-br from-blue-600 to-indigo-600 relative">
-            <button onclick="checkAdmin()" class="absolute top-4 right-4 text-white/50 hover:text-white p-2"><i class="fa-solid fa-lock"></i></button>
-        </div>
-        <div class="px-6 -mt-16 relative">
-            <div class="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-white overflow-hidden">
-                <img src="https://ui-avatars.com/api/?name=Vinicius+Ravagnani&background=0D8ABC&color=fff&size=256" alt="Vinicius" class="w-full h-full object-cover">
-            </div>
-            <div class="mt-4 flex justify-between items-start">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Vinicius Ravagnani</h1>
-                    <p class="text-sm text-blue-600 font-medium">Psicólogo Clínico &bull; CRP 06/12345</p>
-                </div>
-                <div class="text-right bg-blue-50 px-3 py-1 rounded-lg">
-                    <p class="text-lg font-bold text-blue-700">R$ 150</p>
-                    <p class="text-[10px] text-blue-400 font-bold uppercase">Sessão 50min</p>
-                </div>
-            </div>
-            
-            <div class="mt-6 space-y-6">
-                <div>
-                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Especialidades</h3>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">Terapia Cognitivo-Comportamental</span>
-                        <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">Ansiedade</span>
-                        <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">Autoconhecimento</span>
+<body class="text-gray-800 antialiased pb-24">
+    <!-- PERFIL DO PSICÓLOGO (CLIENTE) -->
+    <div id="view-profile" class="view-section max-w-md mx-auto bg-white min-h-screen shadow-xl overflow-hidden relative">
+        <div class="relative">
+            <div class="h-32 bg-gradient-to-r from-primary-600 to-primary-500"></div>
+            <div class="px-5">
+                <div class="relative -mt-12 mb-3">
+                    <div class="w-28 h-28 rounded-full border-4 border-white overflow-hidden shadow-lg bg-white">
+                        <img src="https://ui-avatars.com/api/?name=PsiPro&background=0D8ABC&color=fff&size=256" alt="PsiPro" class="w-full h-full object-cover">
                     </div>
                 </div>
-
-                <div>
-                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Sobre</h3>
-                    <p class="text-sm text-gray-600 leading-relaxed">
-                        Olá! Sou o Vinicius. Meu objetivo é oferecer um espaço seguro e acolhedor para que você possa explorar seus sentimentos e desenvolver ferramentas para lidar com os desafios da vida.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 max-w-md mx-auto">
-            <button onclick="navigateTo('view-client-calendar')" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-[0.98] flex justify-center items-center gap-2">
-                <i class="fa-regular fa-calendar"></i> Agendar Sessão
-            </button>
-        </div>
-    </div>
-
-    <div id="view-client-calendar" class="view-section max-w-md mx-auto bg-gray-50 min-h-screen relative">
-        <div class="bg-white px-4 py-4 shadow-sm sticky top-0 z-20 flex items-center gap-4">
-            <button onclick="navigateTo('view-profile')" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left"></i></button>
-            <h2 class="font-bold text-gray-800 text-lg">Escolha um horário</h2>
-        </div>
-
-        <div class="p-4">
-            <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="font-bold text-gray-700" id="client-month-display">Janeiro</h3>
-                    <div class="flex gap-2">
-                         <button onclick="clientChangeDate(-1)" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                         <button onclick="clientChangeDate(1)" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"><i class="fa-solid fa-chevron-right text-xs"></i></button>
-                    </div>
-                </div>
-                <div id="client-date-scroll" class="flex overflow-x-auto gap-3 pb-2 no-scrollbar snap-x">
-                    </div>
-            </div>
-
-            <div id="client-slots-container">
-                <div id="client-slots-grid" class="grid grid-cols-3 gap-3">
-                    </div>
-                <div id="client-empty-state" class="hidden text-center py-10">
-                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
-                        <i class="fa-regular fa-calendar-xmark text-2xl"></i>
-                    </div>
-                    <p class="text-gray-500 text-sm">Nenhum horário disponível nesta data.</p>
-                </div>
-            </div>
-        </div>
-
-        <div id="client-confirm-bar" class="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-100 max-w-md mx-auto transform translate-y-full transition-transform duration-300 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
-            <div class="flex justify-between items-center mb-4">
-                <div>
-                    <p class="text-xs text-gray-500 font-medium uppercase">Horário Selecionado</p>
-                    <p id="client-selected-info" class="text-sm font-bold text-gray-900">--/-- às --:--</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-xs text-gray-500 font-medium uppercase">Valor</p>
-                    <p class="text-sm font-bold text-blue-600">R$ 150,00</p>
-                </div>
-            </div>
-            <button onclick="openBookingModal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-600/20">
-                Confirmar Agendamento
-            </button>
-        </div>
-    </div>
-
-    <div id="view-admin" class="view-section max-w-md mx-auto bg-slate-50 min-h-screen pb-24">
-        <div class="bg-white px-5 py-4 shadow-sm sticky top-0 z-30 flex justify-between items-center">
-            <div>
-                <h2 class="font-bold text-lg text-slate-800">Painel <span class="text-teal-600">PsiPro</span></h2>
-            </div>
-            <button onclick="navigateTo('view-profile')" class="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full hover:bg-slate-200">
-                <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Sair
-            </button>
-        </div>
-
-        <div class="bg-white border-b border-slate-100 flex overflow-x-auto sticky top-[60px] z-20 hide-scrollbar px-2">
-            <button onclick="switchTab('dashboard')" class="nav-tab active" data-tab="dashboard">Visão Geral</button>
-            <button onclick="switchTab('calendar')" class="nav-tab" data-tab="calendar">Agenda</button>
-            <button onclick="switchTab('clients')" class="nav-tab" data-tab="clients">Pacientes</button>
-            <button onclick="switchTab('financial')" class="nav-tab" data-tab="financial">Financeiro</button>
-            <button onclick="switchTab('settings')" class="nav-tab" data-tab="settings">Config</button>
-        </div>
-
-        <div class="p-4">
-            
-            <div id="tab-dashboard" class="tab-content block">
-                <div class="bg-gradient-to-r from-teal-600 to-teal-500 text-white rounded-2xl p-5 shadow-lg shadow-teal-500/20 mb-6 relative overflow-hidden">
-                    <div class="absolute -right-6 -top-6 bg-white/20 w-32 h-32 rounded-full blur-2xl"></div>
-                    <div class="relative z-10">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-teal-50 font-medium text-xs uppercase tracking-wider">Próxima Sessão</h3>
-                            <span id="dash-next-badge" class="bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold">HOJE</span>
-                        </div>
-                        <div id="dash-next-content">
-                            <p id="dash-next-time" class="text-3xl font-bold mb-1">--:--</p>
-                            <p id="dash-next-client" class="text-teal-50 font-medium text-lg truncate">Nenhum agendamento</p>
-                            <div class="mt-4 flex gap-2">
-                                <button onclick="sendQuickMsg()" class="bg-white text-teal-700 text-xs font-bold px-3 py-2 rounded-lg flex-1 shadow-sm active:scale-95 transition"><i class="fa-brands fa-whatsapp mr-1"></i> Confirmar</button>
-                                <button onclick="openNextClientDetails()" class="bg-teal-700/50 text-white text-xs font-bold px-3 py-2 rounded-lg flex-1 hover:bg-teal-700 active:scale-95 transition">Ver Detalhes</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                        <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-2"><i class="fa-solid fa-users"></i></div>
-                        <div class="text-slate-400 text-[10px] font-bold uppercase">Total Pacientes</div>
-                        <div class="text-2xl font-bold text-slate-800" id="dash-total-clients">0</div>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                        <div class="w-8 h-8 rounded-full bg-green-50 text-green-600 flex items-center justify-center mb-2"><i class="fa-solid fa-calendar-check"></i></div>
-                        <div class="text-slate-400 text-[10px] font-bold uppercase">Sessões (Mês)</div>
-                        <div class="text-2xl font-bold text-slate-800" id="dash-month-count">0</div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="tab-calendar" class="tab-content hidden">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="p-4 flex justify-between items-center border-b border-slate-100">
-                        <button onclick="changeAdminMonth(-1)" class="w-8 h-8 hover:bg-slate-50 rounded-full flex items-center justify-center text-slate-500"><i class="fa-solid fa-chevron-left"></i></button>
-                        <h3 id="admin-calendar-month" class="font-bold text-slate-800 capitalize">Janeiro 2026</h3>
-                        <button onclick="changeAdminMonth(1)" class="w-8 h-8 hover:bg-slate-50 rounded-full flex items-center justify-center text-slate-500"><i class="fa-solid fa-chevron-right"></i></button>
-                    </div>
-                    <div class="grid grid-cols-7 gap-px bg-slate-100 border-b border-slate-100">
-                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">D</div>
-                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">S</div>
-                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">T</div>
-                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">Q</div>
-                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">Q</div>
-                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">S</div>
-                        <div class="bg-slate-50 py-2 text-center text-[10px] font-bold text-slate-400 uppercase">S</div>
-                    </div>
-                    <div id="admin-calendar-grid" class="grid grid-cols-7 gap-px bg-slate-100 p-px">
-                        </div>
-                </div>
-                <div class="mt-4 flex justify-center gap-4 text-xs text-slate-500">
-                    <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-teal-600"></span> Com Sessão</div>
-                    <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-300"></span> Vazio</div>
-                    <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Cheio</div>
-                </div>
-            </div>
-
-            <div id="tab-clients" class="tab-content hidden">
-                <div class="relative mb-4">
-                    <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-400 text-sm"></i>
-                    <input type="text" id="client-search" onkeyup="renderClients()" placeholder="Buscar por nome..." class="w-full bg-white pl-10 pr-4 py-3 rounded-xl shadow-sm border-none focus:ring-2 focus:ring-teal-500 text-sm">
-                </div>
-                <div id="clients-list" class="space-y-3">
-                    </div>
-            </div>
-
-            <div id="tab-financial" class="tab-content hidden">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 text-center mb-6">
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Estimativa Mensal</p>
-                    <h2 class="text-4xl font-bold text-slate-800" id="fin-total">R$ 0,00</h2>
-                    <p class="text-xs text-green-600 bg-green-50 inline-block px-3 py-1 rounded-full mt-3 font-medium">
-                        <i class="fa-solid fa-arrow-trend-up mr-1"></i> Baseado em agendamentos
-                    </p>
-                </div>
-                <h3 class="font-bold text-slate-700 text-sm mb-3">Histórico de Receita</h3>
-                <div id="fin-history" class="space-y-3">
-                    </div>
-            </div>
-
-            <div id="tab-settings" class="tab-content hidden">
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-5">
-                    <h3 class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2">Automação WhatsApp</h3>
-                    
+                <div class="flex justify-between items-start">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1">Mensagem de Confirmação</label>
-                        <textarea id="setting-msg-confirm" rows="3" class="input-field text-xs"></textarea>
+                        <h1 class="text-2xl font-bold text-gray-900 leading-tight">PsiPro</h1>
+                        <p class="text-sm text-gray-500 font-medium mt-1">Plataforma de Agendamento para Psicólogos</p>
                     </div>
-                    
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1">Link da Vídeo Chamada</label>
-                        <input type="text" id="setting-video-link" placeholder="https://meet.google.com/..." class="input-field">
+                    <div class="text-right">
+                        <p class="text-lg font-bold text-gray-900">R$ 150,00</p>
+                        <p class="text-xs text-gray-500">/ 50 min</p>
                     </div>
-
-                    <button onclick="saveSettings()" class="w-full bg-teal-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-teal-500/20 active:scale-95 transition">Salvar Configurações</button>
                 </div>
-                <div class="mt-6 text-center">
-                    <button onclick="resetApp()" class="text-red-500 text-xs font-bold hover:underline">Resetar Dados do Aplicativo</button>
+                <div class="flex items-center gap-2 mt-3 mb-4">
+                    <div class="flex text-yellow-400 text-sm">
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <span class="text-sm text-gray-500 font-medium ml-1">(Agenda Aberta)</span>
                 </div>
             </div>
-
+        </div>
+        <hr class="border-gray-100">
+        <div class="p-5">
+            <h3 class="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-shapes text-primary-500"></i> Especialidades
+            </h3>
+            <div class="flex flex-wrap gap-2">
+                <span class="px-3 py-1 bg-primary-50 text-primary-700 text-sm font-semibold rounded-full">Ansiedade</span>
+                <span class="px-3 py-1 bg-primary-50 text-primary-700 text-sm font-semibold rounded-full">Depressão</span>
+                <span class="px-3 py-1 bg-primary-50 text-primary-700 text-sm font-semibold rounded-full">TDAH</span>
+                <span class="px-3 py-1 bg-primary-50 text-primary-700 text-sm font-semibold rounded-full">Terapia de Casal</span>
+            </div>
+        </div>
+        <div class="h-2 bg-gray-50"></div>
+        <div class="px-5 py-4">
+            <h3 class="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <i class="fa-regular fa-user text-primary-500"></i> Sobre
+            </h3>
+            <p class="text-gray-600 leading-relaxed">
+                Bem-vindo à PsiPro, sua plataforma completa para agendamento de consultas psicológicas. 
+                Oferecemos um ambiente seguro e confidencial para suas sessões, com profissionais qualificados 
+                prontos para ajudar você em sua jornada de autoconhecimento e bem-estar emocional.
+            </p>
+        </div>
+        <div class="h-2 bg-gray-50"></div>
+        <div class="px-5 py-4 mb-20">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-graduation-cap text-primary-500"></i> Nossa Equipe
+            </h3>
+            <div class="space-y-4">
+                <div class="flex items-start gap-3">
+                    <div class="mt-1 w-3 h-3 rounded-full bg-primary-400 shrink-0"></div>
+                    <div>
+                        <p class="text-base font-semibold text-gray-800">Dra. Ana Silva</p>
+                        <p class="text-sm text-gray-600">CRP 06/123456 • Psicóloga Clínica • 8 anos de experiência</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <div class="mt-1 w-3 h-3 rounded-full bg-primary-400 shrink-0"></div>
+                    <div>
+                        <p class="text-base font-semibold text-gray-800">Dr. Carlos Mendes</p>
+                        <p class="text-sm text-gray-600">CRP 06/789012 • Psicólogo Organizacional • 12 anos de experiência</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 max-w-md mx-auto z-10">
+            <button onclick="navigateTo('view-calendar')" class="w-full bg-primary-600 hover:bg-primary-700 active:scale-[0.98] transition text-white font-bold py-4 rounded-xl shadow-lg shadow-primary-500/30 flex justify-center items-center gap-2 text-lg">
+                <i class="fa-regular fa-calendar-check"></i> Ver Horários Disponíveis
+            </button>
         </div>
     </div>
-
-    <div id="modal-booking" class="modal-overlay hidden">
-        <div class="modal-content">
+    
+    <!-- AGENDAMENTO (CLIENTE) -->
+    <div id="view-calendar" class="view-section max-w-md mx-auto bg-gray-50 min-h-screen relative">
+        <div class="bg-white px-4 py-3 shadow-sm sticky top-0 z-20 flex items-center gap-3">
+            <button onclick="navigateTo('view-profile')" class="text-gray-600 p-2 hover:bg-gray-100 rounded-full transition">
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+            </button>
+            <h2 class="font-bold text-lg text-gray-800">Escolha sua Data e Horário</h2>
+        </div>
+        <div class="bg-white pb-2 pt-2 shadow-sm mb-4">
+            <div class="px-4 mb-2 flex justify-between items-end">
+                <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Próximos dias</p>
+                    <h3 id="current-month-label" class="text-lg font-bold text-gray-800 capitalize">Janeiro</h3>
+                </div>
+                <i class="fa-regular fa-calendar text-gray-300 text-2xl"></i>
+            </div>
+            <div id="date-scroll-container" class="flex overflow-x-auto px-4 gap-3 py-2 no-scrollbar snap-x"></div>
+        </div>
+        <div class="px-4">
+            <div id="slots-loader" class="hidden flex justify-center py-8">
+                <i class="fa-solid fa-circle-notch fa-spin text-primary-500 text-3xl"></i>
+            </div>
+            <div id="slots-grid" class="grid grid-cols-2 gap-3 pb-32 transition-opacity duration-300">
+                <div class="col-span-2 text-center py-10 text-gray-400 text-base">
+                    Selecione uma data acima para ver os horários disponíveis.
+                </div>
+            </div>
+        </div>
+        <div id="confirm-bar" class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 max-w-md mx-auto transform translate-y-full transition-transform duration-300 z-30">
+            <div class="flex justify-between items-center mb-3">
+                <div class="text-gray-500 font-medium">Selecionado:</div>
+                <div id="selected-summary" class="text-lg font-bold text-gray-800 text-right">--/-- às --:--</div>
+            </div>
+            <button onclick="openModal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-green-600/20 text-lg flex justify-center items-center gap-2">
+                <i class="fa-solid fa-check"></i> Confirmar Agendamento
+            </button>
+        </div>
+    </div>
+    
+    <!-- CHECKOUT (CLIENTE) -->
+    <div id="checkout-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl animate-[slideUp_0.3s_ease-out]">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="font-bold text-lg text-gray-900">Finalizar Agendamento</h3>
-                <button onclick="closeModal('modal-booking')" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500"><i class="fa-solid fa-times"></i></button>
+                <h3 class="text-xl font-bold text-gray-900">Confirmar Agendamento</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa-solid fa-times text-2xl"></i>
+                </button>
             </div>
-            <form onsubmit="confirmBooking(event)" class="space-y-4">
-                <input type="text" id="book-name" placeholder="Seu Nome Completo" required class="input-field">
-                <input type="tel" id="book-phone" placeholder="Seu WhatsApp (11) 99999-9999" required class="input-field">
-                <div class="bg-blue-50 p-3 rounded-xl flex gap-3">
-                    <i class="fa-solid fa-circle-info text-blue-600 mt-0.5"></i>
-                    <p class="text-xs text-blue-800">Ao confirmar, você receberá os detalhes da sessão via WhatsApp.</p>
+            <form id="booking-form" onsubmit="submitBooking(event)" class="space-y-5">
+                <div class="bg-primary-50 p-4 rounded-xl border border-primary-100 mb-4">
+                    <div class="flex items-start gap-3">
+                        <i class="fa-solid fa-info-circle text-primary-600 mt-1"></i>
+                        <p class="text-sm text-primary-800">
+                            <strong>Importante:</strong> Você receberá um link de confirmação por WhatsApp e um lembrete 24 horas antes do seu agendamento.
+                        </p>
+                    </div>
                 </div>
-                <button type="submit" class="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl">Confirmar</button>
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-1">Nome Completo</label>
+                    <input type="text" name="name" required class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition" placeholder="Ex: João Silva">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-600 mb-1">Celular (WhatsApp)</label>
+                        <input type="tel" name="phone" required class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition" placeholder="(11) 99999-9999" maxlength="15">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-600 mb-1">E-mail</label>
+                        <input type="email" name="email" class="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition" placeholder="seu@email.com">
+                    </div>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <div class="flex items-start gap-3 mb-2">
+                        <i class="fa-solid fa-shield-halved text-blue-600 mt-1"></i>
+                        <p class="text-sm text-blue-800 font-medium">
+                            Seus dados estão protegidos e serão usados apenas para este agendamento.
+                        </p>
+                    </div>
+                    <p class="text-xs text-blue-600 ml-6">Todas as informações são criptografadas e armazenadas com segurança.</p>
+                </div>
+                <button type="submit" id="btn-submit" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-xl mt-2 flex justify-center items-center gap-3 transition-all text-lg shadow-md hover:shadow-lg">
+                    <span>Enviar Solicitação</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                <p class="text-center text-xs text-gray-500 mt-2">
+                    Ao confirmar, você concorda com nossos <a href="#" class="text-primary-600 hover:underline">termos de uso</a> e <a href="#" class="text-primary-600 hover:underline">política de privacidade</a>.
+                </p>
             </form>
         </div>
     </div>
-
-    <div id="modal-day" class="modal-overlay hidden">
-        <div class="modal-content h-[85vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4">
+    
+    <!-- PAINEL ADMINISTRATIVO COMPLETO -->
+    <div id="view-admin" class="view-section max-w-md mx-auto bg-slate-50 min-h-screen relative font-sans text-slate-800 pb-20">
+        <div id="toast-container" class="fixed top-4 left-0 right-0 z-[60] flex flex-col items-center pointer-events-none gap-2"></div>
+        
+        <div class="bg-white px-5 py-4 shadow-sm sticky top-0 z-20 flex justify-between items-center">
+            <div>
+                <h2 class="font-bold text-xl text-slate-800">Painel Psi<span class="text-primary-600">Pro</span></h2>
+                <p class="text-xs text-slate-500">Sistema completo de gestão</p>
+            </div>
+            <button onclick="navigateTo('view-profile')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-full text-xs font-semibold transition flex items-center gap-1">
+                <i class="fa-solid fa-arrow-left mr-1"></i> Cliente
+            </button>
+        </div>
+        
+        <div class="bg-white border-b border-slate-100 flex overflow-x-auto sticky top-[70px] z-10 no-scrollbar">
+            <button onclick="switchTab('dashboard')" class="nav-tab active" data-tab="dashboard">
+                <i class="fa-solid fa-chart-line mr-1 hidden sm:inline"></i> Dashboard
+            </button>
+            <button onclick="switchTab('calendar')" class="nav-tab" data-tab="calendar">
+                <i class="fa-regular fa-calendar mr-1 hidden sm:inline"></i> Agenda
+            </button>
+            <button onclick="switchTab('clients')" class="nav-tab" data-tab="clients">
+                <i class="fa-solid fa-users mr-1 hidden sm:inline"></i> Pacientes
+            </button>
+            <button onclick="switchTab('financial')" class="nav-tab" data-tab="financial">
+                <i class="fa-solid fa-wallet mr-1 hidden sm:inline"></i> Financeiro
+            </button>
+            <button onclick="switchTab('settings')" class="nav-tab" data-tab="settings">
+                <i class="fa-solid fa-gear mr-1 hidden sm:inline"></i> Config
+            </button>
+        </div>
+        
+        <div class="p-4 space-y-6">
+            <!-- Dashboard -->
+            <div id="tab-dashboard" class="tab-content active animate-fade">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="stat-card bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-slate-400 text-xs font-bold uppercase">Total de Pacientes</div>
+                            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                <i class="fa-solid fa-users text-blue-600"></i>
+                            </div>
+                        </div>
+                        <div class="text-3xl font-bold text-slate-800" id="dash-total-clients">0</div>
+                        <div class="text-xs text-green-500 mt-1 flex items-center">
+                            <i class="fa-solid fa-arrow-up mr-1"></i>
+                            <span>+12% em relação ao mês anterior</span>
+                        </div>
+                    </div>
+                    <div class="stat-card bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-slate-400 text-xs font-bold uppercase">Sessões este mês</div>
+                            <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                                <i class="fa-solid fa-calendar-check text-purple-600"></i>
+                            </div>
+                        </div>
+                        <div class="text-3xl font-bold text-slate-800" id="dash-month-sessions">0</div>
+                        <div class="text-xs text-green-500 mt-1 flex items-center">
+                            <i class="fa-solid fa-arrow-up mr-1"></i>
+                            <span>+3 sessões na próxima semana</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="session-card text-white rounded-2xl p-6 shadow-lg mb-6 relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 bg-white/10 w-32 h-32 rounded-full blur-xl"></div>
+                    <h3 class="text-primary-50 font-medium text-sm mb-1">Próximo Atendimento</h3>
+                    <div id="dash-next-session">
+                        <p class="text-3xl font-bold">Hoje, 15:00</p>
+                        <p class="text-primary-100">Paciente: <span class="font-semibold">Carregando...</span></p>
+                        <div class="mt-4 flex flex-wrap gap-3">
+                            <button class="mt-3 bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-2 rounded-lg transition flex items-center gap-2" onclick="switchTab('calendar')">
+                                <i class="fa-regular fa-calendar"></i> Ver Agenda Completa
+                            </button>
+                            <button class="mt-3 bg-primary-500 hover:bg-primary-600 text-white text-sm px-4 py-2 rounded-lg transition flex items-center gap-2" onclick="openVideoLink()">
+                                <i class="fa-solid fa-video"></i> Entrar na Sala
+                            </button>
+                        </div>
+                    </div>
+                    <div id="dash-no-session" class="hidden">
+                        <p class="text-2xl font-bold">Sem agendamentos nos próximos dias</p>
+                        <p class="text-primary-100 text-sm mb-4">Aproveite para organizar sua agenda e adicionar horários disponíveis.</p>
+                        <button class="mt-3 bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-2 rounded-lg transition" onclick="switchTab('calendar')">
+                            <i class="fa-solid fa-plus mr-1"></i> Configurar Horários
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-6">
+                    <div class="p-5 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-simple text-primary-600"></i> Sessões Recentes
+                        </h3>
+                    </div>
+                    <div id="recent-sessions" class="divide-y divide-slate-100">
+                        <!-- Sessões serão carregadas aqui -->
+                        <div class="text-center py-8 text-slate-400">
+                            <i class="fa-solid fa-clock text-3xl mb-2"></i>
+                            <p>Nenhuma sessão recente encontrada</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Calendário -->
+            <div id="tab-calendar" class="tab-content hidden animate-fade">
+                <div class="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-slate-100 mb-4">
+                    <button onclick="changeMonth(-1)" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 transition">
+                        <i class="fa-solid fa-chevron-left text-lg"></i>
+                    </button>
+                    <h3 id="calendar-month-label" class="font-bold text-slate-800 capitalize text-lg">Janeiro 2026</h3>
+                    <button onclick="changeMonth(1)" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 transition">
+                        <i class="fa-solid fa-chevron-right text-lg"></i>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-bold text-slate-400">
+                    <div>Dom</div>
+                    <div>Seg</div>
+                    <div>Ter</div>
+                    <div>Qua</div>
+                    <div>Qui</div>
+                    <div>Sex</div>
+                    <div>Sáb</div>
+                </div>
+                
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1 mb-6"></div>
+                
+                <div class="flex flex-wrap gap-4 justify-center mt-4 text-xs text-slate-500">
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-3 h-3 rounded-full bg-primary-500"></div>
+                        <span>Com sessão marcada</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-3 h-3 rounded-full bg-blue-100 border border-blue-200"></div>
+                        <span>Horários livres</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-300"></div>
+                        <span>Hoje</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pacientes -->
+            <div id="tab-clients" class="tab-content hidden animate-fade">
+                <div class="sticky top-0 bg-slate-50 pb-4 z-10">
+                    <div class="flex gap-2 mb-4">
+                        <div class="relative flex-1">
+                            <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400 text-sm"></i>
+                            <input type="text" id="client-search" onkeyup="filterClients()" placeholder="Buscar paciente..." class="w-full pl-10 pr-4 py-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-primary-500 text-base">
+                        </div>
+                        <button onclick="openClientModal()" class="bg-primary-600 text-white w-12 h-12 rounded-xl shadow-sm flex items-center justify-center hover:bg-primary-700 transition">
+                            <i class="fa-solid fa-plus text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="clients-list" class="space-y-3 pb-20">
+                    <!-- Lista de clientes será carregada aqui -->
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-users text-3xl mb-2"></i>
+                        <p>Nenhum paciente cadastrado ainda</p>
+                        <button onclick="openClientModal()" class="mt-3 text-primary-600 hover:text-primary-700 font-medium flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Adicionar Paciente
+                        </button>
+                    </div>
+                </div>
+            </div>
+<!-- Financeiro -->
+            <div id="tab-financial" class="tab-content hidden animate-fade">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-6 text-center">
+                    <p class="text-slate-500 text-xs font-bold uppercase tracking-wider">Ganhos do Mês</p>
+                    <h2 class="text-3xl font-bold text-slate-800 mt-1" id="financial-total">R$ 0,00</h2>
+                    <p class="text-xs text-green-600 bg-green-50 inline-block px-2 py-1 rounded mt-2">
+                        <i class="fa-solid fa-calculator mr-1"></i> Baseado em agendamentos confirmados
+                    </p>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 overflow-hidden">
+                    <div class="p-4 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-bar text-emerald-500"></i> Gráfico de Sessões
+                        </h3>
+                    </div>
+                    <div class="p-4">
+                        <div class="grid grid-cols-7 gap-2 mb-4">
+                            <div class="text-center">
+                                <div class="w-8 h-20 bg-emerald-100 rounded-t-lg mx-auto"></div>
+                                <span class="text-xs text-slate-500 mt-1 block">Seg</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-8 h-28 bg-emerald-100 rounded-t-lg mx-auto"></div>
+                                <span class="text-xs text-slate-500 mt-1 block">Ter</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-8 h-16 bg-emerald-100 rounded-t-lg mx-auto"></div>
+                                <span class="text-xs text-slate-500 mt-1 block">Qua</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-8 h-32 bg-emerald-100 rounded-t-lg mx-auto"></div>
+                                <span class="text-xs text-slate-500 mt-1 block">Qui</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-8 h-24 bg-emerald-100 rounded-t-lg mx-auto"></div>
+                                <span class="text-xs text-slate-500 mt-1 block">Sex</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-8 h-12 bg-emerald-100 rounded-t-lg mx-auto"></div>
+                                <span class="text-xs text-slate-500 mt-1 block">Sáb</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-8 h-8 bg-slate-100 rounded-t-lg mx-auto"></div>
+                                <span class="text-xs text-slate-300 mt-1 block">Dom</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500 px-2">
+                            <span>1 jan</span>
+                            <span>31 jan</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 class="font-bold text-slate-700 mb-3 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-violet-500"></i> Histórico Recente
+                </h3>
+                <div id="financial-list" class="space-y-3">
+                    <!-- Lista de transações será carregada aqui -->
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-receipt text-3xl mb-2"></i>
+                        <p>Nenhuma transação registrada ainda</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Configurações -->
+            <div id="tab-settings" class="tab-content hidden animate-fade">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 mb-6">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-brands fa-whatsapp text-green-600"></i> Automação de WhatsApp
+                    </h3>
+                    
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Link de Vídeo Chamada</label>
+                            <input type="url" id="conf-video-link" placeholder="https://meet.google.com/seu-link" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition">
+                            <p class="text-[11px] text-slate-400 mt-1">Este link será enviado automaticamente ao paciente antes da sessão.</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Mensagem de Confirmação</label>
+                            <textarea id="conf-msg-confirm" rows="3" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition" placeholder="Olá {{nome}}, seu agendamento foi confirmado para {{data}} às {{hora}}.">{{nome}}, seu agendamento foi confirmado para {{data}} às {{hora}}. Estou ansioso para nossa conversa!</textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Mensagem de Lembrete (24h antes)</label>
+                            <textarea id="conf-msg-reminder" rows="3" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition" placeholder="Lembrete: Sua sessão é amanhã, {{data}} às {{hora}}.">{{nome}}, só um lembrete amigável: nossa sessão é amanhã, {{data}} às {{hora}}. Estou aqui para você!</textarea>
+                        </div>
+                        
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <p class="text-xs font-bold text-slate-600 mb-2">Variáveis Disponíveis:</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="bg-white px-2 py-1 rounded border border-slate-200 text-[11px] font-mono">{{nome}}</span>
+                                <span class="bg-white px-2 py-1 rounded border border-slate-200 text-[11px] font-mono">{{data}}</span>
+                                <span class="bg-white px-2 py-1 rounded border border-slate-200 text-[11px] font-mono">{{hora}}</span>
+                                <span class="bg-white px-2 py-1 rounded border border-slate-200 text-[11px] font-mono">{{link}}</span>
+                            </div>
+                        </div>
+                        
+                        <button onclick="saveSettings()" class="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-xl font-medium transition shadow-lg shadow-primary-200 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-save"></i> Salvar Configurações
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-user-gear text-amber-500"></i> Perfil Profissional
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Nome Completo</label>
+                            <input type="text" id="conf-prof-name" value="PsiPro" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Valor da Sessão</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">R$</span>
+                                <input type="number" id="conf-session-value" value="150" min="0" step="0.01" class="w-full border border-slate-200 rounded-xl pl-8 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition">
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Especialidades</label>
+                            <div class="flex flex-wrap gap-2 mb-2">
+                                <span class="px-2 py-1 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full flex items-center">Ansiedade <button class="ml-1 text-primary-500 hover:text-primary-700"><i class="fa-solid fa-xmark text-[10px]"></i></button></span>
+                                <span class="px-2 py-1 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full flex items-center">Depressão <button class="ml-1 text-primary-500 hover:text-primary-700"><i class="fa-solid fa-xmark text-[10px]"></i></button></span>
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="new-specialty" placeholder="Adicionar especialidade..." class="flex-1 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                <button onclick="addSpecialty()" class="bg-primary-500 hover:bg-primary-600 text-white px-4 rounded-xl text-sm font-medium">Adicionar</button>
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Sobre</label>
+                            <textarea id="conf-about" rows="3" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition">Bem-vindo à PsiPro, sua plataforma completa para agendamento de consultas psicológicas. Oferecemos um ambiente seguro e confidencial para suas sessões, com profissionais qualificados prontos para ajudar você em sua jornada de autoconhecimento e bem-estar emocional.</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAIS -->
+    
+    <!-- Modal de Dia Selecionado (Admin) -->
+    <div id="day-modal" class="modal-overlay hidden">
+        <div class="modal-content animate-[slideUp_0.3s_ease-out]">
+            <div class="flex justify-between items-start mb-6">
                 <div>
-                    <h3 id="modal-day-title" class="font-bold text-xl text-slate-800">--</h3>
-                    <p id="modal-day-date" class="text-xs text-slate-500">Gerenciar Dia</p>
+                    <h3 id="modal-day-title" class="text-xl font-bold text-slate-800">Segunda-feira</h3>
+                    <p id="modal-day-subtitle" class="text-sm text-slate-500">20 de Janeiro de 2026</p>
                 </div>
-                <button onclick="closeModal('modal-day')" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500"><i class="fa-solid fa-times"></i></button>
+                <button onclick="closeDayModal()" class="w-9 h-9 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition">
+                    <i class="fa-solid fa-times text-lg"></i>
+                </button>
             </div>
             
-            <div class="flex border-b border-slate-100 mb-4">
-                <button onclick="switchDayTab('slots')" id="btn-tab-day-slots" class="flex-1 pb-2 text-sm font-bold text-teal-600 border-b-2 border-teal-600">Horários</button>
-                <button onclick="switchDayTab('bookings')" id="btn-tab-day-bookings" class="flex-1 pb-2 text-sm font-bold text-slate-400 border-b-2 border-transparent">Agendamentos</button>
+            <div class="flex border-b border-slate-100 mb-5">
+                <button onclick="switchDayTab('slots')" id="btn-tab-slots" class="day-tab active">Gerenciar Horários</button>
+                <button onclick="switchDayTab('bookings')" id="btn-tab-bookings" class="day-tab">Agendamentos</button>
             </div>
-
-            <div id="day-content-slots" class="flex-1 overflow-y-auto">
-                <div class="bg-slate-50 p-3 rounded-xl mb-4 border border-slate-100">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Gerador em Massa</p>
-                    <div class="flex gap-2">
-                        <button onclick="bulkGenerate('morning')" class="flex-1 bg-white border border-slate-200 text-xs py-2 rounded-lg hover:border-teal-500 hover:text-teal-600 transition">Manhã (08-12)</button>
-                        <button onclick="bulkGenerate('afternoon')" class="flex-1 bg-white border border-slate-200 text-xs py-2 rounded-lg hover:border-teal-500 hover:text-teal-600 transition">Tarde (13-18)</button>
+            
+            <div id="day-tab-slots" class="day-content">
+                <div class="bg-slate-50 p-4 rounded-xl mb-5 border border-slate-100">
+                    <p class="text-sm font-bold text-slate-600 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-bolt text-amber-500"></i> Gerador Rápido de Horários
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <button onclick="generateSlots('morning')" class="bg-white border border-slate-200 text-sm py-3 rounded-xl hover:border-primary-300 hover:text-primary-600 transition flex flex-col items-center justify-center gap-1">
+                            <span class="font-bold">Manhã</span>
+                            <span class="text-xs text-slate-400">08h-12h</span>
+                        </button>
+                        <button onclick="generateSlots('afternoon')" class="bg-white border border-slate-200 text-sm py-3 rounded-xl hover:border-primary-300 hover:text-primary-600 transition flex flex-col items-center justify-center gap-1">
+                            <span class="font-bold">Tarde</span>
+                            <span class="text-xs text-slate-400">13h-18h</span>
+                        </button>
+                        <button onclick="generateSlots('full')" class="bg-white border border-slate-200 text-sm py-3 rounded-xl hover:border-primary-300 hover:text-primary-600 transition flex flex-col items-center justify-center gap-1">
+                            <span class="font-bold">Dia Todo</span>
+                            <span class="text-xs text-slate-400">08h-18h</span>
+                        </button>
                     </div>
                 </div>
                 
-                <div class="flex gap-2 mb-4">
-                    <input type="time" id="new-slot-time" class="input-field py-2">
-                    <button onclick="addSlot()" class="bg-teal-600 text-white px-4 rounded-xl shadow-lg shadow-teal-500/30"><i class="fa-solid fa-plus"></i></button>
+                <div class="flex gap-3 mb-5">
+                    <input type="time" id="new-slot-input" class="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-center focus:outline-none focus:ring-2 focus:ring-primary-500" value="09:00">
+                    <button onclick="addSingleSlot()" class="bg-primary-600 text-white px-5 rounded-xl hover:bg-primary-700 transition flex items-center">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
                 </div>
-
-                <div id="admin-slots-list" class="grid grid-cols-4 gap-2">
+                
+                <div id="slots-list" class="grid grid-cols-3 md:grid-cols-4 gap-3 max-h-60 overflow-y-auto pr-2"></div>
+            </div>
+            
+            <div id="day-tab-bookings" class="day-content hidden">
+                <div id="bookings-list" class="space-y-4 max-h-80 overflow-y-auto pr-2">
+                    <!-- Agendamentos serão carregados aqui -->
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-calendar-check text-3xl mb-2"></i>
+                        <p>Nenhum agendamento para este dia</p>
+                        <p class="text-xs mt-1">Crie horários disponíveis na aba "Gerenciar Horários"</p>
                     </div>
-            </div>
-
-            <div id="day-content-bookings" class="hidden flex-1 overflow-y-auto space-y-3">
                 </div>
-        </div>
-    </div>
-
-    <div id="modal-notes" class="modal-overlay hidden">
-        <div class="modal-content h-[70vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-lg">Prontuário Rápido</h3>
-                <button onclick="closeModal('modal-notes')" class="w-8 h-8 bg-slate-100 rounded-full text-slate-500"><i class="fa-solid fa-times"></i></button>
             </div>
-            <h4 id="notes-client-name" class="text-sm font-bold text-teal-600 mb-2">Cliente</h4>
-            <textarea id="client-notes-area" class="flex-1 input-field mb-4 resize-none" placeholder="Escreva as anotações aqui..."></textarea>
-            <button onclick="saveNotes()" class="w-full bg-teal-600 text-white font-bold py-3 rounded-xl">Salvar Anotação</button>
         </div>
     </div>
+    
+    <!-- Modal de Cliente (Admin) -->
+    <div id="client-modal" class="modal-overlay hidden">
+        <div class="modal-content animate-[slideUp_0.3s_ease-out]">
+            <h3 class="font-bold text-lg mb-5">Novo Paciente</h3>
+            <form onsubmit="saveClient(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-600 mb-1">Nome Completo</label>
+                        <input type="text" name="name" placeholder="Ex: João Silva" required class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-600 mb-1">Celular (WhatsApp)</label>
+                        <input type="tel" name="phone" placeholder="(11) 99999-9999" required class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition" maxlength="15">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-600 mb-1">E-mail</label>
+                        <input type="email" name="email" placeholder="seu@email.com" class="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition">
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeClientModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition">Cancelar</button>
+                    <button type="submit" class="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-primary-300">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal de Prontuário (Admin) -->
+    <div id="notes-modal" class="modal-overlay hidden">
+        <div class="modal-content animate-[slideUp_0.3s_ease-out] h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="font-bold text-lg text-slate-800">Prontuário Clínico</h3>
+                <button onclick="closeNotesModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <p id="note-client-name" class="text-sm text-primary-600 font-semibold mb-4 bg-primary-50 p-3 rounded-lg">Paciente: Carregando...</p>
+            
+            <div class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-4 mb-5 overflow-y-auto">
+                <div class="flex items-start mb-4 p-3 bg-white rounded-lg border border-slate-100">
+                    <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center mr-3">
+                        <span class="text-primary-700 font-bold text-sm">PS</span>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="font-bold text-slate-800">PsiPro</span>
+                            <span class="text-slate-400">Hoje, 10:30</span>
+                        </div>
+                        <p class="text-sm text-slate-600">Primeira sessão com o paciente. Apresenta sintomas de ansiedade generalizada, com histórico de 2 anos. Demonstrou-se receptivo ao tratamento.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start mb-4 p-3 bg-white rounded-lg border border-slate-100">
+                    <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center mr-3">
+                        <span class="text-primary-700 font-bold text-sm">PS</span>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="font-bold text-slate-800">PsiPro</span>
+                            <span class="text-slate-400">15/01/2026</span>
+                        </div>
+                        <p class="text-sm text-slate-600">Paciente relatou melhora nos sintomas após início do tratamento. Iniciamos técnicas de respiração e mindfulness para uso diário.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <textarea id="client-notes-area" class="w-full border border-slate-200 rounded-xl p-4 text-sm resize-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition mb-4 h-32" placeholder="Adicione anotações à sessão de hoje..."></textarea>
+            
+            <button onclick="saveNotes()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-300 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-floppy-disk"></i> Salvar Anotações
+            </button>
+        </div>
+    </div>
+    
+    <!-- SCRIPTS -->
     <script>
-        // --- ESTADO & DADOS ---
-        const DB_PREFIX = 'psi_app_v1_';
+        // ==== ESTADO GLOBAL DA APLICAÇÃO ====
+        const SESSION_PRICE = 150;
+        
         let state = {
-            currentDate: new Date(),
-            selectedDate: null, // YYYY-MM-DD
-            adminDate: new Date(),
-            selectedSlot: null,
-            settings: JSON.parse(localStorage.getItem(DB_PREFIX + 'settings')) || {
-                confirmMsg: "Olá, confirmo seu agendamento para o dia {data} às {hora}.",
-                videoLink: ""
-            }
+            // Navegação
+            currentView: 'view-profile',
+            currentTab: 'dashboard',
+            
+            // Datas e seleção
+            dateCursor: new Date(),
+            selectedDateISO: null,
+            selectedTimeSlot: null,
+            currentClientId: null,
+            
+            // Dados persistentes (simulando banco de dados)
+            clients: JSON.parse(localStorage.getItem('adminClients') || '[]'),
+            slots: JSON.parse(localStorage.getItem('availableSlots') || '{}'),
+            notes: JSON.parse(localStorage.getItem('adminNotes') || '{}'),
+            bookings: JSON.parse(localStorage.getItem('bookings') || '[]'),
+            settings: JSON.parse(localStorage.getItem('adminSettings') || JSON.stringify({
+                videoLink: 'https://meet.google.com/exemplo',
+                confirm: 'Olá {{nome}}, confirmo seu agendamento para {{data}} às {{hora}}. Link da chamada: {{link}}',
+                reminder: 'Oi {{nome}}! Lembrando nosso atendimento amanhã, {{data}} às {{hora}}. Te espero!',
+                sessionValue: 150,
+                specialties: ['Ansiedade', 'Depressão', 'TDAH', 'Terapia de Casal'],
+                about: 'Bem-vindo à PsiPro, sua plataforma completa para agendamento de consultas psicológicas. Oferecemos um ambiente seguro e confidencial para suas sessões, com profissionais qualificados prontos para ajudar você em sua jornada de autoconhecimento e bem-estar emocional.'
+            }))
         };
-
-        // --- INICIALIZAÇÃO ---
+        
+        // ==== INICIALIZAÇÃO ====
         document.addEventListener('DOMContentLoaded', () => {
-            initApp();
-        });
-
-        function initApp() {
-            // Define data de hoje como padrão
-            const todayISO = new Date().toISOString().split('T')[0];
-            state.selectedDate = todayISO;
+            const urlParams = new URLSearchParams(window.location.search);
             
-            // Renderizações Iniciais
-            renderClientDates();
-            renderClientSlots();
+            // Carregar configurações
+            loadSettings();
             
-            // Carrega Configs
-            document.getElementById('setting-msg-confirm').value = state.settings.confirmMsg;
-            document.getElementById('setting-video-link').value = state.settings.videoLink;
-
-            // Atualiza Dashboard Admin
-            updateDashboard();
-        }
-
-        // --- SISTEMA DE DADOS (LOCALSTORAGE) ---
-        const DataManager = {
-            getSlots: () => JSON.parse(localStorage.getItem(DB_PREFIX + 'slots')) || {},
-            saveSlots: (data) => localStorage.setItem(DB_PREFIX + 'slots', JSON.stringify(data)),
-            
-            getBookings: () => JSON.parse(localStorage.getItem(DB_PREFIX + 'bookings')) || [],
-            saveBookings: (data) => localStorage.setItem(DB_PREFIX + 'bookings', JSON.stringify(data)),
-            
-            getNotes: () => JSON.parse(localStorage.getItem(DB_PREFIX + 'notes')) || {},
-            saveNotes: (data) => localStorage.setItem(DB_PREFIX + 'notes', JSON.stringify(data)),
-        };
-
-        // --- NAVEGAÇÃO ---
-        function navigateTo(viewId) {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
-            window.scrollTo(0,0);
-            
-            if(viewId === 'view-admin') {
-                renderAdminCalendar();
-                updateDashboard();
-            }
-        }
-
-        function switchTab(tabId) {
-            // UI Abas
-            document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
-            document.querySelector(`button[data-tab="${tabId}"]`).classList.add('active');
-            
-            // Conteúdo
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-
-            if(tabId === 'dashboard') updateDashboard();
-            if(tabId === 'calendar') renderAdminCalendar();
-            if(tabId === 'clients') renderClients();
-            if(tabId === 'financial') renderFinancial();
-        }
-
-        function checkAdmin() {
-            const pass = prompt("Senha do Admin:");
-            if(pass === "admin") { // Senha simples para demo
+            // Rotear para admin se necessário
+            if (urlParams.get('view') === 'admin') {
                 navigateTo('view-admin');
+                initDashboard();
+                renderCalendar();
+                renderClientList();
+                renderFinancials();
             } else {
-                alert("Senha incorreta");
+                // Iniciar como cliente
+                navigateTo('view-profile');
+                initClientCalendar();
+            }
+        });
+        
+        // ==== FUNÇÕES DE NAVEGAÇÃO ====
+        function navigateTo(viewId) {
+            // Esconder todas as views
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.remove('active');
+                el.style.display = 'none';
+            });
+            
+            // Mostrar view selecionada
+            const target = document.getElementById(viewId);
+            if (target) {
+                target.style.display = 'block';
+                setTimeout(() => {
+                    target.classList.add('active');
+                    state.currentView = viewId;
+                }, 50);
             }
         }
-
-        // --- LÓGICA DO CLIENTE ---
-        function clientChangeDate(days) {
-            const current = new Date(state.selectedDate + 'T00:00:00'); // Fix fuso horário básico
-            current.setDate(current.getDate() + days);
-            state.selectedDate = current.toISOString().split('T')[0];
-            renderClientDates();
-            renderClientSlots();
+        
+        function switchTab(tabId) {
+            // Esconder todos os tabs
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // Remover classe active de todos os nav tabs
+            document.querySelectorAll('.nav-tab').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Mostrar tab selecionado
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            
+            state.currentTab = tabId;
+            
+            // Atualizar conteúdo específico do tab
+            if (tabId === 'dashboard') initDashboard();
+            if (tabId === 'calendar') renderCalendar();
+            if (tabId === 'financial') renderFinancials();
         }
-
-        function setClientDate(dateIso) {
-            state.selectedDate = dateIso;
-            renderClientDates();
-            renderClientSlots();
+        
+        // ==== UTILITÁRIOS ====
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-slate-800'}`;
+            
+            const icon = type === 'success' ? 'fa-check-circle' : 
+                         type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+            
+            toast.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid ${icon}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Remover toast após 3 segundos
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
-
-        function renderClientDates() {
-            const container = document.getElementById('client-date-scroll');
-            const monthDisplay = document.getElementById('client-month-display');
+        
+        function formatDate(date) {
+            return date.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+        }
+        
+        function formatTime(date) {
+            return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function getBookings() {
+            return JSON.parse(localStorage.getItem('bookings') || '[]');
+        }
+        
+        // ==== LÓGICA DO CLIENTE ====
+        function initClientCalendar() {
+            renderClientMonthDays();
+        }
+        
+        function renderClientMonthDays() {
+            const container = document.getElementById('date-scroll-container');
+            if (!container) return;
+            
             container.innerHTML = '';
-
-            const baseDate = new Date(state.selectedDate + 'T00:00:00');
-            monthDisplay.innerText = baseDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-
-            // Gera 7 dias ao redor da data selecionada
-            for (let i = -3; i <= 3; i++) {
-                const d = new Date(baseDate);
-                d.setDate(baseDate.getDate() + i);
-                const iso = d.toISOString().split('T')[0];
-                const dayNum = d.getDate();
-                const weekDay = d.toLocaleDateString('pt-BR', { weekday: 'short' }).slice(0,3);
+            const label = document.getElementById('current-month-label');
+            const now = new Date();
+            
+            // Atualizar label do mês atual
+            label.textContent = now.toLocaleDateString('pt-BR', { month: 'long' });
+            
+            // Gerar os próximos 30 dias
+            for (let i = 0; i < 30; i++) {
+                const d = new Date();
+                d.setDate(now.getDate() + i);
                 
-                // Checa disponibilidade visual
-                const allSlots = DataManager.getSlots()[iso] || [];
-                const bookings = DataManager.getBookings().filter(b => b.date === iso).map(b => b.time);
-                const available = allSlots.filter(s => !bookings.includes(s)).length > 0;
-
-                const btn = document.createElement('div');
-                btn.className = `calendar-day flex-shrink-0 w-14 h-16 bg-white border border-gray-100 snap-center ${iso === state.selectedDate ? 'selected' : ''} ${available ? 'has-slots' : ''}`;
-                btn.onclick = () => setClientDate(iso);
+                const iso = d.toISOString().split('T')[0];
+                const dayName = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+                const dayNumber = d.getDate();
+                const isToday = now.toDateString() === d.toDateString();
+                
+                const btn = document.createElement('button');
+                btn.className = `flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center border transition-all duration-200 snap-start ${state.selectedDateISO === iso ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white border-primary-500 shadow-lg scale-105' : 'bg-white border-gray-100 text-gray-500 hover:border-primary-200 hover:shadow'}`;
+                
+                if (isToday) {
+                    btn.className += ' ring-2 ring-primary-200 bg-primary-50 text-primary-700 font-medium';
+                }
+                
+                btn.onclick = () => selectClientDate(iso, btn);
                 btn.innerHTML = `
-                    <span class="text-[10px] uppercase opacity-60">${weekDay}</span>
-                    <span class="text-xl font-medium">${dayNum}</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider mb-1">${dayName}</span>
+                    <span class="text-xl font-bold">${dayNumber}</span>
                 `;
+                
                 container.appendChild(btn);
             }
         }
-
-        function renderClientSlots() {
-            const grid = document.getElementById('client-slots-grid');
-            const empty = document.getElementById('client-empty-state');
-            const confirmBar = document.getElementById('client-confirm-bar');
+        
+        function selectClientDate(iso, btnElement) {
+            state.selectedDateISO = iso;
+            state.selectedTimeSlot = null; // Resetar horário
             
-            grid.innerHTML = '';
-            state.selectedSlot = null;
-            confirmBar.classList.remove('translate-y-0');
-            confirmBar.classList.add('translate-y-full');
-
-            const allSlots = DataManager.getSlots()[state.selectedDate] || [];
-            // Filtra agendados
-            const bookings = DataManager.getBookings().filter(b => b.date === state.selectedDate).map(b => b.time);
+            // Atualizar visual dos botões de dia
+            const container = document.getElementById('date-scroll-container');
+            Array.from(container.children).forEach(child => {
+                child.className = 'flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center border transition-all duration-200 snap-start bg-white border-gray-100 text-gray-500 hover:border-primary-200 hover:shadow';
+                
+                const date = new Date(child.querySelector('span:last-child').textContent);
+                const today = new Date();
+                if (date.getDate() === today.getDate() && date.getMonth() === today.getMonth()) {
+                    child.className += ' ring-2 ring-primary-200 bg-primary-50 text-primary-700 font-medium';
+                }
+            });
             
-            // Ordena horários
-            allSlots.sort();
-
-            if(allSlots.length === 0 || allSlots.length === bookings.length) {
-                empty.classList.remove('hidden');
+            btnElement.className = 'flex-shrink-0 w-14 h-20 rounded-2xl flex flex-col items-center justify-center border transition-all duration-200 snap-start bg-gradient-to-br from-primary-500 to-primary-600 text-white border-primary-500 shadow-lg scale-105';
+            
+            renderClientSlots(iso);
+            updateConfirmBar();
+        }
+        
+        function renderClientSlots(iso) {
+            const grid = document.getElementById('slots-grid');
+            const loader = document.getElementById('slots-loader');
+            
+            grid.classList.add('opacity-50');
+            loader.classList.remove('hidden');
+            
+            // Simular delay de rede
+            setTimeout(() => {
+                grid.innerHTML = '';
+                loader.classList.add('hidden');
+                grid.classList.remove('opacity-50');
+                
+                const daySlots = state.slots[iso] || [];
+                const bookings = getBookings().filter(b => b.agendamento.dataISO === iso);
+                
+                if (daySlots.length === 0) {
+                    grid.innerHTML = `<div class="col-span-2 text-center py-10 text-gray-400">Sem horários disponíveis para este dia</div>`;
+                    return;
+                }
+                
+                // Filtrar horários já agendados
+                const availableSlots = daySlots.filter(slot => {
+                    return !bookings.some(b => b.agendamento.hora === slot);
+                });
+                
+                if (availableSlots.length === 0) {
+                    grid.innerHTML = `<div class="col-span-2 text-center py-10 text-gray-400">Todos os horários estão ocupados para este dia</div>`;
+                    return;
+                }
+                
+                // Ordenar e renderizar slots
+                availableSlots.sort().forEach(time => {
+                    const btn = document.createElement('button');
+                    btn.className = 'time-slot py-3 rounded-xl border border-gray-200 text-base font-medium text-gray-700 bg-white hover:border-primary-300 hover:text-primary-600 transition-all duration-200';
+                    btn.textContent = time;
+                    btn.onclick = () => selectTimeSlot(time, btn);
+                    grid.appendChild(btn);
+                });
+            }, 500);
+        }
+        
+        function selectTimeSlot(time, btnElement) {
+            state.selectedTimeSlot = time;
+            
+            // Remover classe active de todos os botões
+            document.querySelectorAll('.time-slot').forEach(el => {
+                el.classList.remove('active');
+                el.classList.remove('bg-primary-600');
+                el.classList.remove('text-white');
+                el.classList.add('bg-white');
+                el.classList.add('text-gray-700');
+            });
+            
+            // Adicionar classe active no selecionado
+            btnElement.classList.remove('bg-white');
+            btnElement.classList.remove('text-gray-700');
+            btnElement.classList.add('active');
+            btnElement.classList.add('bg-primary-600');
+            btnElement.classList.add('text-white');
+            
+            updateConfirmBar();
+        }
+        
+        function updateConfirmBar() {
+            const bar = document.getElementById('confirm-bar');
+            const summary = document.getElementById('selected-summary');
+            
+            if (state.selectedDateISO && state.selectedTimeSlot) {
+                const dateParts = state.selectedDateISO.split('-');
+                summary.textContent = `${dateParts[2]}/${dateParts[1]} às ${state.selectedTimeSlot}`;
+                bar.classList.remove('translate-y-full');
+            } else {
+                bar.classList.add('translate-y-full');
+            }
+        }
+        
+        // ==== MODAL DE CHECKOUT ====
+        function openModal() {
+            if (!state.selectedDateISO || !state.selectedTimeSlot) {
+                showToast('Selecione um horário primeiro', 'error');
                 return;
             }
-            empty.classList.add('hidden');
-
-            allSlots.forEach(time => {
-                const isBooked = bookings.includes(time);
-                const btn = document.createElement('button');
-                btn.className = `time-slot p-3 rounded-xl font-medium text-sm text-center ${isBooked ? 'booked' : 'bg-white text-gray-700 hover:border-teal-500'}`;
-                btn.innerText = time;
-                
-                if(!isBooked) {
-                    btn.onclick = () => selectSlot(btn, time);
-                }
-                grid.appendChild(btn);
-            });
-        }
-
-        function selectSlot(el, time) {
-            document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected', 'bg-teal-600', 'text-white', 'border-teal-600'));
-            el.classList.add('selected');
             
-            state.selectedSlot = time;
-            
-            const dateFmt = new Date(state.selectedDate + 'T00:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
-            document.getElementById('client-selected-info').innerText = `${dateFmt} às ${time}`;
-            
-            document.getElementById('client-confirm-bar').classList.remove('translate-y-full');
-            document.getElementById('client-confirm-bar').classList.add('translate-y-0');
+            document.getElementById('checkout-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
         }
-
-        function openBookingModal() {
-            document.getElementById('modal-booking').classList.remove('hidden');
+        
+        function closeModal() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
         }
-
-        function confirmBooking(e) {
+        
+        function submitBooking(e) {
             e.preventDefault();
-            const name = document.getElementById('book-name').value;
-            const phone = document.getElementById('book-phone').value;
-
-            if(!name || !phone) return alert('Preencha todos os dados');
-
-            const bookings = DataManager.getBookings();
-            const newBooking = {
+            
+            const btn = document.getElementById('btn-submit');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Processando...';
+            
+            const formData = new FormData(e.target);
+            
+            // Criar novo agendamento
+            const booking = {
                 id: Date.now(),
-                date: state.selectedDate,
-                time: state.selectedSlot,
-                clientName: name,
-                clientPhone: phone,
-                value: 150, // Valor fixo conforme HTML
+                cliente: {
+                    nome: formData.get('name'),
+                    telefone: formData.get('phone'),
+                    email: formData.get('email'),
+                    id: Date.now() + 1
+                },
+                agendamento: {
+                    dataISO: state.selectedDateISO,
+                    hora: state.selectedTimeSlot,
+                    valor: SESSION_PRICE
+                },
+                status: 'confirmado',
                 createdAt: new Date().toISOString()
             };
-
-            bookings.push(newBooking);
-            DataManager.saveBookings(bookings);
-
-            // Geração de Link WhatsApp Automático
-            const msg = state.settings.confirmMsg
-                .replace('{data}', state.selectedDate.split('-').reverse().join('/'))
-                .replace('{hora}', state.selectedSlot);
             
-            const waLink = `https://wa.me/55${phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
+            // Salvar no localStorage
+            let currentBookings = getBookings();
+            currentBookings.push(booking);
+            localStorage.setItem('bookings', JSON.stringify(currentBookings));
             
-            closeModal('modal-booking');
-            
-            // Sucesso e Redirecionamento
-            alert('Agendamento Confirmado! Você será redirecionado para o WhatsApp.');
-            window.open(waLink, '_blank');
-            
-            // Reset UI
-            renderClientSlots();
-            renderClientDates(); // Atualiza indicadores
-            navigateTo('view-profile');
-        }
-
-
-        // --- LÓGICA DO ADMIN ---
-
-        // 1. Calendário Admin
-        function changeAdminMonth(delta) {
-            state.adminDate.setMonth(state.adminDate.getMonth() + delta);
-            renderAdminCalendar();
-        }
-
-        function renderAdminCalendar() {
-            const grid = document.getElementById('admin-calendar-grid');
-            const title = document.getElementById('admin-calendar-month');
-            grid.innerHTML = '';
-
-            const year = state.adminDate.getFullYear();
-            const month = state.adminDate.getMonth();
-            
-            title.innerText = state.adminDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-            // Padding dias vazios
-            for(let i=0; i<firstDay; i++) {
-                grid.innerHTML += `<div class="bg-slate-50 h-24"></div>`;
+            // Salvar cliente na lista de clientes se não existir
+            const clientExists = state.clients.find(c => c.phone === booking.cliente.telefone);
+            if (!clientExists) {
+                state.clients.push({
+                    id: booking.cliente.id,
+                    name: booking.cliente.nome,
+                    phone: booking.cliente.telefone,
+                    email: booking.cliente.email,
+                    createdAt: new Date().toISOString()
+                });
+                localStorage.setItem('adminClients', JSON.stringify(state.clients));
             }
-
-            const slotsMap = DataManager.getSlots();
-            const bookings = DataManager.getBookings();
-
-            for(let d=1; d<=daysInMonth; d++) {
-                const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            
+            // Enviar mensagem de confirmação via WhatsApp (simulação)
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                closeModal();
                 
-                const slots = slotsMap[iso] || [];
-                const dayBookings = bookings.filter(b => b.date === iso);
+                showToast('Agendamento confirmado com sucesso!', 'success');
                 
-                // Lógica de Cores/Status
-                let statusClass = '';
-                if(slots.length === 0) statusClass = 'text-slate-400'; // Vazio
-                else if(dayBookings.length >= slots.length) statusClass = 'text-red-500 font-bold bg-red-50'; // Cheio
-                else if(dayBookings.length > 0) statusClass = 'text-teal-600 font-bold bg-teal-50'; // Parcial
-                else statusClass = 'text-slate-700 bg-white'; // Livre
-
-                // Dots
-                let dots = '';
-                if(dayBookings.length > 0) dots = `<span class="w-1.5 h-1.5 bg-teal-500 rounded-full mx-auto mt-1 block"></span>`;
-
-                const dayEl = document.createElement('div');
-                dayEl.className = `h-24 border border-slate-50 p-1 cursor-pointer hover:bg-slate-100 transition relative flex flex-col items-center justify-center ${statusClass}`;
-                dayEl.onclick = () => openDayModal(iso);
-                dayEl.innerHTML = `
-                    <span class="text-sm">${d}</span>
-                    ${dots}
-                    <span class="text-[9px] mt-1 opacity-70">${slots.length > 0 ? `${dayBookings.length}/${slots.length}` : ''}</span>
-                `;
-                grid.appendChild(dayEl);
-            }
+                // Simular confirmação por WhatsApp
+                setTimeout(() => {
+                    showToast('Confirmação enviada por WhatsApp!', 'success');
+                }, 1000);
+                
+                // Resetar seleção
+                state.selectedDateISO = null;
+                state.selectedTimeSlot = null;
+                updateConfirmBar();
+                
+                // Resetar formulário
+                e.target.reset();
+                
+                // Fechar modal após 2 segundos
+                setTimeout(() => {
+                    navigateTo('view-profile');
+                }, 2000);
+            }, 1500);
         }
-
-        // 2. Modal do Dia (Gestão)
-        let currentModalDate = null;
         
-        function openDayModal(iso) {
-            currentModalDate = iso;
-            const d = new Date(iso + 'T00:00:00');
-            document.getElementById('modal-day-title').innerText = d.getDate();
-            document.getElementById('modal-day-date').innerText = d.toLocaleDateString('pt-BR', {weekday: 'long', month:'long'});
-            
-            document.getElementById('modal-day').classList.remove('hidden');
-            
-            // Default tab
-            switchDayTab('slots');
-            renderAdminDaySlots();
-            renderAdminDayBookings();
-        }
-
-        function switchDayTab(tab) {
-            if(tab === 'slots') {
-                document.getElementById('day-content-slots').classList.remove('hidden');
-                document.getElementById('day-content-bookings').classList.add('hidden');
-                document.getElementById('btn-tab-day-slots').className = "flex-1 pb-2 text-sm font-bold text-teal-600 border-b-2 border-teal-600";
-                document.getElementById('btn-tab-day-bookings').className = "flex-1 pb-2 text-sm font-bold text-slate-400 border-b-2 border-transparent";
-            } else {
-                document.getElementById('day-content-slots').classList.add('hidden');
-                document.getElementById('day-content-bookings').classList.remove('hidden');
-                document.getElementById('btn-tab-day-slots').className = "flex-1 pb-2 text-sm font-bold text-slate-400 border-b-2 border-transparent";
-                document.getElementById('btn-tab-day-bookings').className = "flex-1 pb-2 text-sm font-bold text-teal-600 border-b-2 border-teal-600";
-            }
-        }
-
-        // 3. Gestão de Slots
-        function addSlot() {
-            const time = document.getElementById('new-slot-time').value;
-            if(!time) return;
-
-            const slotsMap = DataManager.getSlots();
-            if(!slotsMap[currentModalDate]) slotsMap[currentModalDate] = [];
-            
-            if(!slotsMap[currentModalDate].includes(time)) {
-                slotsMap[currentModalDate].push(time);
-                slotsMap[currentModalDate].sort();
-                DataManager.saveSlots(slotsMap);
-                renderAdminDaySlots();
-                renderAdminCalendar(); // Atualiza contador na view mensal
-            }
-        }
-
-        function removeSlot(time) {
-            const slotsMap = DataManager.getSlots();
-            const bookings = DataManager.getBookings().filter(b => b.date === currentModalDate && b.time === time);
-            
-            if(bookings.length > 0) {
-                alert("Não é possível remover um horário que já possui agendamento. Cancele o agendamento primeiro.");
-                return;
-            }
-
-            slotsMap[currentModalDate] = slotsMap[currentModalDate].filter(t => t !== time);
-            DataManager.saveSlots(slotsMap);
-            renderAdminDaySlots();
-            renderAdminCalendar();
-        }
-
-        function bulkGenerate(period) {
-            if(!confirm("Isso adicionará vários horários. Confirmar?")) return;
-            
-            const slotsMap = DataManager.getSlots();
-            if(!slotsMap[currentModalDate]) slotsMap[currentModalDate] = [];
-
-            let start, end;
-            if(period === 'morning') { start = 8; end = 12; }
-            if(period === 'afternoon') { start = 13; end = 18; }
-
-            for(let h = start; h <= end; h++) {
-                const timeStr = `${String(h).padStart(2,'0')}:00`;
-                if(!slotsMap[currentModalDate].includes(timeStr)) {
-                    slotsMap[currentModalDate].push(timeStr);
-                }
-            }
-            slotsMap[currentModalDate].sort();
-            DataManager.saveSlots(slotsMap);
-            renderAdminDaySlots();
-            renderAdminCalendar();
-        }
-
-        function renderAdminDaySlots() {
-            const list = document.getElementById('admin-slots-list');
-            list.innerHTML = '';
-            
-            const slotsMap = DataManager.getSlots();
-            const daySlots = slotsMap[currentModalDate] || [];
-            const bookings = DataManager.getBookings().filter(b => b.date === currentModalDate).map(b => b.time);
-
-            daySlots.forEach(time => {
-                const isBooked = bookings.includes(time);
-                const el = document.createElement('div');
-                el.className = `flex items-center justify-between p-2 rounded-lg text-xs font-bold border ${isBooked ? 'bg-teal-50 border-teal-200 text-teal-700' : 'bg-white border-slate-200 text-slate-600'}`;
-                el.innerHTML = `
-                    <span>${time}</span>
-                    ${!isBooked ? `<button onclick="removeSlot('${time}')" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>` : '<i class="fa-solid fa-check text-teal-500"></i>'}
-                `;
-                list.appendChild(el);
-            });
-        }
-
-        // 4. Gestão de Agendamentos (Dentro do dia)
-        function renderAdminDayBookings() {
-            const container = document.getElementById('day-content-bookings');
-            container.innerHTML = '';
-
-            const bookings = DataManager.getBookings()
-                .filter(b => b.date === currentModalDate)
-                .sort((a,b) => a.time.localeCompare(b.time));
-
-            if(bookings.length === 0) {
-                container.innerHTML = '<p class="text-center text-slate-400 text-sm py-4">Nenhum agendamento para este dia.</p>';
-                return;
-            }
-
-            bookings.forEach(booking => {
-                const card = document.createElement('div');
-                card.className = "bg-white p-3 rounded-xl border border-slate-100 shadow-sm relative";
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <span class="bg-teal-100 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded">${booking.time}</span>
-                            <h4 class="font-bold text-slate-800 text-sm mt-1">${booking.clientName}</h4>
-                        </div>
-                        <button onclick="deleteBooking(${booking.id})" class="text-red-400 hover:text-red-600 text-xs"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                    <div class="flex gap-2">
-                        <a href="https://wa.me/55${booking.clientPhone.replace(/\D/g,'')}" target="_blank" class="flex-1 bg-green-50 text-green-600 text-center py-1.5 rounded-lg text-xs font-bold"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
-                        <button onclick="openNotesModal('${booking.clientPhone}', '${booking.clientName}')" class="flex-1 bg-slate-100 text-slate-600 py-1.5 rounded-lg text-xs font-bold">Prontuário</button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function deleteBooking(id) {
-            if(!confirm('Tem certeza que deseja cancelar este agendamento?')) return;
-            
-            let bookings = DataManager.getBookings().filter(b => b.id !== id);
-            DataManager.saveBookings(bookings);
-            
-            renderAdminDayBookings();
-            renderAdminDaySlots(); // Atualiza status visual dos slots
-            renderAdminCalendar(); // Atualiza dots
-            updateDashboard(); // Atualiza stats
-        }
-
-        // 5. Dashboard
-        function updateDashboard() {
-            const bookings = DataManager.getBookings();
+        // ==== LÓGICA DO ADMIN ====
+        function initDashboard() {
+            const bookings = getBookings();
             const now = new Date();
-            const currentMonthISO = now.toISOString().slice(0,7); // YYYY-MM
-
-            // Filtra próximo atendimento (Data >= Hoje e Hora > Agora se for hoje)
-            const upcoming = bookings.filter(b => {
-                const bDate = new Date(b.date + 'T' + b.time + ':00');
-                return bDate >= now;
-            }).sort((a,b) => {
-                const dateA = new Date(a.date + 'T' + a.time);
-                const dateB = new Date(b.date + 'T' + b.time);
-                return dateA - dateB;
-            });
-
-            // Update UI Próximo
-            if(upcoming.length > 0) {
+            
+            // Total de clientes
+            document.getElementById('dash-total-clients').textContent = state.clients.length;
+            
+            // Sessões do mês atual
+            const currentMonthISO = now.toISOString().slice(0, 7);
+            const monthSessions = bookings.filter(b => b.agendamento.dataISO.startsWith(currentMonthISO)).length;
+            document.getElementById('dash-month-sessions').textContent = monthSessions;
+            
+            // Próximo atendimento
+            const upcoming = bookings
+                .filter(b => new Date(`${b.agendamento.dataISO}T${b.agendamento.hora}`) > now)
+                .sort((a, b) => new Date(`${a.agendamento.dataISO}T${a.agendamento.hora}`) - new Date(`${b.agendamento.dataISO}T${b.agendamento.hora}`));
+            
+            const nextSessionDiv = document.getElementById('dash-next-session');
+            const noSessionDiv = document.getElementById('dash-no-session');
+            
+            if (upcoming.length > 0) {
                 const next = upcoming[0];
-                const isToday = next.date === now.toISOString().split('T')[0];
+                const sessionDate = new Date(`${next.agendamento.dataISO}T${next.agendamento.hora}`);
+                const formattedDate = sessionDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+                const formattedTime = sessionDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                 
-                document.getElementById('dash-next-badge').innerText = isToday ? 'HOJE' : next.date.split('-').reverse().join('/');
-                document.getElementById('dash-next-time').innerText = next.time;
-                document.getElementById('dash-next-client').innerText = next.clientName;
+                nextSessionDiv.innerHTML = `
+                    <p class="text-3xl font-bold">${formattedTime}</p>
+                    <p class="text-primary-100 mb-1">${formattedDate}</p>
+                    <p class="text-white font-semibold flex items-center gap-2">
+                        <i class="fa-solid fa-user-doctor"></i>
+                        ${next.cliente.nome}
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-3">
+                        <button class="mt-3 bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-2 rounded-lg transition flex items-center gap-2" onclick="switchTab('calendar')">
+                            <i class="fa-regular fa-calendar"></i> Ver Agenda Completa
+                        </button>
+                        <button class="mt-3 bg-primary-500 hover:bg-primary-600 text-white text-sm px-4 py-2 rounded-lg transition flex items-center gap-2" onclick="openVideoLink()">
+                            <i class="fa-solid fa-video"></i> Entrar na Sala
+                        </button>
+                        <button class="mt-3 bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-2 rounded-lg transition flex items-center gap-2" onclick="sendWhatsApp(${next.id}, 'confirm')">
+                            <i class="fa-brands fa-whatsapp"></i> Enviar Confirmação
+                        </button>
+                    </div>
+                `;
                 
-                // Salva ID para ações rápidas
-                document.getElementById('dash-next-content').dataset.nextPhone = next.clientPhone;
-                document.getElementById('dash-next-content').dataset.nextName = next.clientName;
+                noSessionDiv.classList.add('hidden');
+                nextSessionDiv.classList.remove('hidden');
             } else {
-                document.getElementById('dash-next-time').innerText = "--:--";
-                document.getElementById('dash-next-client').innerText = "Sem próximos agendamentos";
+                noSessionDiv.classList.remove('hidden');
+                nextSessionDiv.classList.add('hidden');
             }
-
-            // Stats
-            const uniqueClients = [...new Set(bookings.map(b => b.clientPhone))].length;
-            const monthSessions = bookings.filter(b => b.date.startsWith(currentMonthISO)).length;
-
-            document.getElementById('dash-total-clients').innerText = uniqueClients;
-            document.getElementById('dash-month-count').innerText = monthSessions;
+            
+            // Renderizar sessões recentes
+            renderRecentSessions();
         }
-
-        // Ações Rápidas Dashboard
-        function sendQuickMsg() {
-            const el = document.getElementById('dash-next-content');
-            const phone = el.dataset.nextPhone;
-            if(phone) {
-                window.open(`https://wa.me/55${phone.replace(/\D/g,'')}`, '_blank');
+        
+        function renderRecentSessions() {
+            const container = document.getElementById('recent-sessions');
+            const bookings = getBookings();
+            
+            if (bookings.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-clock text-3xl mb-2"></i>
+                        <p>Nenhuma sessão recente encontrada</p>
+                        <p class="text-xs mt-1">Comece adicionando horários disponíveis na sua agenda</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ordenar por data mais recente e pegar as últimas 5
+            const recent = [...bookings]
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .slice(0, 5);
+            
+            container.innerHTML = '';
+            
+            recent.forEach(booking => {
+                const date = new Date(`${booking.agendamento.dataISO}T${booking.agendamento.hora}`);
+                const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+                const formattedTime = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                
+                const div = document.createElement('div');
+                div.className = 'p-4 hover:bg-slate-50 transition';
+                div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+                                <span class="text-primary-700 font-bold">${booking.cliente.nome.charAt(0)}</span>
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-800">${booking.cliente.nome}</p>
+                                <p class="text-xs text-slate-500">${formattedDate} • ${formattedTime}</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">${booking.status}</span>
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+        
+        function renderCalendar() {
+            const year = state.dateCursor.getFullYear();
+            const month = state.dateCursor.getMonth();
+            
+            // Atualizar label do mês e ano
+            const label = document.getElementById('calendar-month-label');
+            if (label) {
+                label.textContent = state.dateCursor.toLocaleDateString('pt-BR', { 
+                    month: 'long', 
+                    year: 'numeric' 
+                });
+            }
+            
+            const firstDay = new Date(year, month, 1);
+            const startDate = new Date(firstDay);
+            startDate.setDate(firstDay.getDate() - firstDay.getDay());
+            
+            const grid = document.getElementById('calendar-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            const bookings = getBookings();
+            const today = new Date().toISOString().split('T')[0];
+            
+            for (let i = 0; i < 42; i++) {
+                const d = new Date(startDate);
+                d.setDate(startDate.getDate() + i);
+                
+                const iso = d.toISOString().split('T')[0];
+                const isCurrentMonth = d.getMonth() === month;
+                const isToday = iso === today;
+                
+                const hasSlots = state.slots[iso] && state.slots[iso].length > 0;
+                const dayBookings = bookings.filter(b => b.agendamento.dataISO === iso);
+                const hasBookings = dayBookings.length > 0;
+                
+                // Determinar cor do ponto indicador
+                let dotClass = '';
+                if (hasBookings) dotClass = 'bg-primary-600'; // Com sessões agendadas
+                else if (hasSlots) dotClass = 'bg-blue-300';   // Com horários disponíveis
+                else if (!isCurrentMonth) dotClass = 'bg-slate-200'; // Mês fora do período
+                
+                const dayElement = document.createElement('button');
+                dayElement.className = `
+                    calendar-day w-full h-14 rounded-xl border flex flex-col items-center justify-center cursor-pointer
+                    transition-all duration-200 relative overflow-hidden
+                    ${!isCurrentMonth ? 'bg-slate-50 text-slate-300 border-transparent' : 'bg-white border-slate-100 text-slate-700 hover:border-primary-200 hover:shadow-sm'}
+                    ${isToday ? 'today border-2 border-yellow-300 bg-yellow-50' : ''}
+                    ${hasBookings ? 'booked' : ''}
+                    ${hasSlots && !hasBookings ? 'has-sessions' : ''}
+                `;
+                
+                dayElement.innerHTML = `
+                    <span class="font-medium text-sm z-10">${d.getDate()}</span>
+                    ${dotClass ? `<div class="w-2 h-2 rounded-full mt-1 ${dotClass} z-10"></div>` : ''}
+                `;
+                
+                if (isCurrentMonth) {
+                    dayElement.onclick = () => openDayModal(iso, d);
+                }
+                
+                grid.appendChild(dayElement);
             }
         }
-        function openNextClientDetails() {
-            const el = document.getElementById('dash-next-content');
-            const phone = el.dataset.nextPhone;
-            const name = el.dataset.nextName;
-            if(phone) openNotesModal(phone, name);
+        
+        function changeMonth(delta) {
+            state.dateCursor.setMonth(state.dateCursor.getMonth() + delta);
+            renderCalendar();
         }
-
-        // 6. Clientes e Prontuários
-        let currentNoteClient = null; // Chave é o telefone
-
-        function renderClients() {
-            const search = document.getElementById('client-search').value.toLowerCase();
-            const list = document.getElementById('clients-list');
+        
+        function openDayModal(iso, dateObj) {
+            state.selectedDateISO = iso;
+            
+            // Atualizar título e subtítulo do modal
+            document.getElementById('modal-day-title').textContent = dateObj.toLocaleDateString('pt-BR', { 
+                weekday: 'long' 
+            }).replace(/^\w/, c => c.toUpperCase());
+            
+            document.getElementById('modal-day-subtitle').textContent = dateObj.toLocaleDateString('pt-BR', { 
+                day: 'numeric', 
+                month: 'long',
+                year: 'numeric'
+            });
+            
+            // Resetar para aba de slots
+            switchDayTab('slots');
+            
+            // Renderizar conteúdo
+            renderDaySlots();
+            renderDayBookings();
+            
+            // Mostrar modal
+            document.getElementById('day-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeDayModal() {
+            document.getElementById('day-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+        
+        function switchDayTab(tab) {
+            // Remover classe active de todos os tabs
+            document.querySelectorAll('.day-tab').forEach(t => {
+                t.classList.remove('active');
+            });
+            
+            // Esconder todos os conteúdos
+            document.querySelectorAll('.day-content').forEach(c => {
+                c.classList.add('hidden');
+            });
+            
+            // Mostrar tab e conteúdo selecionado
+            document.getElementById(`btn-tab-${tab}`).classList.add('active');
+            document.getElementById(`day-tab-${tab}`).classList.remove('hidden');
+        }
+        
+        function renderDaySlots() {
+            const list = document.getElementById('slots-list');
+            if (!list) return;
+            
             list.innerHTML = '';
-
-            const bookings = DataManager.getBookings();
-            // Agrupar por telefone (ID único neste sistema simples)
-            const clientsMap = {};
-            bookings.forEach(b => {
-                if(!clientsMap[b.clientPhone]) {
-                    clientsMap[b.clientPhone] = { name: b.clientName, phone: b.clientPhone, lastDate: b.date };
-                } else {
-                    // Atualiza última data se for mais recente
-                    if(b.date > clientsMap[b.clientPhone].lastDate) clientsMap[b.clientPhone].lastDate = b.date;
+            const slots = state.slots[state.selectedDateISO] || [];
+            
+            if (slots.length === 0) {
+                list.innerHTML = `
+                    <div class="col-span-4 text-center py-8 text-slate-400">
+                        <i class="fa-regular fa-clock text-2xl mb-2"></i>
+                        <p>Nenhum horário disponível para este dia</p>
+                        <p class="text-xs mt-1">Use o gerador rápido ou adicione manualmente</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ordenar e renderizar slots
+            slots.sort().forEach(time => {
+                const slotElement = document.createElement('div');
+                slotElement.className = 'time-card bg-white border border-slate-100 rounded-xl p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group';
+                slotElement.innerHTML = `
+                    <span class="font-medium text-slate-700">${time}</span>
+                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="editSlot('${time}')" class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-primary-100 hover:text-primary-600 flex items-center justify-center transition">
+                            <i class="fa-solid fa-pen text-[9px]"></i>
+                        </button>
+                        <button onclick="removeSlot('${time}')" class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition">
+                            <i class="fa-solid fa-xmark text-[10px]"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(slotElement);
+            });
+        }
+        
+        function renderDayBookings() {
+            const list = document.getElementById('bookings-list');
+            if (!list) return;
+            
+            const bookings = getBookings().filter(b => b.agendamento.dataISO === state.selectedDateISO);
+            
+            if (bookings.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-calendar-check text-3xl mb-2"></i>
+                        <p>Nenhum agendamento confirmado para este dia</p>
+                        <p class="text-xs mt-1">Crie horários disponíveis na aba "Gerenciar Horários"</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = '';
+            
+            bookings.forEach(booking => {
+                const time = booking.agendamento.hora;
+                const clientName = booking.cliente.nome;
+                const clientId = booking.cliente.id;
+                
+                const bookingElement = document.createElement('div');
+                bookingElement.className = 'bg-white p-4 rounded-xl border border-slate-100 shadow-sm transition hover:shadow-md';
+                bookingElement.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-lg">${clientName}</h4>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-sm bg-primary-100 text-primary-700 px-2 py-0.5 rounded-md font-medium">${time}</span>
+                                <span class="text-xs text-slate-400">• R$ ${booking.agendamento.valor.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <button onclick="deleteBooking(${booking.id})" class="text-slate-300 hover:text-red-500 transition" title="Cancelar agendamento">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="sendWhatsApp(${booking.id}, 'confirm')" class="flex-1 bg-green-50 text-green-700 text-xs py-2 rounded-lg border border-green-100 hover:bg-green-100 font-medium transition flex items-center justify-center gap-1">
+                            <i class="fa-brands fa-whatsapp text-sm"></i> Confirmar
+                        </button>
+                        <button onclick="sendWhatsApp(${booking.id}, 'reminder')" class="flex-1 bg-amber-50 text-amber-700 text-xs py-2 rounded-lg border border-amber-100 hover:bg-amber-100 font-medium transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-bell text-sm"></i> Lembrete
+                        </button>
+                        <button onclick="sendWhatsApp(${booking.id}, 'link')" class="flex-1 bg-purple-50 text-purple-700 text-xs py-2 rounded-lg border border-purple-100 hover:bg-purple-100 font-medium transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-video text-sm"></i> Vídeo
+                        </button>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
+                        <button onclick="openNotesModal(${clientId}, '${clientName}')" class="text-primary-600 hover:text-primary-800 text-sm font-medium flex items-center gap-1 transition">
+                            <i class="fa-solid fa-notes-medical"></i> Prontuário
+                        </button>
+                        <span class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">${booking.status}</span>
+                    </div>
+                `;
+                list.appendChild(bookingElement);
+            });
+        }
+        
+        function addSingleSlot() {
+            const timeInput = document.getElementById('new-slot-input');
+            const time = timeInput.value;
+            
+            if (!time) {
+                showToast('Selecione um horário válido', 'error');
+                return;
+            }
+            
+            saveSlots([time]);
+            timeInput.value = "09:00"; // Resetar para próximo horário comum
+            showToast('Horário adicionado com sucesso!', 'success');
+        }
+        
+        function generateSlots(type) {
+            let newSlots = [];
+            
+            switch(type) {
+                case 'morning':
+                    newSlots = ["08:00", "09:00", "10:00", "11:00", "12:00"];
+                    break;
+                case 'afternoon':
+                    newSlots = ["13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
+                    break;
+                case 'full':
+                    newSlots = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
+                    break;
+            }
+            
+            saveSlots(newSlots);
+            showToast(`Horários de ${type === 'morning' ? 'manhã' : type === 'afternoon' ? 'tarde' : 'dia todo'} gerados com sucesso!`, 'success');
+        }
+        
+        function saveSlots(newTimes) {
+            if (!state.slots[state.selectedDateISO]) {
+                state.slots[state.selectedDateISO] = [];
+            }
+            
+            let slotsAdded = 0;
+            newTimes.forEach(time => {
+                if (!state.slots[state.selectedDateISO].includes(time)) {
+                    state.slots[state.selectedDateISO].push(time);
+                    slotsAdded++;
                 }
             });
-
-            const clients = Object.values(clientsMap).filter(c => c.name.toLowerCase().includes(search));
-
-            clients.forEach(c => {
-                const el = document.createElement('div');
-                el.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center";
-                el.innerHTML = `
-                    <div>
-                        <h4 class="font-bold text-slate-800">${c.name}</h4>
-                        <p class="text-xs text-slate-500">Última sessão: ${c.lastDate.split('-').reverse().join('/')}</p>
-                    </div>
-                    <button onclick="openNotesModal('${c.phone}', '${c.name}')" class="w-8 h-8 bg-teal-50 text-teal-600 rounded-lg flex items-center justify-center hover:bg-teal-100">
-                        <i class="fa-solid fa-file-medical"></i>
-                    </button>
-                `;
-                list.appendChild(el);
-            });
-        }
-
-        function openNotesModal(phone, name) {
-            currentNoteClient = phone;
-            document.getElementById('modal-notes').classList.remove('hidden');
-            document.getElementById('notes-client-name').innerText = name;
             
-            const notes = DataManager.getNotes();
-            document.getElementById('client-notes-area').value = notes[phone] || '';
-        }
-
-        function saveNotes() {
-            const text = document.getElementById('client-notes-area').value;
-            const notes = DataManager.getNotes();
-            notes[currentNoteClient] = text;
-            DataManager.saveNotes(notes);
+            if (slotsAdded > 0) {
+                // Ordenar os horários
+                state.slots[state.selectedDateISO].sort();
+                localStorage.setItem('availableSlots', JSON.stringify(state.slots));
+                renderDaySlots();
+                renderCalendar();
+            }
             
-            closeModal('modal-notes');
-            // Toast simulado
-            const btn = document.querySelector('#modal-notes button');
-            const originalText = btn.innerText;
-            btn.innerText = "Salvo!";
-            setTimeout(() => btn.innerText = originalText, 1000);
+            return slotsAdded;
         }
-
-        // 7. Financeiro
-        function renderFinancial() {
-            const history = document.getElementById('fin-history');
-            const totalEl = document.getElementById('fin-total');
-            history.innerHTML = '';
-
-            const bookings = DataManager.getBookings();
-            
-            // Agrupar por Mês
-            const monthsMap = {};
-            bookings.forEach(b => {
-                const key = b.date.slice(0,7); // YYYY-MM
-                if(!monthsMap[key]) monthsMap[key] = 0;
-                monthsMap[key] += (b.value || 150);
-            });
-
-            // Total estimado do mês ATUAL
-            const currentMonth = new Date().toISOString().slice(0,7);
-            const total = monthsMap[currentMonth] || 0;
-            totalEl.innerText = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-            // Histórico
-            Object.keys(monthsMap).sort().reverse().forEach(key => {
-                const [y, m] = key.split('-');
-                const dateObj = new Date(parseInt(y), parseInt(m)-1);
-                const monthName = dateObj.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        
+        function removeSlot(time) {
+            if (confirm(`Tem certeza que deseja remover o horário ${time}?`)) {
+                state.slots[state.selectedDateISO] = state.slots[state.selectedDateISO].filter(t => t !== time);
                 
-                const row = document.createElement('div');
-                row.className = "flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100";
-                row.innerHTML = `
-                    <span class="text-sm text-slate-600 capitalize font-medium">${monthName}</span>
-                    <span class="text-sm font-bold text-slate-800">${monthsMap[key].toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                `;
-                history.appendChild(row);
-            });
-        }
-
-        // 8. Configurações
-        function saveSettings() {
-            state.settings.confirmMsg = document.getElementById('setting-msg-confirm').value;
-            state.settings.videoLink = document.getElementById('setting-video-link').value;
-            
-            localStorage.setItem(DB_PREFIX + 'settings', JSON.stringify(state.settings));
-            alert('Configurações salvas com sucesso!');
-        }
-
-        function resetApp() {
-            if(confirm("ATENÇÃO: Isso apagará TODOS os dados (agendamentos, clientes, anotações). Deseja continuar?")) {
-                localStorage.clear();
-                location.reload();
+                if (state.slots[state.selectedDateISO].length === 0) {
+                    delete state.slots[state.selectedDateISO];
+                }
+                
+                localStorage.setItem('availableSlots', JSON.stringify(state.slots));
+                renderDaySlots();
+                renderCalendar();
+                
+                showToast('Horário removido com sucesso!', 'success');
             }
         }
-
-        // Helpers UI
-        function closeModal(id) {
-            document.getElementById(id).classList.add('hidden');
+        
+        function deleteBooking(id) {
+            if (confirm('Tem certeza que deseja cancelar este agendamento? O cliente será notificado.')) {
+                let bookings = getBookings().filter(b => b.id !== id);
+                localStorage.setItem('bookings', JSON.stringify(bookings));
+                
+                renderDayBookings();
+                renderCalendar();
+                initDashboard();
+                
+                showToast('Agendamento cancelado com sucesso!', 'success');
+            }
         }
-
-        // Fechar modal ao clicar fora
-        document.querySelectorAll('.modal-overlay').forEach(overlay => {
-            overlay.addEventListener('click', (e) => {
-                if(e.target === overlay) overlay.classList.add('hidden');
+        
+        // ==== GESTÃO DE CLIENTES ====
+        function renderClientList(filter = '') {
+            const list = document.getElementById('clients-list');
+            if (!list) return;
+            
+            list.innerHTML = '';
+            
+            const filtered = state.clients.filter(client => 
+                client.name.toLowerCase().includes(filter.toLowerCase()) || 
+                client.phone.includes(filter.replace(/\D/g, ''))
+            );
+            
+            if (filtered.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-12 text-slate-400">
+                        <i class="fa-solid fa-users text-4xl mb-3"></i>
+                        <p>Nenhum paciente encontrado</p>
+                        <p class="text-sm mt-1 mb-4">Tente outra pesquisa ou adicione um novo paciente</p>
+                        <button onclick="openClientModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 mx-auto">
+                            <i class="fa-solid fa-plus"></i> Adicionar Paciente
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            filtered.forEach(client => {
+                const clientElement = document.createElement('div');
+                clientElement.className = 'bg-white rounded-xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-shadow';
+                clientElement.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-primary-700 font-bold text-lg">${client.name.charAt(0)}</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-bold text-slate-800 truncate">${client.name}</h3>
+                                    <div class="flex gap-2 mt-0.5">
+                                        <span class="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">ID: ${client.id}</span>
+                                        <span class="text-xs bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">${new Date(client.createdAt).toLocaleDateString('pt-BR')}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="space-y-1.5 mt-2">
+                                <div class="flex items-center gap-1.5 text-sm text-slate-600">
+                                    <i class="fa-brands fa-whatsapp text-green-500"></i>
+                                    <span>${client.phone}</span>
+                                </div>
+                                ${client.email ? `
+                                <div class="flex items-center gap-1.5 text-sm text-slate-600">
+                                    <i class="fa-solid fa-envelope text-amber-500"></i>
+                                    <span class="truncate">${client.email}</span>
+                                </div>` : ''}
+                            </div>
+                            <div class="mt-3 flex justify-between items-center">
+                                <button onclick="openNotesModal(${client.id}, '${client.name.replace(/'/g, "\\'")}')"
+                                    class="text-sm text-primary-600 hover:text-primary-800 font-medium flex items-center gap-1 transition">
+                                    <i class="fa-solid fa-notes-medical mr-0.5"></i> Prontuário
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-2 ml-2">
+                            <button onclick="deleteClient(${client.id})"
+                                class="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition" 
+                                title="Remover paciente">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                            <button onclick="sendWhatsAppToClient('${client.phone}', 'client')"
+                                class="w-8 h-8 rounded-full bg-green-50 text-green-500 hover:bg-green-100 flex items-center justify-center transition" 
+                                title="Enviar WhatsApp">
+                                <i class="fa-brands fa-whatsapp text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(clientElement);
+            });
+        }
+        
+        function filterClients() {
+            const searchTerm = document.getElementById('client-search').value;
+            renderClientList(searchTerm);
+        }
+        
+        function openClientModal() {
+            document.getElementById('client-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeClientModal() {
+            document.getElementById('client-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+        
+        function saveClient(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const clientName = form.name.value.trim();
+            const clientPhone = form.phone.value.replace(/\D/g, '');
+            
+            if (!clientName || clientName.length < 3) {
+                showToast('Nome inválido', 'error');
+                return;
+            }
+            
+            if (clientPhone.length < 10) {
+                showToast('Telefone inválido', 'error');
+                return;
+            }
+            
+            // Verificar se cliente já existe
+            const clientExists = state.clients.some(c => c.phone === clientPhone);
+            if (clientExists) {
+                showToast('Este cliente já está cadastrado', 'error');
+                return;
+            }
+            
+            // Criar novo cliente
+            const newClient = {
+                id: Date.now(),
+                name: clientName,
+                phone: form.phone.value,
+                email: form.email.value || '',
+                createdAt: new Date().toISOString()
+            };
+            
+            state.clients.push(newClient);
+            localStorage.setItem('adminClients', JSON.stringify(state.clients));
+            
+            // Resetar e fechar modal
+            form.reset();
+            closeClientModal();
+            
+            // Atualizar lista
+            renderClientList();
+            
+            showToast('Paciente cadastrado com sucesso!', 'success');
+        }
+        
+        function deleteClient(id) {
+            if (confirm('Tem certeza que deseja remover este paciente? Esta ação não pode ser desfeita.')) {
+                state.clients = state.clients.filter(c => c.id !== id);
+                localStorage.setItem('adminClients', JSON.stringify(state.clients));
+                
+                renderClientList();
+                showToast('Paciente removido com sucesso!', 'success');
+            }
+        }
+        
+        // ==== PRONTUÁRIO ====
+        function openNotesModal(clientId, clientName) {
+            state.currentClientId = clientId;
+            
+            // Atualizar nome do cliente no modal
+            document.getElementById('note-client-name').textContent = `Paciente: ${clientName}`;
+            
+            // Carregar anotações existentes
+            document.getElementById('client-notes-area').value = state.notes[clientId] || '';
+            
+            // Mostrar modal
+            document.getElementById('notes-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeNotesModal() {
+            document.getElementById('notes-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            state.currentClientId = null;
+        }
+        
+        function saveNotes() {
+            if (!state.currentClientId) return;
+            
+            const notesText = document.getElementById('client-notes-area').value.trim();
+            
+            if (!notesText) {
+                showToast('Nenhuma anotação para salvar', 'error');
+                return;
+            }
+            
+            // Salvar anotações
+            state.notes[state.currentClientId] = notesText;
+            localStorage.setItem('adminNotes', JSON.stringify(state.notes));
+            
+            closeNotesModal();
+            showToast('Anotações salvas com sucesso!', 'success');
+            
+            // Atualizar prontuário no modal se estiver aberto
+            if (document.getElementById('notes-modal').classList.contains('hidden') === false) {
+                renderNotesHistory();
+            }
+        }
+        
+        function renderNotesHistory() {
+            // Esta função seria implementada para carregar o histórico de anotações
+            // de sessões anteriores para o cliente atual
+        }
+        
+        // ==== FINANCEIRO ====
+        function renderFinancials() {
+            const bookings = getBookings();
+            const now = new Date();
+            const currentMonthISO = now.toISOString().slice(0, 7);
+            
+            // Calcular total do mês atual
+            const monthBookings = bookings.filter(b => b.agendamento.dataISO.startsWith(currentMonthISO));
+            const total = monthBookings.reduce((sum, b) => sum + b.agendamento.valor, 0);
+            
+            // Atualizar total
+            document.getElementById('financial-total').textContent = total.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            });
+            
+            // Renderizar histórico
+            const list = document.getElementById('financial-list');
+            if (!list) return;
+            
+            list.innerHTML = '';
+            
+            if (bookings.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-wallet text-3xl mb-2"></i>
+                        <p>Nenhuma transação registrada</p>
+                        <p class="text-xs mt-1">Seus ganhos serão exibidos aqui após os agendamentos</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ordenar por data mais recente e pegar as últimas 10
+            const recent = [...bookings]
+                .sort((a, b) => new Date(b.agendamento.dataISO) - new Date(a.agendamento.dataISO))
+                .slice(0, 10);
+            
+            recent.forEach(booking => {
+                const date = new Date(booking.agendamento.dataISO);
+                const formattedDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+                
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center p-3 bg-white border border-slate-100 rounded-xl hover:shadow-sm transition';
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                            <span class="text-primary-700 font-bold text-sm">${booking.cliente.nome.charAt(0)}</span>
+                        </div>
+                        <div>
+                            <p class="font-medium text-slate-800">${booking.cliente.nome}</p>
+                            <p class="text-xs text-slate-500">${formattedDate} • ${booking.agendamento.hora}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-emerald-600">+ R$ ${booking.agendamento.valor.toFixed(2)}</p>
+                        <span class="text-[11px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">${booking.status}</span>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+        
+        // ==== CONFIGURAÇÕES ====
+        function loadSettings() {
+            document.getElementById('conf-video-link').value = state.settings.videoLink || '';
+            document.getElementById('conf-msg-confirm').value = state.settings.confirm || '';
+            document.getElementById('conf-msg-reminder').value = state.settings.reminder || '';
+            document.getElementById('conf-session-value').value = state.settings.sessionValue || 150;
+            document.getElementById('conf-prof-name').value = state.settings.profName || 'PsiPro';
+            document.getElementById('conf-about').value = state.settings.about || state.settings.about;
+        }
+        
+        function saveSettings() {
+            state.settings = {
+                videoLink: document.getElementById('conf-video-link').value,
+                confirm: document.getElementById('conf-msg-confirm').value,
+                reminder: document.getElementById('conf-msg-reminder').value,
+                sessionValue: parseFloat(document.getElementById('conf-session-value').value),
+                profName: document.getElementById('conf-prof-name').value,
+                about: document.getElementById('conf-about').value,
+                specialties: state.settings.specialties || ['Ansiedade', 'Depressão', 'TDAH', 'Terapia de Casal']
+            };
+            
+            localStorage.setItem('adminSettings', JSON.stringify(state.settings));
+            showToast('Configurações salvas com sucesso!', 'success');
+        }
+        
+        function addSpecialty() {
+            const input = document.getElementById('new-specialty');
+            const specialty = input.value.trim();
+            
+            if (!specialty || specialty.length < 2) {
+                showToast('Especialidade inválida', 'error');
+                return;
+            }
+            
+            if (!state.settings.specialties) {
+                state.settings.specialties = [];
+            }
+            
+            if (state.settings.specialties.includes(specialty)) {
+                showToast('Esta especialidade já foi adicionada', 'error');
+                return;
+            }
+            
+            state.settings.specialties.push(specialty);
+            input.value = '';
+            
+            // Atualizar exibição (seria implementado em uma função separada na versão completa)
+            showToast(`Especialidade "${specialty}" adicionada!`, 'success');
+        }
+        
+        // ==== INTEGRAÇÃO WHATSAPP ====
+        function sendWhatsApp(bookingId, type) {
+            const booking = getBookings().find(b => b.id == bookingId);
+            if (!booking) {
+                showToast('Agendamento não encontrado', 'error');
+                return;
+            }
+            
+            let messageTemplate = '';
+            
+            switch(type) {
+                case 'confirm':
+                    messageTemplate = state.settings.confirm;
+                    break;
+                case 'reminder':
+                    messageTemplate = state.settings.reminder;
+                    break;
+                case 'link':
+                    messageTemplate = `Olá ${booking.cliente.nome}, aqui está o link para nossa sessão de hoje: ${state.settings.videoLink || '[LINK NÃO CONFIGURADO]'}`;
+                    break;
+                default:
+                    messageTemplate = state.settings.confirm;
+            }
+            
+            // Substituir variáveis no template
+            const sessionDate = new Date(`${booking.agendamento.dataISO}T${booking.agendamento.hora}`);
+            const formattedDate = sessionDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+            const formattedTime = sessionDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            
+            let message = messageTemplate
+                .replace(/{{nome}}/g, booking.cliente.nome)
+                .replace(/{{data}}/g, formattedDate)
+                .replace(/{{hora}}/g, formattedTime)
+                .replace(/{{link}}/g, state.settings.videoLink || '[LINK NÃO CONFIGURADO]');
+            
+            // Remover caracteres não permitidos na URL
+            const phone = booking.cliente.telefone.replace(/\D/g, '');
+            const encodedMessage = encodeURIComponent(message);
+            
+            // Abrir WhatsApp
+            const whatsappUrl = `https://wa.me/55${phone}?text=${encodedMessage}`;
+            window.open(whatsappUrl, '_blank');
+            
+            showToast(`Mensagem ${type === 'confirm' ? 'de confirmação' : type === 'reminder' ? 'de lembrete' : 'de link'} enviada para ${booking.cliente.nome}!`, 'success');
+        }
+        
+        function sendWhatsAppToClient(phone, type = 'client') {
+            const cleanPhone = phone.replace(/\D/g, '');
+            let message = '';
+            
+            switch(type) {
+                case 'client':
+                    message = 'Olá! Como posso ajudar você hoje?';
+                    break;
+                default:
+                    message = 'Mensagem personalizada';
+            }
+            
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodedMessage}`;
+            window.open(whatsappUrl, '_blank');
+            
+            showToast('WhatsApp aberto com sucesso!', 'success');
+        }
+        
+        function openVideoLink() {
+            if (state.settings.videoLink) {
+                window.open(state.settings.videoLink, '_blank');
+                showToast('Sala de videoconferência aberta!', 'success');
+            } else {
+                showToast('Link de vídeo não configurado. Configure em Configurações.', 'error');
+            }
+        }
+        
+        // ==== MÁSCARAS E UTILITÁRIOS DO FORMULÁRIO ====
+        document.addEventListener('DOMContentLoaded', function() {
+            // Máscara para telefone
+            const phoneInputs = document.querySelectorAll('input[type="tel"]');
+            phoneInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    this.value = this.value.replace(/\D/g, '')
+                        .replace(/(\d{2})(\d)/, '($1) $2')
+                        .replace(/(\d{5})(\d)/, '$1-$2')
+                        .replace(/(-\d{4})\d+?$/, '$1');
+                });
+            });
+            
+            // Formatação de valor monetário
+            const currencyInputs = document.querySelectorAll('input[type="number"]');
+            currencyInputs.forEach(input => {
+                input.addEventListener('blur', function() {
+                    if (this.value) {
+                        const value = parseFloat(this.value);
+                        this.value = value.toFixed(2);
+                    }
+                });
             });
         });
-
     </script>
 </body>
-</html>
-
+                            </html>
