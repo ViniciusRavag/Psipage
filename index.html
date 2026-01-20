@@ -524,8 +524,20 @@
                     </div>
                 </div>
             </div>
-            
             <!-- Calendário (CORRIGIDO) -->
+<div id="tab-calendar" class="tab-content hidden animate-fade">
+    <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100 mb-4">
+        <button onclick="changeMonth(-1)" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 transition">
+            <i class="fa-solid fa-chevron-left text-lg"></i>
+        </button>
+        <h3 id="calendar-month-label" class="font-bold text-slate-800 capitalize text-lg">Janeiro 2026</h3>
+        <button onclick="changeMonth(1)" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 transition">
+            <i class="fa-solid fa-chevron-right text-lg"></i>
+        </button>
+    </div>
+    
+    <div class="grid grid-cols-7 gap-2 mb-3 text-center text-xs font-bold text-slate-500">
+    <!-- Calendário (CORRIGIDO E APRIMORADO) -->
 <div id="tab-calendar" class="tab-content hidden animate-fade">
     <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100 mb-4">
         <button onclick="changeMonth(-1)" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 transition">
@@ -549,58 +561,43 @@
     
     <div id="calendar-grid" class="grid grid-cols-7 gap-2 mb-6"></div>
     
-    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-        <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
-            <i class="fa-solid fa-cog text-primary-500"></i> Ferramentas Rápidas
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-                <label class="block text-xs font-medium text-slate-600 mb-2">Gerador de Horários em Massa</label>
-                <select id="mass-generator-select" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                    <option value="">Selecione um padrão...</option>
-                    <option value="morning">Manhã (8h-12h)</option>
-                    <option value="afternoon">Tarde (13h-18h)</option>
-                    <option value="evening">Noite (18h-21h)</option>
-                    <option value="full">Dia Inteiro (8h-18h)</option>
-                    <option value="custom">Personalizar...</option>
-                </select>
-            </div>
-            <div id="custom-generator-container" class="hidden">
-                <label class="block text-xs font-medium text-slate-600 mb-2">Personalizar Intervalo</label>
-                <div class="flex gap-2">
-                    <input type="time" id="start-time" value="08:00" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                    <input type="time" id="end-time" value="18:00" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                    <select id="interval-select" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                        <option value="30">30 min</option>
-                        <option value="45" selected>45 min</option>
-                        <option value="60">60 min</option>
-                    </select>
-                </div>
+    <!-- Novo botão de ferramentas rápidas -->
+    <button onclick="openToolsModal()" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 rounded-xl mb-6 transition flex items-center justify-center gap-2 shadow-lg shadow-primary-300">
+        <i class="fa-solid fa-wrench"></i> Ferramentas Rápidas para Agenda
+    </button>
+    
+    <!-- Seção de sessões do dia selecionado -->
+    <div id="day-sessions-section" class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-6 hidden">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-calendar-day text-primary-500"></i>
+                <span id="selected-day-title">Sessões do Dia</span>
+            </h3>
+            <button onclick="clearSelectedDay()" class="text-slate-400 hover:text-slate-600 text-sm font-medium flex items-center gap-1">
+                <i class="fa-solid fa-xmark"></i> Limpar seleção
+            </button>
+        </div>
+        <div id="day-sessions-content" class="p-4 max-h-80 overflow-y-auto">
+            <div class="text-center py-8 text-slate-400">
+                <i class="fa-solid fa-clock text-3xl mb-2"></i>
+                <p>Selecione um dia no calendário para ver as sessões</p>
             </div>
         </div>
-        <button onclick="generateMassSlots()" class="mt-4 w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-bolt"></i> Gerar Horários
-        </button>
-        
-        <div class="mt-6 pt-4 border-t border-slate-100">
-            <h4 class="font-bold text-slate-800 mb-3">Legenda do Calendário</h4>
-            <div class="flex flex-wrap gap-4 justify-center">
-                <div class="flex items-center gap-1.5">
-                    <div class="w-3 h-3 rounded-full bg-primary-500"></div>
-                    <span class="text-xs text-slate-600">Com sessão marcada</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <div class="w-3 h-3 rounded-full bg-blue-300 border border-blue-400"></div>
-                    <span class="text-xs text-slate-600">Horários disponíveis</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <div class="w-3 h-3 rounded-full bg-yellow-300 border border-yellow-400"></div>
-                    <span class="text-xs text-slate-600">Hoje</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <div class="w-3 h-3 rounded-full bg-slate-200"></div>
-                    <span class="text-xs text-slate-600">Sem horários</span>
-                </div>
+    </div>
+    
+    <div class="mt-6 pt-4 border-t border-slate-100 text-center">
+        <div class="flex flex-wrap justify-center gap-4">
+            <div class="flex items-center gap-1.5">
+                <div class="w-3 h-3 rounded-full bg-primary-500"></div>
+                <span class="text-xs text-slate-600">Com sessão marcada</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <div class="w-3 h-3 rounded-full bg-blue-300 border border-blue-400"></div>
+                <span class="text-xs text-slate-600">Horários disponíveis</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <div class="w-3 h-3 rounded-full bg-yellow-300 border border-yellow-400"></div>
+                <span class="text-xs text-slate-600">Hoje</span>
             </div>
         </div>
     </div>
@@ -1386,7 +1383,39 @@
             });
         }
         
-            // ==== AGENDA ADMINISTRATIVA CORRIGIDA ====
+            // ==== AGENDA ADMINISTRATIVA CORRIGIDA ===
+
+// Função para abrir o modal de ferramentas
+function openToolsModal() {
+    // Verificar se um dia está selecionado para as ferramentas específicas
+    if (state.selectedDateISO) {
+        renderCurrentDaySlots();
+    }
+    
+    document.getElementById('tools-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeToolsModal() {
+    document.getElementById('tools-modal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Função para limpar a seleção do dia
+function clearSelectedDay() {
+    state.selectedDateISO = null;
+    document.getElementById('day-sessions-section').classList.add('hidden');
+    
+    // Remover a seleção visual no calendário
+    document.querySelectorAll('.calendar-day.selected').forEach(el => {
+        el.classList.remove('selected', 'ring-2', 'ring-primary-500', 'bg-primary-50');
+    });
+    
+    // Re-renderizar o calendário para remover indicações visuais
+    renderCalendar();
+}
+
+// Renderizar calendário com seleção visual
 function renderCalendar() {
     const year = state.dateCursor.getFullYear();
     const month = state.dateCursor.getMonth();
@@ -1418,6 +1447,7 @@ function renderCalendar() {
         const iso = d.toISOString().split('T')[0];
         const isCurrentMonth = d.getMonth() === month;
         const isToday = iso === today;
+        const isSelected = state.selectedDateISO === iso;
         
         // Verificar se existem slots e bookings para este dia
         const hasSlots = state.slots[iso] && state.slots[iso].length > 0;
@@ -1428,7 +1458,6 @@ function renderCalendar() {
         let dotClass = '';
         if (hasBookings) dotClass = 'bg-primary-500'; // Com sessões agendadas
         else if (hasSlots) dotClass = 'bg-blue-300 border border-blue-400';   // Com horários disponíveis
-        else if (!isCurrentMonth) dotClass = 'bg-slate-200'; // Mês fora do período
         
         const dayElement = document.createElement('button');
         dayElement.className = `
@@ -1436,6 +1465,7 @@ function renderCalendar() {
             transition-all duration-200 relative overflow-hidden text-sm font-medium
             ${!isCurrentMonth ? 'bg-slate-50 text-slate-300 border-transparent cursor-default' : 'bg-white border-slate-100 text-slate-700 hover:border-primary-200 hover:shadow-sm'}
             ${isToday ? 'ring-2 ring-yellow-300 bg-yellow-50 font-bold' : ''}
+            ${isSelected ? 'ring-2 ring-primary-500 bg-primary-50 selected' : ''}
         `;
         
         dayElement.innerHTML = `
@@ -1445,140 +1475,195 @@ function renderCalendar() {
         `;
         
         if (isCurrentMonth) {
-            dayElement.onclick = () => openDayModal(iso, d);
+            dayElement.onclick = () => selectDay(iso, d, dayElement);
         }
         
         grid.appendChild(dayElement);
     }
 }
 
-function changeMonth(delta) {
-    state.dateCursor.setMonth(state.dateCursor.getMonth() + delta);
-    renderCalendar();
-}
-
-function openDayModal(iso, dateObj) {
+// Função para selecionar um dia no calendário
+function selectDay(iso, dateObj, element) {
+    // Remover seleção anterior
+    document.querySelectorAll('.calendar-day.selected').forEach(el => {
+        el.classList.remove('selected', 'ring-2', 'ring-primary-500', 'bg-primary-50');
+    });
+    
+    // Adicionar seleção ao elemento clicado
+    element.classList.add('selected', 'ring-2', 'ring-primary-500', 'bg-primary-50');
+    
     state.selectedDateISO = iso;
     
-    // Atualizar título e subtítulo do modal
-    document.getElementById('modal-day-title').textContent = dateObj.toLocaleDateString('pt-BR', { 
-        weekday: 'long' 
-    }).replace(/^\w/, c => c.toUpperCase());
+    // Atualizar título da seção de sessões
+    document.getElementById('selected-day-title').textContent = `Sessões de ${dateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}`;
     
-    document.getElementById('modal-day-subtitle').textContent = dateObj.toLocaleDateString('pt-BR', { 
-        day: 'numeric', 
-        month: 'long',
-        year: 'numeric'
-    });
+    // Mostrar seção de sessões do dia
+    document.getElementById('day-sessions-section').classList.remove('hidden');
     
-    // Resetar para aba de slots
-    switchDayTab('slots');
+    // Renderizar sessões do dia
+    renderDaySessions();
     
-    // Renderizar conteúdo
-    renderDaySlots();
-    renderDayBookings();
-    
-    // Mostrar modal
-    document.getElementById('day-modal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeDayModal() {
-    document.getElementById('day-modal').classList.add('hidden');
-    document.body.style.overflow = 'auto';
-}
-
-function switchDayTab(tab) {
-    // Remover classe active de todos os tabs
-    document.querySelectorAll('.day-tab').forEach(t => {
-        t.classList.remove('active');
-    });
-    
-    // Esconder todos os conteúdos
-    document.querySelectorAll('.day-content').forEach(c => {
-        c.classList.add('hidden');
-    });
-    
-    // Mostrar tab e conteúdo selecionado
-    document.getElementById(`btn-tab-${tab}`).classList.add('active');
-    document.getElementById(`day-tab-${tab}`).classList.remove('hidden');
-    
-    // Se for a aba de bookings, atualizar a lista
-    if (tab === 'bookings') {
-        renderDayBookings();
+    // Renderizar slots no modal de ferramentas se estiver aberto
+    if (document.getElementById('tools-modal').classList.contains('hidden') === false) {
+        renderCurrentDaySlots();
     }
 }
 
-function renderDaySlots() {
-    const list = document.getElementById('slots-list');
-    if (!list) return;
+// Renderizar sessões do dia selecionado abaixo do calendário
+function renderDaySessions() {
+    const container = document.getElementById('day-sessions-content');
+    if (!container) return;
     
-    list.innerHTML = '';
-    const slots = state.slots[state.selectedDateISO] || [];
+    container.innerHTML = '';
     
-    if (slots.length === 0) {
-        list.innerHTML = `
-            <div class="col-span-4 text-center py-8 text-slate-400">
-                <i class="fa-regular fa-clock text-2xl mb-2"></i>
-                <p>Nenhum horário disponível para este dia</p>
-                <p class="text-xs mt-1">Use o gerador rápido ou adicione manualmente</p>
+    if (!state.selectedDateISO) {
+        container.innerHTML = `
+            <div class="text-center py-8 text-slate-400">
+                <i class="fa-solid fa-clock text-3xl mb-2"></i>
+                <p>Selecione um dia no calendário para ver as sessões</p>
             </div>
         `;
         return;
     }
     
-    // Ordenar e renderizar slots
-    slots.sort().forEach(time => {
-        const slotElement = document.createElement('div');
-        slotElement.className = 'time-slot bg-white border border-slate-100 rounded-xl p-3 flex items-center justify-between hover:shadow-md transition-shadow group cursor-pointer';
-        
-        // Verificar se este horário está agendado
-        const isBooked = getBookings().some(b => 
-            b.agendamento.dataISO === state.selectedDateISO && 
-            b.agendamento.hora === time
-        );
-        
-        slotElement.innerHTML = `
-            <span class="font-medium text-slate-700 ${isBooked ? 'text-slate-400 line-through' : ''}">${time}</span>
-            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                ${!isBooked ? `
-                <button onclick="editSlot('${time}')" class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 hover:bg-primary-100 hover:text-primary-600 flex items-center justify-center transition" title="Editar horário">
-                    <i class="fa-solid fa-pen text-xs"></i>
-                </button>
-                <button onclick="removeSlot('${time}')" class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition" title="Remover horário">
-                    <i class="fa-solid fa-trash-can text-xs"></i>
-                </button>
-                ` : `
-                <span class="px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded-full font-medium">Agendado</span>
-                `}
+    const bookings = getBookings().filter(b => b.agendamento.dataISO === state.selectedDateISO);
+    const slots = state.slots[state.selectedDateISO] || [];
+    
+    if (bookings.length === 0 && slots.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 text-slate-400">
+                <i class="fa-regular fa-calendar-xmark text-3xl mb-2"></i>
+                <p>Nenhuma sessão ou horário disponível para este dia</p>
+                <p class="text-sm mt-2">Use as Ferramentas Rápidas para adicionar horários</p>
             </div>
         `;
-        
-        if (!isBooked) {
-            slotElement.onclick = () => selectSlotForRemoval(time, slotElement);
-        }
-        
-        list.appendChild(slotElement);
-    });
-}
-
-function selectSlotForRemoval(time, element) {
-    // Remover seleção anterior
-    document.querySelectorAll('.time-slot').forEach(el => {
-        el.classList.remove('border-primary-500', 'ring-1', 'ring-primary-500');
-    });
+        return;
+    }
     
-    // Adicionar seleção ao elemento clicado
-    element.classList.add('border-primary-500', 'ring-1', 'ring-primary-500');
+    // Primeiro, mostrar as sessões agendadas
+    if (bookings.length > 0) {
+        const bookingsContainer = document.createElement('div');
+        bookingsContainer.className = 'mb-6';
+        bookingsContainer.innerHTML = '<h4 class="font-bold text-slate-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-calendar-check text-primary-500"></i> Sessões Agendadas</h4>';
+        
+        const bookingsGrid = document.createElement('div');
+        bookingsGrid.className = 'space-y-3';
+        
+        bookings.sort((a, b) => a.agendamento.hora.localeCompare(b.agendamento.hora)).forEach(booking => {
+            const bookingElement = document.createElement('div');
+            bookingElement.className = 'bg-primary-50 border border-primary-200 rounded-xl p-4 hover:shadow-md transition';
+            bookingElement.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                                <span class="text-primary-700 font-bold text-lg">${booking.cliente.nome.charAt(0)}</span>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800">${booking.cliente.nome}</h3>
+                                <div class="flex gap-2 mt-0.5">
+                                    <span class="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">${booking.agendamento.hora}</span>
+                                    <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">R$ ${booking.agendamento.valor.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <button onclick="sendWhatsApp(${booking.id}, 'confirm')" class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-lg hover:bg-green-200 transition">
+                                <i class="fa-brands fa-whatsapp mr-1"></i> Confirmar
+                            </button>
+                            <button onclick="sendWhatsApp(${booking.id}, 'reminder')" class="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-lg hover:bg-amber-200 transition">
+                                <i class="fa-solid fa-bell mr-1"></i> Lembrete
+                            </button>
+                            <button onclick="sendWhatsApp(${booking.id}, 'link')" class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-lg hover:bg-purple-200 transition">
+                                <i class="fa-solid fa-video mr-1"></i> Vídeo
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end justify-start ml-2">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 mb-2">${booking.status}</span>
+                        <button onclick="deleteBooking(${booking.id})" class="w-8 h-8 rounded-full bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition" title="Cancelar sessão">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            bookingsGrid.appendChild(bookingElement);
+        });
+        
+        bookingsContainer.appendChild(bookingsGrid);
+        container.appendChild(bookingsContainer);
+    }
     
-    // Perguntar se quer remover
-    if (confirm(`Deseja remover o horário ${time}?`)) {
-        removeSlot(time);
+    // Depois, mostrar os horários disponíveis (não agendados)
+    const availableSlots = slots.filter(slot => 
+        !bookings.some(b => b.agendamento.hora === slot)
+    );
+    
+    if (availableSlots.length > 0) {
+        const slotsContainer = document.createElement('div');
+        slotsContainer.innerHTML = '<h4 class="font-bold text-slate-700 mb-3 flex items-center gap-2"><i class="fa-regular fa-clock text-blue-500"></i> Horários Disponíveis</h4>';
+        
+        const slotsGrid = document.createElement('div');
+        slotsGrid.className = 'grid grid-cols-2 md:grid-cols-4 gap-2';
+        
+        availableSlots.sort().forEach(slot => {
+            const slotElement = document.createElement('button');
+            slotElement.className = 'bg-blue-50 text-blue-700 border border-blue-200 rounded-lg py-2 font-medium text-sm hover:bg-blue-100 transition';
+            slotElement.textContent = slot;
+            slotElement.onclick = () => alert(`Horário ${slot} disponível para agendamento`);
+            slotsGrid.appendChild(slotElement);
+        });
+        
+        slotsContainer.appendChild(slotsGrid);
+        container.appendChild(slotsContainer);
     }
 }
 
-function addSingleSlot() {
-    const timeInput = document.getElementById('new-slot-input');
+// Função para renderizar os slots do dia atual no modal de ferramentas
+function renderCurrentDaySlots() {
+    const container = document.getElementById('current-day-slots');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (!state.selectedDateISO) {
+        container.innerHTML = '<div class="text-center py-4 text-slate-400 text-sm">Selecione um dia no calendário primeiro</div>';
+        return;
+    }
+    
+    const slots = state.slots[state.selectedDateISO] || [];
+    const bookings = getBookings().filter(b => b.agendamento.dataISO === state.selectedDateISO);
+    
+    if (slots.length === 0) {
+        container.innerHTML = '<div class="text-center py-4 text-slate-400 text-sm">Nenhum horário configurado para este dia</div>';
+        return;
+    }
+    
+    slots.sort().forEach(slot => {
+        const isBooked = bookings.some(b => b.agendamento.hora === slot);
+        
+        const slotElement = document.createElement('div');
+        slotElement.className = `time-slot relative bg-white border rounded-lg p-2 text-center text-sm font-medium cursor-pointer hover:shadow-sm transition-all ${isBooked ? 'border-red-300 bg-red-50 text-red-600 line-through' : 'border-slate-200 hover:border-primary-300'}`;
+        
+        slotElement.innerHTML = `
+            <span>${slot}</span>
+            ${!isBooked ? `<button onclick="removeSlotFromModal('${slot}')" class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-100 text-red-500 hover:bg-red-200 flex items-center justify-center transition" title="Remover horário">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>` : ''}
+        `;
+        
+        container.appendChild(slotElement);
+    });
+}
+
+// Funções para o modal de ferramentas
+function addSingleSlotFromModal() {
+    if (!state.selectedDateISO) {
+        showToast('Selecione um dia no calendário primeiro', 'error');
+        return;
+    }
+    
+    const timeInput = document.getElementById('new-slot-input-modal');
     const time = timeInput.value;
     const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
     
@@ -1595,411 +1680,66 @@ function addSingleSlot() {
     }
     
     saveSlots([time]);
-    timeInput.value = incrementTime(time); // Avança para o próximo horário
+    
+    // Atualizar visualização
+    renderCurrentDaySlots();
+    renderDaySessions();
+    renderCalendar();
+    
     showToast('Horário adicionado com sucesso!', 'success');
 }
 
-function incrementTime(timeStr) {
-    // Incrementar o horário em 1 hora
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    let newHours = hours;
-    
-    // Se for o último horário do dia, volta para o primeiro
-    if (hours >= 21) {
-        newHours = 8;
-    } else {
-        newHours = hours + 1;
-    }
-    
-    return `${newHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-}
-
-function generateSlots(type) {
-    let newSlots = [];
-    const existingSlots = state.slots[state.selectedDateISO] || [];
-    
-    switch(type) {
-        case 'morning':
-            newSlots = ["08:00", "09:00", "10:00", "11:00", "12:00"];
-            break;
-        case 'afternoon':
-            newSlots = ["13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-            break;
-        case 'evening':
-            newSlots = ["18:00", "19:00", "20:00", "21:00"];
-            break;
-        case 'full':
-            newSlots = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-            break;
-    }
-    
-    // Filtrar apenas slots que ainda não existem
-    const slotsToAdd = newSlots.filter(slot => !existingSlots.includes(slot));
-    
-    if (slotsToAdd.length === 0) {
-        showToast('Todos os horários selecionados já existem para este dia', 'info');
-        return;
-    }
-    
-    saveSlots(slotsToAdd);
-    showToast(`${type === 'morning' ? 'Manhã' : type === 'afternoon' ? 'Tarde' : type === 'evening' ? 'Noite' : 'Dia completo'}: ${slotsToAdd.length} horários adicionados!`, 'success');
-}
-
-function generateMassSlots() {
-    const pattern = document.getElementById('mass-generator-select').value;
-    
-    if (!pattern) {
-        showToast('Selecione um padrão de horários primeiro', 'error');
-        return;
-    }
-    
-    if (pattern === 'custom') {
-        const startTime = document.getElementById('start-time').value;
-        const endTime = document.getElementById('end-time').value;
-        const interval = parseInt(document.getElementById('interval-select').value);
-        
-        if (!startTime || !endTime) {
-            showToast('Selecione horários de início e fim válidos', 'error');
-            return;
-        }
-        
-        const start = new Date(`2000-01-01T${startTime}`);
-        const end = new Date(`2000-01-01T${endTime}`);
-        
-        if (end <= start) {
-            showToast('O horário final deve ser posterior ao inicial', 'error');
-            return;
-        }
-        
-        const slots = [];
-        let current = new Date(start);
-        
-        while (current < end) {
-            slots.push(current.toTimeString().substring(0, 5));
-            current.setMinutes(current.getMinutes() + interval);
-        }
-        
-        // Remover o último slot se passar do horário final
-        if (slots.length > 0 && new Date(`2000-01-01T${slots[slots.length-1]}`) >= end) {
-            slots.pop();
-        }
-        
-        if (slots.length === 0) {
-            showToast('Nenhum horário gerado com este intervalo', 'error');
-            return;
-        }
-        
-        // Salvar os slots para todos os dias do mês atual
-        const year = state.dateCursor.getFullYear();
-        const month = state.dateCursor.getMonth();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        
-        for (let day = 1; day <= daysInMonth; day++) {
-            const date = new Date(year, month, day);
-            const iso = date.toISOString().split('T')[0];
-            saveSlots(slots, iso);
-        }
-        
-        showToast(`Horários personalizados gerados para todo o mês! (${slots.length} horários por dia)`, 'success');
-    } else {
-        // Gerar para todos os dias do mês
-        const year = state.dateCursor.getFullYear();
-        const month = state.dateCursor.getMonth();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        
-        for (let day = 1; day <= daysInMonth; day++) {
-            const date = new Date(year, month, day);
-            
-            // Pular finais de semana se necessário
-            if (pattern !== 'full' && (date.getDay() === 0 || date.getDay() === 6)) {
-                continue;
-            }
-            
-            const iso = date.toISOString().split('T')[0];
-            let slotsToAdd = [];
-            
-            switch(pattern) {
-                case 'morning':
-                    slotsToAdd = ["08:00", "09:00", "10:00", "11:00", "12:00"];
-                    break;
-                case 'afternoon':
-                    slotsToAdd = ["13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-                    break;
-                case 'evening':
-                    slotsToAdd = ["18:00", "19:00", "20:00", "21:00"];
-                    break;
-                case 'full':
-                    slotsToAdd = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-                    break;
-            }
-            
-            saveSlots(slotsToAdd, iso);
-        }
-        
-        showToast(`Horários gerados para todo o mês de ${state.dateCursor.toLocaleDateString('pt-BR', { month: 'long' })}!`, 'success');
-    }
-    
-    renderCalendar();
-}
-
-function saveSlots(newTimes, isoDate = null) {
-    const dateISO = isoDate || state.selectedDateISO;
-    
-    if (!dateISO) {
-        showToast('Nenhuma data selecionada', 'error');
-        return;
-    }
-    
-    if (!state.slots[dateISO]) {
-        state.slots[dateISO] = [];
-    }
-    
-    let slotsAdded = 0;
-    newTimes.forEach(time => {
-        if (!state.slots[dateISO].includes(time)) {
-            state.slots[dateISO].push(time);
-            slotsAdded++;
-        }
-    });
-    
-    if (slotsAdded > 0) {
-        // Ordenar os horários
-        state.slots[dateISO].sort();
-        localStorage.setItem('availableSlots', JSON.stringify(state.slots));
-        
-        // Se esta é a data atual do modal, atualizar a visualização
-        if (dateISO === state.selectedDateISO) {
-            renderDaySlots();
-        }
-    }
-    
-    return slotsAdded;
-}
-
-function removeSlot(time) {
+function removeSlotFromModal(time) {
     if (!state.selectedDateISO) return;
     
-    const originalLength = state.slots[state.selectedDateISO].length;
-    state.slots[state.selectedDateISO] = state.slots[state.selectedDateISO].filter(t => t !== time);
-    
-    if (state.slots[state.selectedDateISO].length === 0) {
-        delete state.slots[state.selectedDateISO];
-    }
-    
-    if (state.slots[state.selectedDateISO].length < originalLength) {
-        localStorage.setItem('availableSlots', JSON.stringify(state.slots));
-        renderDaySlots();
-        renderCalendar();
-        
-        showToast('Horário removido com sucesso!', 'success');
+    if (confirm(`Deseja remover o horário ${time}?`)) {
+        removeSlot(time);
+        renderCurrentDaySlots();
     }
 }
-
-function editSlot(time) {
-    // Abrir um prompt para editar o horário (versão simples)
-    const newTime = prompt('Editar horário (formato HH:mm):', time);
-    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    
-    if (newTime && timeRegex.test(newTime) && newTime !== time) {
-        // Remover o horário antigo
-        state.slots[state.selectedDateISO] = state.slots[state.selectedDateISO].filter(t => t !== time);
-        
-        // Adicionar o novo horário
-        if (!state.slots[state.selectedDateISO].includes(newTime)) {
-            state.slots[state.selectedDateISO].push(newTime);
-            state.slots[state.selectedDateISO].sort();
-            localStorage.setItem('availableSlots', JSON.stringify(state.slots));
-            renderDaySlots();
-            showToast('Horário atualizado com sucesso!', 'success');
-        } else {
-            showToast('Este horário já existe para este dia', 'error');
-            // Re-adicionar o horário antigo se o novo já existir
-            state.slots[state.selectedDateISO].push(time);
-        }
-    } else if (newTime && !timeRegex.test(newTime)) {
-        showToast('Formato de horário inválido. Use HH:mm', 'error');
-    }
+        // Atualizar a função openDayModal para não ser mais usada (substituída por selectDay)
+function openDayModal(iso, dateObj, element) {
+    // Esta função não é mais necessária, substituída por selectDay
+    selectDay(iso, dateObj, element);
 }
 
-function renderDayBookings() {
-    const list = document.getElementById('bookings-list');
-    if (!list) return;
-    
-    list.innerHTML = '';
-    
-    const bookings = getBookings().filter(b => b.agendamento.dataISO === state.selectedDateISO);
-    
-    if (bookings.length === 0) {
-        list.innerHTML = `
-            <div class="text-center py-8 text-slate-400">
-                <i class="fa-solid fa-calendar-check text-3xl mb-2"></i>
-                <p>Nenhum agendamento confirmado para este dia</p>
-                <p class="text-xs mt-1">Você pode criar horários disponíveis na aba "Gerenciar Horários"</p>
-            </div>
-        `;
+// Atualizar a função closeModal para lidar com diferentes modais
+function closeModal(modalId = 'checkout-modal') {
+    document.getElementById(modalId).classList.add('hidden');
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = 'auto';
+}
+
+// Atualizar a função para adicionar a classe quando modais abrem
+function openModalGeneric(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
+}
+
+function clearDaySlots() {
+    if (!state.selectedDateISO) {
+        showToast('Selecione um dia primeiro', 'error');
         return;
     }
     
-    bookings.sort((a, b) => {
-        return a.agendamento.hora.localeCompare(b.agendamento.hora);
-    });
-    
-    bookings.forEach(booking => {
-        const time = booking.agendamento.hora;
-        const clientName = booking.cliente.nome || 'Cliente não informado';
-        const clientPhone = booking.cliente.telefone || '';
+    if (confirm('Tem certeza que deseja remover TODOS os horários deste dia? Esta ação não pode ser desfeita.')) {
+        const date = new Date(state.selectedDateISO);
+        const dateStr = date.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
         
-        const bookingElement = document.createElement('div');
-        bookingElement.className = 'bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all mb-3';
-        bookingElement.innerHTML = `
-            <div class="flex justify-between items-start mb-3">
-                <div class="min-w-0">
-                    <div class="flex items-center gap-3">
-                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-                            <span class="text-primary-700 font-bold">${clientName.charAt(0)}</span>
-                        </div>
-                        <div class="min-w-0">
-                            <h4 class="font-bold text-slate-800 truncate">${clientName}</h4>
-                            <p class="text-xs text-slate-500 truncate">${clientPhone}</p>
-                        </div>
-                    </div>
-                </div>
-                <span class="px-2.5 py-1 rounded-full text-xs font-bold ${
-                    booking.status === 'confirmado' ? 'bg-green-100 text-green-800' :
-                    booking.status === 'pendente' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                }">${booking.status}</span>
-            </div>
-            <div class="flex items-center justify-between bg-slate-50 p-3 rounded-lg mb-3">
-                <div class="flex items-center gap-2">
-                    <i class="fa-regular fa-clock text-primary-600"></i>
-                    <span class="font-medium text-slate-700">${time}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-tag text-primary-600"></i>
-                    <span class="font-medium text-slate-700">R$ ${booking.agendamento.valor.toFixed(2)}</span>
-                </div>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <button onclick="sendWhatsApp(${booking.id}, 'confirm')" class="flex-1 min-w-[100px] bg-green-50 text-green-700 text-xs py-2 rounded-lg border border-green-200 hover:bg-green-100 font-medium transition flex items-center justify-center gap-1">
-                    <i class="fa-brands fa-whatsapp text-sm"></i> Confirmar
-                </button>
-                <button onclick="sendWhatsApp(${booking.id}, 'reminder')" class="flex-1 min-w-[100px] bg-amber-50 text-amber-700 text-xs py-2 rounded-lg border border-amber-200 hover:bg-amber-100 font-medium transition flex items-center justify-center gap-1">
-                    <i class="fa-solid fa-bell text-sm"></i> Lembrete
-                </button>
-                <button onclick="sendWhatsApp(${booking.id}, 'link')" class="flex-1 min-w-[100px] bg-purple-50 text-purple-700 text-xs py-2 rounded-lg border border-purple-200 hover:bg-purple-100 font-medium transition flex items-center justify-center gap-1">
-                    <i class="fa-solid fa-video text-sm"></i> Vídeo
-                </button>
-            </div>
-            <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
-                <button onclick="openNotesModal(${booking.cliente.id || Date.now()}, '${clientName.replace(/'/g, "\\'") || 'Cliente'}')" class="text-primary-600 hover:text-primary-800 text-sm font-medium flex items-center gap-1 transition">
-                    <i class="fa-solid fa-notes-medical"></i> Prontuário
-                </button>
-                <button onclick="deleteBooking(${booking.id})" class="text-red-500 hover:text-red-700 text-sm font-medium flex items-center gap-1 transition">
-                    <i class="fa-solid fa-xmark"></i> Cancelar
-                </button>
-            </div>
-        `;
-        list.appendChild(bookingElement);
-    });
+        // Remover slots do dia
+        delete state.slots[state.selectedDateISO];
+        localStorage.setItem('availableSlots', JSON.stringify(state.slots));
+        
+        // Remover apenas os horários disponíveis (não os agendamentos)
+        showToast(`Todos os horários disponíveis foram removidos para ${dateStr}`, 'success');
+        
+        // Atualizar visualizações
+        renderCurrentDaySlots();
+        renderDaySessions();
+        renderCalendar();
     }
-        // Adicionar evento para mostrar/ocultar o gerador personalizado
-document.addEventListener('DOMContentLoaded', function() {
-    const massSelect = document.getElementById('mass-generator-select');
-    const customContainer = document.getElementById('custom-generator-container');
-    
-    if (massSelect && customContainer) {
-        massSelect.addEventListener('change', function() {
-            customContainer.classList.toggle('hidden', this.value !== 'custom');
-        });
-    }
-});
-        function addSingleSlot() {
-            const timeInput = document.getElementById('new-slot-input');
-            const time = timeInput.value;
-            
-            if (!time) {
-                showToast('Selecione um horário válido', 'error');
-                return;
-            }
-            
-            saveSlots([time]);
-            timeInput.value = "09:00"; // Resetar para próximo horário comum
-            showToast('Horário adicionado com sucesso!', 'success');
-        }
-        
-        function generateSlots(type) {
-            let newSlots = [];
-            
-            switch(type) {
-                case 'morning':
-                    newSlots = ["08:00", "09:00", "10:00", "11:00", "12:00"];
-                    break;
-                case 'afternoon':
-                    newSlots = ["13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-                    break;
-                case 'full':
-                    newSlots = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-                    break;
-            }
-            
-            saveSlots(newSlots);
-            showToast(`Horários de ${type === 'morning' ? 'manhã' : type === 'afternoon' ? 'tarde' : 'dia todo'} gerados com sucesso!`, 'success');
-        }
-        
-        function saveSlots(newTimes) {
-            if (!state.slots[state.selectedDateISO]) {
-                state.slots[state.selectedDateISO] = [];
-            }
-            
-            let slotsAdded = 0;
-            newTimes.forEach(time => {
-                if (!state.slots[state.selectedDateISO].includes(time)) {
-                    state.slots[state.selectedDateISO].push(time);
-                    slotsAdded++;
-                }
-            });
-            
-            if (slotsAdded > 0) {
-                // Ordenar os horários
-                state.slots[state.selectedDateISO].sort();
-                localStorage.setItem('availableSlots', JSON.stringify(state.slots));
-                renderDaySlots();
-                renderCalendar();
-            }
-            
-            return slotsAdded;
-        }
-        
-        function removeSlot(time) {
-            if (confirm(`Tem certeza que deseja remover o horário ${time}?`)) {
-                state.slots[state.selectedDateISO] = state.slots[state.selectedDateISO].filter(t => t !== time);
-                
-                if (state.slots[state.selectedDateISO].length === 0) {
-                    delete state.slots[state.selectedDateISO];
-                }
-                
-                localStorage.setItem('availableSlots', JSON.stringify(state.slots));
-                renderDaySlots();
-                renderCalendar();
-                
-                showToast('Horário removido com sucesso!', 'success');
-            }
-        }
-        
-        function deleteBooking(id) {
-            if (confirm('Tem certeza que deseja cancelar este agendamento? O cliente será notificado.')) {
-                let bookings = getBookings().filter(b => b.id !== id);
-                localStorage.setItem('bookings', JSON.stringify(bookings));
-                
-                renderDayBookings();
-                renderCalendar();
-                initDashboard();
-                
-                showToast('Agendamento cancelado com sucesso!', 'success');
-            }
-        }
-        
+}
         // ==== GESTÃO DE CLIENTES ====
         function renderClientList(filter = '') {
             const list = document.getElementById('clients-list');
@@ -2172,6 +1912,75 @@ document.addEventListener('DOMContentLoaded', function() {
             state.currentClientId = null;
         }
         
+        
+<div id="tools-modal" class="modal-overlay hidden">
+    <div class="modal-content animate-[slideUp_0.3s_ease-out]">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="font-bold text-xl text-slate-800">Ferramentas Rápidas para Agenda</h3>
+            <button onclick="closeToolsModal()" class="text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-times text-2xl"></i>
+            </button>
+        </div>
+        
+        <div class="space-y-6">
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <h4 class="font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-amber-500"></i> Gerador de Horários em Massa
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <button onclick="generateSlots('morning')" class="bg-white border border-slate-200 text-sm py-3 rounded-xl hover:border-primary-300 hover:text-primary-600 transition flex flex-col items-center justify-center gap-1">
+                        <span class="font-bold">Manhã</span>
+                        <span class="text-xs text-slate-400">08h-12h</span>
+                    </button>
+                    <button onclick="generateSlots('afternoon')" class="bg-white border border-slate-200 text-sm py-3 rounded-xl hover:border-primary-300 hover:text-primary-600 transition flex flex-col items-center justify-center gap-1">
+                        <span class="font-bold">Tarde</span>
+                        <span class="text-xs text-slate-400">13h-18h</span>
+                    </button>
+                    <button onclick="generateSlots('evening')" class="bg-white border border-slate-200 text-sm py-3 rounded-xl hover:border-primary-300 hover:text-primary-600 transition flex flex-col items-center justify-center gap-1">
+                        <span class="font-bold">Noite</span>
+                        <span class="text-xs text-slate-400">18h-21h</span>
+                    </button>
+                    <button onclick="generateSlots('full')" class="bg-white border border-slate-200 text-sm py-3 rounded-xl hover:border-primary-300 hover:text-primary-600 transition flex flex-col items-center justify-center gap-1">
+                        <span class="font-bold">Dia Inteiro</span>
+                        <span class="text-xs text-slate-400">08h-18h</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <h4 class="font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-clock text-blue-500"></i> Adicionar ou Remover Horário Específico
+                </h4>
+                <div class="flex gap-3 mb-4">
+                    <input type="time" id="new-slot-input-modal" class="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-center focus:outline-none focus:ring-2 focus:ring-primary-500" value="09:00">
+                    <button onclick="addSingleSlotFromModal()" class="bg-primary-600 text-white px-5 rounded-xl hover:bg-primary-700 transition flex items-center">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500 mb-2">Selecione uma data no calendário primeiro para adicionar ou remover horários específicos.</p>
+                <div id="current-day-slots" class="grid grid-cols-3 md:grid-cols-4 gap-2 mt-3 max-h-40 overflow-y-auto p-2 border border-slate-100 rounded-lg bg-white">
+                    <div class="text-center py-4 text-slate-400 text-sm">Selecione um dia para ver os horários</div>
+                </div>
+            </div>
+            
+            <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
+                <h4 class="font-bold text-slate-700 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-trash-can text-red-500"></i> Limpar Horários
+                </h4>
+                <p class="text-sm text-slate-600 mb-3">Remova todos os horários disponíveis para o dia selecionado.</p>
+                <button onclick="clearDaySlots()" class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-trash-can"></i> Limpar Horários do Dia Selecionado
+                </button>
+            </div>
+        </div>
+        
+        <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+            <button onclick="closeToolsModal()" class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition">
+                Fechar
+            </button>
+        </div>
+    </div>
+</div>
         function saveNotes() {
             if (!state.currentClientId) return;
             
