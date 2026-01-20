@@ -1443,7 +1443,7 @@
                         }
                         console.log("Data refreshed at", new Date().toLocaleTimeString());
                     } catch (error) {
-                        console.error("Error refreshing data:", error);
+                        console.error("Error refreshing ", error);
                     } finally {
                         loadingData = false;
                     }
@@ -1644,9 +1644,17 @@
             e.preventDefault();
             
             const name = document.getElementById('book-name').value.trim();
-            const phone = document.getElementById('book-phone').value.trim();
+            let phone = document.getElementById('book-phone').value.trim();
             const email = document.getElementById('book-email').value.trim();
             const source = document.getElementById('book-source').value;
+            
+            // Formatar o telefone para o padrão brasileiro
+            phone = phone.replace(/\D/g, '');
+            if (phone.length === 10) {
+                phone = phone.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+            } else if (phone.length === 11) {
+                phone = phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+            }
             
             if (!name || !phone) {
                 showToast("Por favor, preencha todos os campos obrigatórios.", "error");
@@ -1767,16 +1775,21 @@
         function validatePhone(phone) {
             // Remover caracteres não numéricos
             const digits = phone.replace(/\D/g, '');
-            // Verificar se tem 11 dígitos (código do país + DDD + número)
-            return digits.length === 11;
+            // Verificar se tem 10 ou 11 dígitos (código do país + DDD + número)
+            return digits.length === 10 || digits.length === 11;
         }
         
         function formatPhone(phone) {
-            // Remover caracteres não numéricos e garantir o formato (XX) XXXXX-XXXX
+            // Remover caracteres não numéricos
             const digits = phone.replace(/\D/g, '');
-            if (digits.length < 11) return phone;
             
-            return `(${digits.substring(0,2)}) ${digits.substring(2,7)}-${digits.substring(7,11)}`;
+            if (digits.length === 10) {
+                return `(${digits.substring(0,2)}) ${digits.substring(2,6)}-${digits.substring(6,10)}`;
+            } else if (digits.length === 11) {
+                return `(${digits.substring(0,2)}) ${digits.substring(2,7)}-${digits.substring(7,11)}`;
+            }
+            
+            return phone;
         }
         
         //--- ADMIN VIEW FUNCTIONS ---
@@ -2283,6 +2296,9 @@
             }
         }
         
+        let currentNoteClient = null;
+        let currentNoteClientName = '';
+        
         function openNotesModal(phone, name) {
             currentNoteClient = phone;
             currentNoteClientName = name;
@@ -2343,8 +2359,9 @@
                 
                 showToast("Anotações salvas com sucesso!");
                 
-                // Restaurar texto original do botão
+                // Fechar modal após salvar
                 setTimeout(() => {
+                    closeModal('modal-notes');
                     saveButton.innerHTML = '<i class="fa-solid fa-save mr-1"></i> Salvar Anotação';
                 }, 1000);
             } catch (error) {
@@ -2365,7 +2382,7 @@
             
             switch(type) {
                 case 'initial':
-                    template = `DATA: ${currentDate} às ${currentTime}\n\nANAMNESE INICIAL\n\nMotivo da consulta:\n\nHistórico:\n\nDiagnóstico preliminar:\n\nPlano de tratamento:\n\nPróximos passos:\n`;
+                    template = `DATA: ${currentDate} às ${currentTime}\n\nANAMNESE INICIAL\n\nMotivo da consulta:\n${cache.clients[currentNoteClient]?.reason || ''}\n\nHistórico:\n${cache.clients[currentNoteClient]?.medicalHistory || ''}\n\nDiagnóstico preliminar:\n\nPlano de tratamento:\n\nPróximos passos:\n`;
                     break;
                 case 'session':
                     template = `DATA: ${currentDate} às ${currentTime}\n\nSESSÃO\n\nResumo da sessão:\n\nTópicos abordados:\n\nExercícios/Atividades:\n\nPróximos objetivos:\n\nObservações:\n`;
@@ -2640,6 +2657,8 @@
             }
         }
         
+        let currentReminderBookingId = null;
+        
         function openReminderModal(bookingId, clientName) {
             currentReminderBookingId = bookingId;
             document.getElementById('reminder-text').innerText = `Você está prestes a enviar um lembrete para ${clientName} sobre sua sessão.`;
@@ -2723,25 +2742,15 @@
                     return new Date(b.lastSession) - new Date(a.lastSession);
                 });
                 
-                // Pagination
-                const startIndex = 0;
-                const endIndex = Math.min(clients.length, clientsPerPage);
-                const paginatedClients = clients.slice(startIndex, endIndex);
-                
                 // Atualizar contador
                 document.getElementById('clients-count').innerText = clients.length;
                 
                 // Mostrar/ocultar botão de carregar mais
                 const loadMoreBtn = document.getElementById('load-more-clients');
-                if (clients.length > clientsPerPage) {
-                    loadMoreBtn.classList.remove('hidden');
-                    loadMoreBtn.onclick = () => loadMoreClients(clients, endIndex);
-                } else {
-                    loadMoreBtn.classList.add('hidden');
-                }
+                loadMoreBtn.classList.add('hidden');
                 
                 // Renderizar clientes
-                if (paginatedClients.length === 0) {
+                if (clients.length === 0) {
                     list.innerHTML = `
                         <div class="empty-state py-10">
                             <i class="fa-solid fa-magnifying-glass text-slate-300"></i>
@@ -2757,7 +2766,7 @@
                 
                 list.innerHTML = '';
                 
-                paginatedClients.forEach(client => {
+                clients.slice(0, clientsPerPage).forEach(client => {
                     const lastSessionDate = client.lastSession ? new Date(client.lastSession + 'T00:00:00') : null;
                     const formattedDate = lastSessionDate ? lastSessionDate.toLocaleDateString('pt-BR') : 'Nenhuma sessão';
                     const totalSessions = client.totalSessions || 0;
@@ -2818,6 +2827,12 @@
                     `;
                     list.appendChild(el);
                 });
+                
+                // Mostrar botão de carregar mais se houver mais clientes
+                if (clients.length > clientsPerPage) {
+                    loadMoreBtn.classList.remove('hidden');
+                    loadMoreBtn.onclick = () => loadMoreClients(clients, clientsPerPage);
+                }
             } catch (error) {
                 console.error("Error rendering clients:", error);
                 list.innerHTML = `
@@ -2851,806 +2866,1111 @@
                     <div class="flex justify-between items-start">
                         <div class="min-w-0 flex-1">
                             <div class="flex items-start">
-                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from
-                                                            <i class="fa-solid fa-bullhorn mr-1 text-slate-400"></i> Origem: ${client.source === 'indication' ? 'Indicação' : client.source === 'google' ? 'Google' : client.source === 'instagram' ? 'Instagram' : client.source === 'facebook' ? 'Facebook' : 'Outro'}
-                            </span>` : ''}
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mr-3 flex-shrink-0">
+                                    <span class="text-white text-lg font-bold">${client.name.charAt(0)}</span>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="font-bold text-lg text-slate-800 truncate" title="${client.name}">${client.name}</h4>
+                                    <div class="flex flex-wrap items-center gap-2 mt-1">
+                                        <span class="text-sm text-slate-600 flex items-center">
+                                            <i class="fa-solid fa-phone mr-1 text-slate-400"></i> ${client.phone}
+                                        </span>
+                                        ${client.email ? `
+                                        <span class="text-sm text-slate-600 flex items-center">
+                                            <i class="fa-solid fa-envelope mr-1 text-slate-400"></i> ${client.email}
+                                        </span>` : ''}
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-2 mt-2 text-sm">
+                                        <span class="text-slate-500 flex items-center">
+                                            <i class="fa-solid fa-calendar-day mr-1 text-slate-400"></i> Última sessão: ${formattedDate}
+                                        </span>
+                                        <span class="text-slate-500 flex items-center">
+                                            <i class="fa-solid fa-user-injured mr-1 text-slate-400"></i> ${totalSessions} sessão${totalSessions !== 1 ? 'es' : ''}
+                                        </span>
+                                        ${client.source ? `
+                                        <span class="text-slate-500 flex items-center">
+                                            <i class="fa-solid fa-bullhorn mr-1 text-slate-400"></i> Origem: ${client.source === 'indication' ? 'Indicação' : client.source === 'google' ? 'Google' : client.source === 'instagram' ? 'Instagram' : client.source === 'facebook' ? 'Facebook' : 'Outro'}
+                                        </span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end space-y-2 ml-3">
+                            <button onclick="openNotesModal('${client.phone}', '${client.name}')" class="w-9 h-9 bg-teal-50 text-teal-600 rounded-lg flex items-center justify-center hover:bg-teal-100 transition" title="Ver prontuário">
+                                <i class="fa-solid fa-file-medical text-base"></i>
+                            </button>
+                            <a href="https://wa.me/55${client.phone.replace(/\D/g,'')}" target="_blank" class="w-9 h-9 bg-green-50 text-green-600 rounded-lg flex items-center justify-center hover:bg-green-100 transition" title="WhatsApp">
+                                <i class="fa-brands fa-whatsapp text-base"></i>
+                            </a>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="flex flex-col items-end space-y-2 ml-3">
-                <button onclick="openNotesModal('${client.phone}', '${client.name}')" class="w-9 h-9 bg-teal-50 text-teal-600 rounded-lg flex items-center justify-center hover:bg-teal-100 transition" title="Ver prontuário">
-                    <i class="fa-solid fa-file-medical text-base"></i>
-                </button>
-                <a href="https://wa.me/55${client.phone.replace(/\D/g,'')}" target="_blank" class="w-9 h-9 bg-green-50 text-green-600 rounded-lg flex items-center justify-center hover:bg-green-100 transition" title="WhatsApp">
-                    <i class="fa-brands fa-whatsapp text-base"></i>
-                </a>
-            </div>
-        </div>
-        <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
-            <div class="text-sm">
-                <span class="text-xs text-slate-400 mr-2">Registrado em:</span>
-                <span class="font-medium text-slate-700">${new Date(client.createdAt?.toDate() || client.createdAt).toLocaleDateString('pt-BR')}</span>
-            </div>
-            <button onclick="openNewSessionModal('${client.phone}', '${client.name}')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-100 transition flex items-center">
-                <i class="fa-solid fa-calendar-plus mr-1"></i> Nova Sessão
-            </button>
-        </div>
-    `;
-    list.appendChild(el);
-});
-
-if (endIndex < clients.length) {
-    loadMoreBtn.classList.remove('hidden');
-} else {
-    loadMoreBtn.classList.add('hidden');
-}
-} catch (error) {
-    console.error("Error loading more clients:", error);
-    showToast("Erro ao carregar mais pacientes. Tente novamente.", "error");
-}
-}
-
-async function openNewClientModal() {
-document.getElementById('modal-new-client').classList.remove('hidden');
-document.getElementById('client-name').value = '';
-document.getElementById('client-phone').value = '';
-document.getElementById('client-email').value = '';
-document.getElementById('client-birthdate').value = '';
-document.getElementById('client-reason').value = '';
-document.getElementById('client-medical-history').value = '';
-}
-
-async function saveNewClient(e) {
-e.preventDefault();
-const name = document.getElementById('client-name').value.trim();
-const phone = document.getElementById('client-phone').value.trim();
-const email = document.getElementById('client-email').value.trim();
-const birthdate = document.getElementById('client-birthdate').value;
-const reason = document.getElementById('client-reason').value.trim();
-const medicalHistory = document.getElementById('client-medical-history').value.trim();
-
-if (!name || !phone) {
-    showToast("Nome e WhatsApp são obrigatórios.", "error");
-    return;
-}
-
-if (!validatePhone(phone)) {
-    showToast("Número de WhatsApp inválido. Use o formato (11) 99999-9999", "error");
-    return;
-}
-
-showLoader(true);
-
-try {
-    const formattedPhone = formatPhone(phone);
-    
-    // Verificar se cliente já existe
-    if (cache.clients[formattedPhone]) {
-        showToast("Este paciente já está cadastrado no sistema.", "error");
-        return;
-    }
-    
-    const clientData = {
-        name: name,
-        phone: formattedPhone,
-        email: email || null,
-        birthdate: birthdate || null,
-        reason: reason || null,
-        medicalHistory: medicalHistory || null,
-        source: 'manual',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastSession: null,
-        totalSessions: 0
-    };
-    
-    // Salvar no Firebase
-    await db.collection('clients').doc(formattedPhone).set(clientData);
-    
-    // Adicionar ao cache
-    cache.clients[formattedPhone] = clientData;
-    
-    // Fechar modal
-    closeModal('modal-new-client');
-    
-    // Atualizar lista de clientes
-    renderClients();
-    updateDashboard();
-    
-    showToast("Novo paciente cadastrado com sucesso!");
-} catch (error) {
-    console.error("Error saving new client:", error);
-    showToast("Erro ao cadastrar novo paciente. Tente novamente.", "error");
-} finally {
-    showLoader(false);
-}
-}
-
-function openNewSessionModal(phone, name) {
-// Redirecionar para a agenda na data atual
-navigateTo('view-admin');
-switchTab('calendar');
-
-// Selecionar a data de hoje no calendário
-const today = new Date().toISOString().split('T')[0];
-state.adminDate = new Date();
-renderAdminCalendar();
-
-// Abrir o modal do dia atual para agendar
-setTimeout(() => {
-    openDayModal(today);
-}, 300);
-
-// Mostrar toast com informação
-showToast(`Pronto para agendar nova sessão para ${name}`);
-}
-
-async function renderFinancial() {
-showLoader(true);
-const container = document.getElementById('fin-history');
-const totalEl = document.getElementById('fin-total');
-const sessionsDoneEl = document.getElementById('fin-sessions-done');
-const cancellationRateEl = document.getElementById('fin-cancellation-rate');
-const averagePerSessionEl = document.getElementById('fin-average-per-session');
-const period = document.getElementById('financial-period').value;
-
-try {
-    // Obter datas de referência
-    const now = new Date();
-    let startDate, endDate;
-    
-    switch (period) {
-        case 'month':
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-            break;
-        case 'quarter':
-            const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
-            startDate = new Date(now.getFullYear(), quarterStartMonth, 1);
-            endDate = new Date(now.getFullYear(), quarterStartMonth + 3, 0);
-            break;
-        case 'semester':
-            const semesterStartMonth = Math.floor(now.getMonth() / 6) * 6;
-            startDate = new Date(now.getFullYear(), semesterStartMonth, 1);
-            endDate = new Date(now.getFullYear(), semesterStartMonth + 6, 0);
-            break;
-        case 'year':
-            startDate = new Date(now.getFullYear(), 0, 1);
-            endDate = new Date(now.getFullYear(), 11, 31);
-            break;
-    }
-    
-    // Formatar datas para consulta
-    const startISO = startDate.toISOString().split('T')[0];
-    const endISO = endDate.toISOString().split('T')[0];
-    
-    // Filtrar agendamentos no período
-    const periodBookings = cache.bookings.filter(b => 
-        b.date >= startISO && b.date <= endISO && b.status === 'confirmed'
-    );
-    
-    // Calcular métricas
-    const totalRevenue = periodBookings.reduce((sum, b) => sum + (b.value || 0), 0);
-    const sessionsDone = periodBookings.length;
-    const cancellationRate = calculateCancellationRate(periodBookings, startISO, endISO);
-    const averagePerSession = sessionsDone > 0 ? totalRevenue / sessionsDone : 0;
-    
-    // Atualizar UI
-    totalEl.innerText = totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    sessionsDoneEl.innerText = sessionsDone;
-    cancellationRateEl.innerText = `${cancellationRate.toFixed(1)}%`;
-    averagePerSessionEl.innerText = averagePerSession.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    
-    // Agrupar receita por mês
-    const monthsMap = {};
-    
-    periodBookings.forEach(booking => {
-        const monthKey = booking.date.substring(0, 7); // YYYY-MM
-        
-        if (!monthsMap[monthKey]) {
-            monthsMap[monthKey] = {
-                total: 0,
-                count: 0
-            };
-        }
-        
-        monthsMap[monthKey].total += booking.value || 150;
-        monthsMap[monthKey].count += 1;
-    });
-    
-    // Renderizar histórico
-    container.innerHTML = '';
-    
-    if (Object.keys(monthsMap).length === 0) {
-        container.innerHTML = `
-            <div class="p-4 text-center text-slate-500">
-                <i class="fa-regular fa-calendar-xmark text-3xl opacity-50 mb-2 block"></i>
-                <p>Nenhum agendamento no período selecionado</p>
-            </div>
-        `;
-        return;
-    }
-    
-    // Ordenar por mês (mais recente primeiro)
-    const sortedMonths = Object.keys(monthsMap).sort().reverse();
-    
-    sortedMonths.forEach(monthKey => {
-        const data = monthsMap[monthKey];
-        const [year, month] = monthKey.split('-');
-        const monthDate = new Date(parseInt(year), parseInt(month) - 1);
-        const monthName = monthDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-        
-        const row = document.createElement('div');
-        row.className = "p-4 hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0";
-        row.innerHTML = `
-            <div class="flex justify-between items-center mb-2">
-                <span class="font-bold text-slate-800 capitalize">${monthName}</span>
-                <span class="font-bold text-slate-800">${data.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-            </div>
-            <div class="flex justify-between text-xs text-slate-500">
-                <span>${data.count} sessão${data.count !== 1 ? 'es' : ''}</span>
-                <span>Média: ${Math.round(data.total / data.count).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-            </div>
-            <div class="mt-3 h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div class="h-full bg-teal-500 rounded-full" style="width: ${Math.min(100, (data.total / (Math.max(...Object.values(monthsMap).map(m => m.total)) || 1)) * 100)}%"></div>
-            </div>
-        `;
-        container.appendChild(row);
-    });
-    
-} catch (error) {
-    console.error("Error rendering financial data:", error);
-    container.innerHTML = `
-        <div class="p-4 text-center text-red-500">
-            <i class="fa-solid fa-triangle-exclamation text-2xl mb-2 block"></i>
-            <p>Erro ao carregar dados financeiros</p>
-        </div>
-    `;
-} finally {
-    showLoader(false);
-}
-}
-
-function calculateCancellationRate(bookings, startDate, endDate) {
-// Implementação simples - na versão completa, isso viria do Firebase
-const totalPossible = 30; // Número estimado de dias úteis no período
-const cancellations = 0; // Dados de cancelamentos viriam do Firebase
-return totalPossible > 0 ? (cancellations / totalPossible) * 100 : 0;
-}
-
-async function exportClientsToCSV() {
-showLoader(true);
-try {
-    const clients = Object.values(cache.clients);
-    
-    if (clients.length === 0) {
-        showToast("Nenhum paciente para exportar.", "error");
-        return;
-    }
-    
-    // Cabeçalhos do CSV
-    const headers = [
-        'Nome',
-        'Telefone',
-        'Email',
-        'Data de Nascimento',
-        'Motivo da Consulta',
-        'Histórico Médico',
-        'Origem',
-        'Data de Registro',
-        'Última Sessão',
-        'Total de Sessões'
-    ];
-    
-    // Dados
-    const rows = clients.map(client => [
-        client.name || '',
-        client.phone || '',
-        client.email || '',
-        client.birthdate ? new Date(client.birthdate.toDate()).toLocaleDateString('pt-BR') : '',
-        client.reason || '',
-        client.medicalHistory || '',
-        client.source || '',
-        new Date(client.createdAt?.toDate() || client.createdAt).toLocaleDateString('pt-BR'),
-        client.lastSession ? new Date(client.lastSession + 'T00:00:00').toLocaleDateString('pt-BR') : '',
-        client.totalSessions || 0
-    ]);
-    
-    // Montar CSV
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += headers.join(';') + '\n';
-    
-    rows.forEach(row => {
-        csvContent += row.map(field => 
-            typeof field === 'string' ? `"${field.replace(/"/g, '""')}"` : field
-        ).join(';') + '\n';
-    });
-    
-    // Download
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `pacientes_psipro_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    showToast("Pacientes exportados com sucesso!");
-} catch (error) {
-    console.error("Error exporting clients:", error);
-    showToast("Erro ao exportar pacientes. Tente novamente.", "error");
-} finally {
-    showLoader(false);
-}
-}
-
-function generateReport() {
-const startDate = document.getElementById('report-start-date').value;
-const endDate = document.getElementById('report-end-date').value;
-const reportType = document.getElementById('report-type').value;
-
-if (!startDate || !endDate) {
-    showToast("Selecione um período válido para o relatório.", "error");
-    return;
-}
-
-if (new Date(startDate) > new Date(endDate)) {
-    showToast("A data inicial não pode ser posterior à data final.", "error");
-    return;
-}
-
-showLoader(true);
-const resultsContainer = document.getElementById('report-results');
-resultsContainer.querySelector('.empty-state').style.display = 'none';
-
-setTimeout(() => {
-    try {
-        let reportHTML = '';
-        const periodText = `${new Date(startDate).toLocaleDateString('pt-BR')} a ${new Date(endDate).toLocaleDateString('pt-BR')}`;
-        
-        switch (reportType) {
-            case 'attendance':
-                reportHTML = generateAttendanceReport(startDate, endDate, periodText);
-                break;
-            case 'revenue':
-                reportHTML = generateRevenueReport(startDate, endDate, periodText);
-                break;
-            case 'clients':
-                reportHTML = generateClientsReport(startDate, endDate, periodText);
-                break;
-            case 'cancellations':
-                reportHTML = generateCancellationsReport(startDate, endDate, periodText);
-                break;
-        }
-        
-        resultsContainer.innerHTML = reportHTML;
-        showToast("Relatório gerado com sucesso!");
-    } catch (error) {
-        console.error("Error generating report:", error);
-        resultsContainer.innerHTML = `
-            <div class="p-6 text-center text-red-500">
-                <i class="fa-solid fa-triangle-exclamation text-3xl mb-2 block"></i>
-                <p>Erro ao gerar relatório. Tente novamente.</p>
-            </div>
-        `;
-    } finally {
-        showLoader(false);
-    }
-}, 500);
-}
-
-function generateAttendanceReport(startDate, endDate, periodText) {
-// Filtrar agendamentos no período
-const periodBookings = cache.bookings.filter(b => 
-    b.date >= startDate && b.date <= endDate && b.status === 'confirmed'
-);
-
-// Agrupar por dia da semana
-const weekdays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-const weekdayCounts = Array(7).fill(0);
-const hourlyCounts = {};
-
-// Contar agendamentos por dia da semana e hora
-periodBookings.forEach(booking => {
-    const date = new Date(booking.date + 'T00:00:00');
-    const dayIndex = date.getDay();
-    weekdayCounts[dayIndex]++;
-    
-    const hour = booking.time.split(':')[0];
-    if (!hourlyCounts[hour]) hourlyCounts[hour] = 0;
-    hourlyCounts[hour]++;
-});
-
-// Montar relatório
-return `
-    <div class="p-5">
-        <h3 class="font-bold text-lg text-slate-800 mb-4">Relatório de Atendimentos</h3>
-        <p class="text-sm text-slate-500 mb-6">Período: ${periodText} | Total de Sessões: ${periodBookings.length}</p>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div class="bg-slate-50 rounded-xl p-4">
-                <h4 class="font-bold text-slate-700 mb-3">Sessões por Dia da Semana</h4>
-                <div class="space-y-3">
-                    ${weekdays.map((day, i) => `
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium text-slate-700">${day}</span>
-                            <div class="flex items-center">
-                                <span class="text-sm font-bold text-slate-800 mr-3">${weekdayCounts[i]}</span>
-                                <div class="w-16 bg-slate-200 rounded-full h-2 overflow-hidden">
-                                    <div class="h-full bg-teal-500 rounded-full" style="width: ${Math.min(100, weekdayCounts[i] / Math.max(...weekdayCounts) * 100)}%"></div>
-                                </div>
-                            </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+                        <div class="text-sm">
+                            <span class="text-xs text-slate-400 mr-2">Registrado em:</span>
+                            <span class="font-medium text-slate-700">${new Date(client.createdAt?.toDate() || client.createdAt).toLocaleDateString('pt-BR')}</span>
                         </div>
-                    `).join('')}
-                </div>
-            </div>
+                        <button onclick="openNewSessionModal('${client.phone}', '${client.name}')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-100 transition flex items-center">
+                            <i class="fa-solid fa-calendar-plus mr-1"></i> Nova Sessão
+                        </button>
+                    </div>
+                `;
+                list.appendChild(el);
+            });
             
-            <div class="bg-slate-50 rounded-xl p-4">
-                <h4 class="font-bold text-slate-700 mb-3">Sessões por Horário</h4>
-                <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
-                    ${Object.entries(hourlyCounts).sort().map(([hour, count]) => `
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium text-slate-700">${hour}h</span>
-                            <div class="flex items-center">
-                                <span class="text-sm font-bold text-slate-800 mr-3">${count}</span>
-                                <div class="w-16 bg-slate-200 rounded-full h-2 overflow-hidden">
-                                    <div class="h-full bg-amber-400 rounded-full" style="width: ${Math.min(100, count / Math.max(...Object.values(hourlyCounts)) * 100)}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        </div>
-        
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200">
-                <thead class="bg-slate-50">
-                    <tr>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Data</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Horário</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Paciente</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Valor</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-slate-100">
-                    ${periodBookings.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)).map(booking => {
-                        const client = cache.clients[booking.clientPhone] || { name: booking.clientName };
-                        return `
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">${booking.date.split('-').reverse().join('/')}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800">${booking.time}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-800">${client.name}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-green-600 font-medium">R$ ${booking.value},00</td>
-                            </tr>
-                        `;
-                    }).join('')}
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
-            <button onclick="exportTableToCSV('attendance-report', 'relatorio_atendimentos')" class="text-sm bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition">
-                <i class="fa-solid fa-file-csv mr-1"></i> Exportar CSV
-            </button>
-        </div>
-    </div>
-`;
-}
-
-function generateRevenueReport(startDate, endDate, periodText) {
-// Filtrar agendamentos no período
-const periodBookings = cache.bookings.filter(b => 
-    b.date >= startDate && b.date <= endDate && b.status === 'confirmed'
-);
-
-// Calcular totais
-const totalRevenue = periodBookings.reduce((sum, b) => sum + (b.value || 0), 0);
-const averagePerSession = periodBookings.length > 0 ? totalRevenue / periodBookings.length : 0;
-
-// Agrupar por semana
-const weeksMap = {};
-periodBookings.forEach(booking => {
-    const date = new Date(booking.date + 'T00:00:00');
-    const weekStart = new Date(date);
-    weekStart.setDate(date.getDate() - date.getDay()); // Domingo como início da semana
-    const weekKey = weekStart.toISOString().split('T')[0];
-    
-    if (!weeksMap[weekKey]) {
-        weeksMap[weekKey] = { total: 0, count: 0 };
-    }
-    
-    weeksMap[weekKey].total += booking.value || 0;
-    weeksMap[weekKey].count += 1;
-});
-
-return `
-    <div class="p-5">
-        <h3 class="font-bold text-lg text-slate-800 mb-4">Relatório Financeiro</h3>
-        <p class="text-sm text-slate-500 mb-6">Período: ${periodText}</p>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-4">
-                <p class="text-xs font-bold uppercase tracking-wider opacity-90">Receita Total</p>
-                <p class="text-2xl font-bold mt-1">${totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-            </div>
-            <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-4">
-                <p class="text-xs font-bold uppercase tracking-wider opacity-90">Número de Sessões</p>
-                <p class="text-2xl font-bold mt-1">${periodBookings.length}</p>
-            </div>
-            <div class="bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-xl p-4">
-                <p class="text-xs font-bold uppercase tracking-wider opacity-90">Média por Sessão</p>
-                <p class="text-2xl font-bold mt-1">${averagePerSession.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-            </div>
-        </div>
-        
-        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-6">
-            <div class="p-4 border-b border-slate-100">
-                <h4 class="font-bold text-slate-700">Receita por Semana</h4>
-            </div>
-            <div class="p-4">
-                <div class="h-48 flex items-end justify-around mb-4">
-                    ${Object.entries(weeksMap).sort().map(([weekKey, data]) => {
-                        const date = new Date(weekKey + 'T00:00:00');
-                        const weekNumber = getWeekNumber(date);
-                        const percentage = Math.min(100, data.total / Math.max(...Object.values(weeksMap).map(w => w.total)) * 100);
-                        
-                        return `
-                            <div class="text-center">
-                                <div class="bg-green-400 w-6 mx-auto rounded-t-lg" style="height: ${Math.max(20, percentage)}px;"></div>
-                                <span class="text-[10px] mt-1 block text-slate-500">Semana ${weekNumber}</span>
-                                <span class="text-[10px] font-bold text-slate-700 mt-1">${data.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-        </div>
-        
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200" id="attendance-report">
-                <thead class="bg-slate-50">
-                    <tr>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Data</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Paciente</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Valor</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Pago</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-slate-100">
-                    ${periodBookings.sort((a, b) => a.date.localeCompare(b.date)).map(booking => {
-                        const client = cache.clients[booking.clientPhone] || { name: booking.clientName };
-                        return `
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">${booking.date.split('-').reverse().join('/')}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800">${client.name}</td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-green-600 font-medium">R$ ${booking.value},00</td>
-                                <td class="px-4 py-3 whitespace-nowrap">
-                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Sim</span>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('')}
-                    ${periodBookings.length === 0 ? `
-                        <tr>
-                            <td colspan="4" class="px-4 py-8 text-center text-slate-500">
-                                Nenhum agendamento confirmado no período selecionado
-                            </td>
-                        </tr>
-                    ` : ''}
-                </tbody>
-                <tfoot class="bg-slate-50">
-                    <tr>
-                        <td colspan="2" class="px-4 py-3 text-sm font-bold text-right">TOTAL:</td>
-                        <td class="px-4 py-3 text-sm font-bold text-green-700">R$ ${totalRevenue},00</td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-        
-        <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
-            <button onclick="exportTableToCSV('attendance-report', 'relatorio_financeiro')" class="text-sm bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition">
-                <i class="fa-solid fa-file-csv mr-1"></i> Exportar CSV
-            </button>
-        </div>
-    </div>
-`;
-}
-
-function getWeekNumber(date) {
-const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
-return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
-}
-
-async function saveSettings() {
-showLoader(true);
-const saveButton = document.querySelector('#tab-settings button');
-const originalText = saveButton.innerHTML;
-saveButton.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-1"></i> Salvando...';
-
-try {
-    // Obter valores dos campos
-    const professionalName = document.getElementById('setting-professional-name').value.trim();
-    const crp = document.getElementById('setting-crp').value.trim();
-    const specialties = document.getElementById('setting-specialties').value.trim();
-    const sessionValue = parseFloat(document.getElementById('setting-session-value').value) || 150;
-    const sessionDuration = parseInt(document.getElementById('setting-session-duration').value) || 50;
-    const confirmMsg = document.getElementById('setting-msg-confirm').value.trim();
-    const reminderMsg = document.getElementById('setting-msg-reminder').value.trim();
-    const videoLink = document.getElementById('setting-video-link').value.trim();
-    
-    // Obter dias úteis selecionados
-    const workingDays = [];
-    document.querySelectorAll('#tab-settings input[type="checkbox"]').forEach(checkbox => {
-        if (checkbox.checked) {
-            workingDays.push(checkbox.id.replace('day-', ''));
+            const loadMoreBtn = document.getElementById('load-more-clients');
+            if (endIndex < clients.length) {
+                loadMoreBtn.classList.remove('hidden');
+            } else {
+                loadMoreBtn.classList.add('hidden');
+            }
         }
-    });
-    
-    // Validar dados obrigatórios
-    if (!professionalName || !crp) {
-        showToast("Nome do profissional e registro (CRP) são obrigatórios.", "error");
-        return;
-    }
-    
-    // Atualizar state.settings
-    state.settings = {
-        ...state.settings,
-        professionalName,
-        crp,
-        specialties,
-        sessionValue,
-        sessionDuration,
-        confirmMsg,
-        reminderMsg,
-        videoLink,
-        workingDays,
-        updatedAt: new Date()
-    };
-    
-    // Salvar no Firebase
-    await db.collection('settings').doc('main').set(state.settings, { merge: true });
-    
-    // Atualizar informações do profissional na view do cliente
-    document.querySelector('#view-profile h1').innerText = professionalName;
-    document.querySelector('#view-profile .text-blue-600').innerHTML = `${professionalName.split(' ')[0]} &bull; ${crp}`;
-    document.querySelector('#view-profile .text-lg.font-bold.text-blue-700').innerText = `R$ ${sessionValue}`;
-    document.querySelector('#client-confirm-bar .text-sm.font-bold.text-blue-600').innerText = `R$ ${sessionValue},00`;
-    
-    // Atualizar especialidades
-    const specialtiesContainer = document.querySelector('#view-profile .flex.flex-wrap.gap-2');
-    specialtiesContainer.innerHTML = '';
-    specialties.split(',').map(s => s.trim()).forEach(specialty => {
-        if (specialty) {
-            specialtiesContainer.innerHTML += `
-                <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">${specialty}</span>
-            `;
-        }
-    });
-    
-    showToast("Configurações salvas com sucesso!");
-} catch (error) {
-    console.error("Error saving settings:", error);
-    showToast("Erro ao salvar configurações. Tente novamente.", "error");
-} finally {
-    showLoader(false);
-    saveButton.innerHTML = originalText;
-}
-}
-
-async function exportAllData() {
-if (!confirm("Você está prestes a exportar TODOS os dados do sistema. Deseja continuar?")) {
-    return;
-}
-
-showLoader(true);
-
-try {
-    // Coletar todos os dados
-    const exportData = {
-        timestamp: new Date().toISOString(),
-        settings: state.settings,
-        slots: cache.slots,
-        bookings: cache.bookings,
-        clients: Object.values(cache.clients),
-        notes: await getAllNotes()
-    };
-    
-    // Converter para JSON e fazer download
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `psipro_backup_${new Date().toISOString().split('T')[0]}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
-    
-    showToast("Backup completo exportado com sucesso!");
-} catch (error) {
-    console.error("Error exporting data:", error);
-    showToast("Erro ao exportar dados. Tente novamente.", "error");
-} finally {
-    showLoader(false);
-}
-}
-
-async function getAllNotes() {
-const notesSnapshot = await db.collection('notes').get();
-const notes = {};
-    
-notesSnapshot.forEach(doc => {
-    notes[doc.id] = doc.data();
-});
-    
-return notes;
-}
-
-async function importData() {
-showLoader(true);
-    
-try {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
         
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+        async function openNewClientModal() {
+            document.getElementById('modal-new-client').classList.remove('hidden');
+            document.getElementById('client-name').value = '';
+            document.getElementById('client-phone').value = '';
+            document.getElementById('client-email').value = '';
+            document.getElementById('client-birthdate').value = '';
+            document.getElementById('client-reason').value = '';
+            document.getElementById('client-medical-history').value = '';
+        }
+        
+        async function saveNewClient(e) {
+            e.preventDefault();
+            const name = document.getElementById('client-name').value.trim();
+            let phone = document.getElementById('client-phone').value.trim();
+            const email = document.getElementById('client-email').value.trim();
+            const birthdate = document.getElementById('client-birthdate').value;
+            const reason = document.getElementById('client-reason').value.trim();
+            const medicalHistory = document.getElementById('client-medical-history').value.trim();
             
-        const reader = new FileReader();
-        reader.onload = async (event) => {
+            // Formatar o telefone para o padrão brasileiro
+            phone = phone.replace(/\D/g, '');
+            if (phone.length === 10) {
+                phone = phone.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+            } else if (phone.length === 11) {
+                phone = phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+            }
+            
+            if (!name || !phone) {
+                showToast("Nome e WhatsApp são obrigatórios para cadastro.", "error");
+                return;
+            }
+            
+            if (!validatePhone(phone)) {
+                showToast("Número de WhatsApp inválido. Use o formato (11) 99999-9999", "error");
+                return;
+            }
+            
+            showLoader(true);
+            
             try {
-                const jsonData = JSON.parse(event.target.result);
-                    
-                if (!confirm("Isso substituirá todos os dados atuais do sistema. Deseja continuar?")) {
+                const formattedPhone = formatPhone(phone);
+                
+                // Verificar se cliente já existe
+                if (cache.clients[formattedPhone]) {
+                    showToast("Este paciente já está cadastrado no sistema.", "error");
                     return;
                 }
-                    
-                showLoader(true);
-                    
-                // Importar configurações
-                if (jsonData.settings) {
-                    await db.collection('settings').doc('main').set(jsonData.settings);
-                    state.settings = jsonData.settings;
+                
+                const clientData = {
+                    name: name,
+                    phone: formattedPhone,
+                    email: email || null,
+                    birthdate: birthdate || null,
+                    reason: reason || null,
+                    medicalHistory: medicalHistory || null,
+                    source: 'manual',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    lastSession: null,
+                    totalSessions: 0
+                };
+                
+                // Salvar no Firebase
+                await db.collection('clients').doc(formattedPhone).set(clientData);
+                
+                // Adicionar ao cache
+                cache.clients[formattedPhone] = clientData;
+                
+                // Fechar modal
+                closeModal('modal-new-client');
+                
+                // Atualizar lista de clientes
+                renderClients();
+                updateDashboard();
+                
+                showToast("Novo paciente cadastrado com sucesso!");
+            } catch (error) {
+                console.error("Error saving new client:", error);
+                showToast("Erro ao cadastrar novo paciente. Tente novamente.", "error");
+            } finally {
+                showLoader(false);
+            }
+        }
+        
+        function openNewSessionModal(phone, name) {
+            // Redirecionar para a agenda na data atual
+            navigateTo('view-admin');
+            switchTab('calendar');
+            
+            // Selecionar a data de hoje no calendário
+            const today = new Date().toISOString().split('T')[0];
+            state.adminDate = new Date();
+            renderAdminCalendar();
+            
+            // Abrir o modal do dia atual para agendar
+            setTimeout(() => {
+                openDayModal(today);
+            }, 300);
+            
+            // Mostrar toast com informação
+            showToast(`Pronto para agendar nova sessão para ${name}`);
+        }
+        
+        async function renderFinancial() {
+            showLoader(true);
+            const container = document.getElementById('fin-history');
+            const totalEl = document.getElementById('fin-total');
+            const sessionsDoneEl = document.getElementById('fin-sessions-done');
+            const cancellationRateEl = document.getElementById('fin-cancellation-rate');
+            const averagePerSessionEl = document.getElementById('fin-average-per-session');
+            const period = document.getElementById('financial-period').value;
+            
+            try {
+                // Obter datas de referência
+                const now = new Date();
+                let startDate, endDate;
+                
+                switch (period) {
+                    case 'month':
+                        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                        break;
+                    case 'quarter':
+                        const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+                        startDate = new Date(now.getFullYear(), quarterStartMonth, 1);
+                        endDate = new Date(now.getFullYear(), quarterStartMonth + 3, 0);
+                        break;
+                    case 'semester':
+                        const semesterStartMonth = Math.floor(now.getMonth() / 6) * 6;
+                        startDate = new Date(now.getFullYear(), semesterStartMonth, 1);
+                        endDate = new Date(now.getFullYear(), semesterStartMonth + 6, 0);
+                        break;
+                    case 'year':
+                        startDate = new Date(now.getFullYear(), 0, 1);
+                        endDate = new Date(now.getFullYear(), 11, 31);
+                        break;
                 }
+                
+                // Formatar datas para consulta
+                const startISO = startDate.toISOString().split('T')[0];
+                const endISO = endDate.toISOString().split('T')[0];
+                
+                // Filtrar agendamentos no período
+                const periodBookings = cache.bookings.filter(b => 
+                    b.date >= startISO && b.date <= endISO && b.status === 'confirmed'
+                );
+                
+                // Calcular métricas
+                const totalRevenue = periodBookings.reduce((sum, b) => sum + (b.value || 0), 0);
+                const sessionsDone = periodBookings.length;
+                const cancellationRate = calculateCancellationRate(periodBookings, startISO, endISO);
+                const averagePerSession = sessionsDone > 0 ? totalRevenue / sessionsDone : 0;
+                
+                // Atualizar UI
+                totalEl.innerText = totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                sessionsDoneEl.innerText = sessionsDone;
+                cancellationRateEl.innerText = `${cancellationRate.toFixed(1)}%`;
+                averagePerSessionEl.innerText = averagePerSession.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                
+                // Agrupar receita por mês
+                const monthsMap = {};
+                
+                periodBookings.forEach(booking => {
+                    const monthKey = booking.date.substring(0, 7); // YYYY-MM
                     
-                // Importar slots
-                if (jsonData.slots) {
-                    for (const [date, slotData] of Object.entries(jsonData.slots)) {
-                        await db.collection('slots').doc(date).set({
-                            times: slotData.times || slotData,
-                            date: date,
-                            updatedAt: new Date()
-                        });
+                    if (!monthsMap[monthKey]) {
+                        monthsMap[monthKey] = {
+                            total: 0,
+                            count: 0
+                        };
                     }
-                }
                     
-                // Importar clientes
-                if (jsonData.clients) {
-                    for (const client of jsonData.clients) {
-                        await db.collection('clients').doc(client.phone).set(client);
+                    monthsMap[monthKey].total += booking.value || 150;
+                    monthsMap[monthKey].count += 1;
+                });
+                
+                // Renderizar histórico
+                container.innerHTML = '';
+                
+                if (Object.keys(monthsMap).length === 0) {
+                    container.innerHTML = `
+                        <div class="p-4 text-center text-slate-500">
+                            <i class="fa-regular fa-calendar-xmark text-3xl opacity-50 mb-2 block"></i>
+                            <p>Nenhum agendamento no período selecionado</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Ordenar por mês (mais recente primeiro)
+                const sortedMonths = Object.keys(monthsMap).sort().reverse();
+                
+                sortedMonths.forEach(monthKey => {
+                    const data = monthsMap[monthKey];
+                    const [year, month] = monthKey.split('-');
+                    const monthDate = new Date(parseInt(year), parseInt(month) - 1);
+                    const monthName = monthDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+                    
+                    const row = document.createElement('div');
+                    row.className = "p-4 hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0";
+                    row.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold text-slate-800 capitalize">${monthName}</span>
+                            <span class="font-bold text-slate-800">${data.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500">
+                            <span>${data.count} sessão${data.count !== 1 ? 'es' : ''}</span>
+                            <span>Média: ${Math.round(data.total / data.count).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                        </div>
+                        <div class="mt-3 h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-teal-500 rounded-full" style="width: ${Math.min(100, (data.total / (Math.max(...Object.values(monthsMap).map(m => m.total)) || 1)) * 100)}%"></div>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error("Error rendering financial data:", error);
+                container.innerHTML = `
+                    <div class="p-4 text-center text-red-500">
+                        <i class="fa-solid fa-triangle-exclamation text-2xl mb-2 block"></i>
+                        <p>Erro ao carregar dados financeiros</p>
+                    </div>
+                `;
+            } finally {
+                showLoader(false);
+            }
+        }
+        
+        function calculateCancellationRate(bookings, startDate, endDate) {
+            // Implementação simples - na versão completa, isso viria do Firebase
+            const totalPossible = 30; // Número estimado de dias úteis no período
+            const cancellations = 0; // Dados de cancelamentos viriam do Firebase
+            return totalPossible > 0 ? (cancellations / totalPossible) * 100 : 0;
+        }
+        
+        async function exportClientsToCSV() {
+            showLoader(true);
+            try {
+                const clients = Object.values(cache.clients);
+                
+                if (clients.length === 0) {
+                    showToast("Nenhum paciente para exportar.", "error");
+                    return;
+                }
+                
+                // Cabeçalhos do CSV
+                const headers = [
+                    'Nome',
+                    'Telefone',
+                    'Email',
+                    'Data de Nascimento',
+                    'Motivo da Consulta',
+                    'Histórico Médico',
+                    'Origem',
+                    'Data de Registro',
+                    'Última Sessão',
+                    'Total de Sessões'
+                ];
+                
+                // Dados
+                const rows = clients.map(client => [
+                    client.name || '',
+                    client.phone || '',
+                    client.email || '',
+                    client.birthdate ? new Date(client.birthdate.toDate()).toLocaleDateString('pt-BR') : '',
+                    client.reason || '',
+                    client.medicalHistory || '',
+                    client.source || '',
+                    new Date(client.createdAt?.toDate() || client.createdAt).toLocaleDateString('pt-BR'),
+                    client.lastSession ? new Date(client.lastSession + 'T00:00:00').toLocaleDateString('pt-BR') : '',
+                    client.totalSessions || 0
+                ]);
+                
+                // Montar CSV
+                let csvContent = "text/csv;charset=utf-8,";
+                csvContent += headers.join(';') + '\n';
+                
+                rows.forEach(row => {
+                    csvContent += row.map(field => 
+                        typeof field === 'string' ? `"${field.replace(/"/g, '""')}"` : field
+                    ).join(';') + '\n';
+                });
+                
+                // Download
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `pacientes_psipro_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showToast("Pacientes exportados com sucesso!");
+            } catch (error) {
+                console.error("Error exporting clients:", error);
+                showToast("Erro ao exportar pacientes. Tente novamente.", "error");
+            } finally {
+                showLoader(false);
+            }
+        }
+        
+        function generateReport() {
+            const startDate = document.getElementById('report-start-date').value;
+            const endDate = document.getElementById('report-end-date').value;
+            const reportType = document.getElementById('report-type').value;
+            
+            if (!startDate || !endDate) {
+                showToast("Selecione um período válido para o relatório.", "error");
+                return;
+            }
+            
+            if (new Date(startDate) > new Date(endDate)) {
+                showToast("A data inicial não pode ser posterior à data final.", "error");
+                return;
+            }
+            
+            showLoader(true);
+            const resultsContainer = document.getElementById('report-results');
+            resultsContainer.querySelector('.empty-state').style.display = 'none';
+            
+            setTimeout(() => {
+                try {
+                    let reportHTML = '';
+                    const periodText = `${new Date(startDate).toLocaleDateString('pt-BR')} a ${new Date(endDate).toLocaleDateString('pt-BR')}`;
+                    
+                    switch (reportType) {
+                        case 'attendance':
+                            reportHTML = generateAttendanceReport(startDate, endDate, periodText);
+                            break;
+                        case 'revenue':
+                            reportHTML = generateRevenueReport(startDate, endDate, periodText);
+                            break;
+                        case 'clients':
+                            reportHTML = generateClientsReport(startDate, endDate, periodText);
+                            break;
+                        case 'cancellations':
+                            reportHTML = generateCancellationsReport(startDate, endDate, periodText);
+                            break;
                     }
-                }
                     
-                // Importar agendamentos
-                if (jsonData.bookings) {
-                    for (const booking of jsonData.bookings) {
-                        await db.collection('bookings').doc(booking.id).set(booking);
+                    resultsContainer.innerHTML = reportHTML;
+                    showToast("Relatório gerado com sucesso!");
+                } catch (error) {
+                    console.error("Error generating report:", error);
+                    resultsContainer.innerHTML = `
+                        <div class="p-6 text-center text-red-500">
+                            <i class="fa-solid fa-triangle-exclamation text-3xl mb-2 block"></i>
+                            <p>Erro ao gerar relatório. Tente novamente.</p>
+                        </div>
+                    `;
+                } finally {
+                    showLoader(false);
+                }
+            }, 500);
+        }
+        
+        function generateAttendanceReport(startDate, endDate, periodText) {
+            // Filtrar agendamentos no período
+            const periodBookings = cache.bookings.filter(b => 
+                b.date >= startDate && b.date <= endDate && b.status === 'confirmed'
+            );
+            
+            // Agrupar por dia da semana
+            const weekdays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+            const weekdayCounts = Array(7).fill(0);
+            const hourlyCounts = {};
+            
+            // Contar agendamentos por dia da semana e hora
+            periodBookings.forEach(booking => {
+                const date = new Date(booking.date + 'T00:00:00');
+                const dayIndex = date.getDay();
+                weekdayCounts[dayIndex]++;
+                
+                const hour = booking.time.split(':')[0];
+                if (!hourlyCounts[hour]) hourlyCounts[hour] = 0;
+                hourlyCounts[hour]++;
+            });
+            
+            // Montar relatório
+            return `
+                <div class="p-5">
+                    <h3 class="font-bold text-lg text-slate-800 mb-4">Relatório de Atendimentos</h3>
+                    <p class="text-sm text-slate-500 mb-6">Período: ${periodText} | Total de Sessões: ${periodBookings.length}</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-slate-50 rounded-xl p-4">
+                            <h4 class="font-bold text-slate-700 mb-3">Sessões por Dia da Semana</h4>
+                            <div class="space-y-3">
+                                ${weekdays.map((day, i) => `
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm font-medium text-slate-700">${day}</span>
+                                        <div class="flex items-center">
+                                            <span class="text-sm font-bold text-slate-800 mr-3">${weekdayCounts[i]}</span>
+                                            <div class="w-16 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                                <div class="h-full bg-teal-500 rounded-full" style="width: ${Math.min(100, weekdayCounts[i] / Math.max(...weekdayCounts) * 100)}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="bg-slate-50 rounded-xl p-4">
+                            <h4 class="font-bold text-slate-700 mb-3">Sessões por Horário</h4>
+                            <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                ${Object.entries(hourlyCounts).sort().map(([hour, count]) => `
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm font-medium text-slate-700">${hour}h</span>
+                                        <div class="flex items-center">
+                                            <span class="text-sm font-bold text-slate-800 mr-3">${count}</span>
+                                            <div class="w-16 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                                <div class="h-full bg-amber-400 rounded-full" style="width: ${Math.min(100, count / Math.max(...Object.values(hourlyCounts)) * 100)}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200" id="attendance-report">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Data</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Horário</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Paciente</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-slate-100">
+                                ${periodBookings.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)).map(booking => {
+                                    const client = cache.clients[booking.clientPhone] || { name: booking.clientName };
+                                    return `
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">${booking.date.split('-').reverse().join('/')}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800">${booking.time}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-800">${client.name}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-green-600 font-medium">R$ ${booking.value},00</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+                        <button onclick="exportTableToCSV('attendance-report', 'relatorio_atendimentos')" class="text-sm bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition">
+                            <i class="fa-solid fa-file-csv mr-1"></i> Exportar CSV
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function generateRevenueReport(startDate, endDate, periodText) {
+            // Filtrar agendamentos no período
+            const periodBookings = cache.bookings.filter(b => 
+                b.date >= startDate && b.date <= endDate && b.status === 'confirmed'
+            );
+            
+            // Calcular totais
+            const totalRevenue = periodBookings.reduce((sum, b) => sum + (b.value || 0), 0);
+            const averagePerSession = periodBookings.length > 0 ? totalRevenue / periodBookings.length : 0;
+            
+            // Agrupar por semana
+            const weeksMap = {};
+            periodBookings.forEach(booking => {
+                const date = new Date(booking.date + 'T00:00:00');
+                const weekStart = new Date(date);
+                weekStart.setDate(date.getDate() - date.getDay()); // Domingo como início da semana
+                const weekKey = weekStart.toISOString().split('T')[0];
+                
+                if (!weeksMap[weekKey]) {
+                    weeksMap[weekKey] = { total: 0, count: 0 };
+                }
+                
+                weeksMap[weekKey].total += booking.value || 0;
+                weeksMap[weekKey].count += 1;
+            });
+            
+            return `
+                <div class="p-5">
+                    <h3 class="font-bold text-lg text-slate-800 mb-4">Relatório Financeiro</h3>
+                    <p class="text-sm text-slate-500 mb-6">Período: ${periodText}</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-4">
+                            <p class="text-xs font-bold uppercase tracking-wider opacity-90">Receita Total</p>
+                            <p class="text-2xl font-bold mt-1">${totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-4">
+                            <p class="text-xs font-bold uppercase tracking-wider opacity-90">Número de Sessões</p>
+                            <p class="text-2xl font-bold mt-1">${periodBookings.length}</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-xl p-4">
+                            <p class="text-xs font-bold uppercase tracking-wider opacity-90">Média por Sessão</p>
+                            <p class="text-2xl font-bold mt-1">${averagePerSession.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-6">
+                        <div class="p-4 border-b border-slate-100">
+                            <h4 class="font-bold text-slate-700">Receita por Semana</h4>
+                        </div>
+                        <div class="p-4">
+                            <div class="h-48 flex items-end justify-around mb-4">
+                                ${Object.entries(weeksMap).sort().map(([weekKey, data]) => {
+                                    const date = new Date(weekKey + 'T00:00:00');
+                                    const weekNumber = getWeekNumber(date);
+                                    const percentage = Math.min(100, data.total / Math.max(...Object.values(weeksMap).map(w => w.total)) * 100);
+                                    
+                                    return `
+                                        <div class="text-center">
+                                            <div class="bg-green-400 w-6 mx-auto rounded-t-lg" style="height: ${Math.max(20, percentage)}px;"></div>
+                                            <span class="text-[10px] mt-1 block text-slate-500">Semana ${weekNumber}</span>
+                                            <span class="text-[10px] font-bold text-slate-700 mt-1">${data.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200" id="attendance-report">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Data</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Paciente</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Valor</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Pago</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-slate-100">
+                                ${periodBookings.sort((a, b) => a.date.localeCompare(b.date)).map(booking => {
+                                    const client = cache.clients[booking.clientPhone] || { name: booking.clientName };
+                                    return `
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">${booking.date.split('-').reverse().join('/')}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800">${client.name}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-green-600 font-medium">R$ ${booking.value},00</td>
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Sim</span>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                                ${periodBookings.length === 0 ? `
+                                    <tr>
+                                        <td colspan="4" class="px-4 py-8 text-center text-slate-500">
+                                            Nenhum agendamento confirmado no período selecionado
+                                        </td>
+                                    </tr>
+                                ` : ''}
+                            </tbody>
+                            <tfoot class="bg-slate-50">
+                                <tr>
+                                    <td colspan="2" class="px-4 py-3 text-sm font-bold text-right">TOTAL:</td>
+                                    <td class="px-4 py-3 text-sm font-bold text-green-700">R$ ${totalRevenue},00</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+                        <button onclick="exportTableToCSV('attendance-report', 'relatorio_financeiro')" class="text-sm bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition">
+                            <i class="fa-solid fa-file-csv mr-1"></i> Exportar CSV
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function generateClientsReport(startDate, endDate, periodText) {
+            // Filtrar pacientes que tiveram sessões no período
+            const periodBookings = cache.bookings.filter(b => 
+                b.date >= startDate && b.date <= endDate && b.status === 'confirmed'
+            );
+            
+            // Agrupar por paciente
+            const clientsMap = {};
+            periodBookings.forEach(booking => {
+                const clientPhone = booking.clientPhone;
+                if (!clientsMap[clientPhone]) {
+                    clientsMap[clientPhone] = {
+                        sessions: [],
+                        totalValue: 0,
+                        client: cache.clients[clientPhone] || { name: booking.clientName }
+                    };
+                }
+                
+                clientsMap[clientPhone].sessions.push({
+                    date: booking.date,
+                    time: booking.time,
+                    value: booking.value || 150
+                });
+                
+                clientsMap[clientPhone].totalValue += booking.value || 150;
+            });
+            
+            // Converter para array e ordenar por quantidade de sessões
+            const clientsArray = Object.values(clientsMap)
+                .map((data, index) => ({
+                    phone: Object.keys(clientsMap)[index],
+                    ...data
+                }))
+                .sort((a, b) => b.sessions.length - a.sessions.length);
+            
+            return `
+                <div class="p-5">
+                    <h3 class="font-bold text-lg text-slate-800 mb-4">Relatório de Pacientes Atendidos</h3>
+                    <p class="text-sm text-slate-500 mb-6">Período: ${periodText} | Total de Pacientes: ${clientsArray.length}</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-slate-50 rounded-xl p-4">
+                            <h4 class="font-bold text-slate-700 mb-3">Top 5 Pacientes por Frequência</h4>
+                            <div class="space-y-3">
+                                ${clientsArray.slice(0, 5).map((clientData, i) => `
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm font-medium text-slate-700">${i+1}. ${clientData.client.name}</span>
+                                        <div class="flex items-center">
+                                            <span class="text-sm font-bold text-slate-800 mr-3">${clientData.sessions.length} sessões</span>
+                                            <div class="w-16 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                                <div class="h-full bg-blue-500 rounded-full" style="width: ${Math.min(100, clientData.sessions.length / Math.max(...clientsArray.map(c => c.sessions.length)) * 100)}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="bg-slate-50 rounded-xl p-4">
+                            <h4 class="font-bold text-slate-700 mb-3">Top 5 Pacientes por Receita</h4>
+                            <div class="space-y-3">
+                                ${clientsArray.slice(0, 5).sort((a, b) => b.totalValue - a.totalValue).map((clientData, i) => `
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm font-medium text-slate-700">${i+1}. ${clientData.client.name}</span>
+                                        <div class="flex items-center">
+                                            <span class="text-sm font-bold text-green-600 mr-3">${clientData.totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                                            <div class="w-16 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                                <div class="h-full bg-green-500 rounded-full" style="width: ${Math.min(100, clientData.totalValue / Math.max(...clientsArray.map(c => c.totalValue)) * 100)}%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200" id="attendance-report">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Paciente</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Sessões</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Valor Total</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Média por Sessão</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Primeira Sessão</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Última Sessão</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-slate-100">
+                                ${clientsArray.map(clientData => {
+                                    const sessions = clientData.sessions;
+                                    const firstSession = sessions.sort((a, b) => a.date.localeCompare(b.date))[0];
+                                    const lastSession = sessions[sessions.length - 1];
+                                    
+                                    return `
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800">${clientData.client.name}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">${clientData.sessions.length}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-green-600 font-medium">${clientData.totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-amber-600 font-medium">${(clientData.totalValue / clientData.sessions.length).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">${firstSession.date.split('-').reverse().join('/')}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">${lastSession.date.split('-').reverse().join('/')}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                                ${clientsArray.length === 0 ? `
+                                    <tr>
+                                        <td colspan="6" class="px-4 py-8 text-center text-slate-500">
+                                            Nenhum paciente atendido no período selecionado
+                                        </td>
+                                    </tr>
+                                ` : ''}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+                        <button onclick="exportTableToCSV('attendance-report', 'relatorio_pacientes')" class="text-sm bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition">
+                            <i class="fa-solid fa-file-csv mr-1"></i> Exportar CSV
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function generateCancellationsReport(startDate, endDate, periodText) {
+            return `
+                <div class="p-5">
+                    <h3 class="font-bold text-lg text-slate-800 mb-4">Relatório de Cancelamentos</h3>
+                    <p class="text-sm text-slate-500 mb-6">Período: ${periodText}</p>
+                    
+                    <div class="bg-slate-50 rounded-xl p-6 text-center mb-6">
+                        <i class="fa-solid fa-ban text-4xl text-red-400 mb-3"></i>
+                        <h4 class="text-lg font-bold text-slate-700 mb-2">Funcionalidade em Desenvolvimento</h4>
+                        <p class="text-slate-600">A funcionalidade completa de relatório de cancelamentos estará disponível em próximas versões do sistema.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl p-4">
+                            <p class="text-xs font-bold uppercase tracking-wider opacity-90">Cancelamentos</p>
+                            <p class="text-2xl font-bold mt-1">0</p>
+                            <p class="text-xs opacity-80 mt-1">Período selecionado</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-pink-500 to-pink-600 text-white rounded-xl p-4">
+                            <p class="text-xs font-bold uppercase tracking-wider opacity-90">Taxa de Cancelamento</p>
+                            <p class="text-2xl font-bold mt-1">0%</p>
+                            <p class="text-xs opacity-80 mt-1">Em relação ao total</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-4">
+                            <p class="text-xs font-bold uppercase tracking-wider opacity-90">Impacto Financeiro</p>
+                            <p class="text-2xl font-bold mt-1">R$ 0,00</p>
+                            <p class="text-xs opacity-80 mt-1">Valor estimado perdido</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="p-5 border-b border-slate-100">
+                            <h4 class="font-bold text-slate-800">Motivos de Cancelamento (Exemplo)</h4>
+                        </div>
+                        <div class="p-4">
+                            <ul class="space-y-2 text-slate-600">
+                                <li class="flex items-start">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full mt-2 mr-2"></span>
+                                    <span>Doença ou problema de saúde - 0 casos (0%)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full mt-2 mr-2"></span>
+                                    <span>Falta de tempo ou compromisso inadiável - 0 casos (0%)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full mt-2 mr-2"></span>
+                                    <span>Desistência do tratamento - 0 casos (0%)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full mt-2 mr-2"></span>
+                                    <span>Outros motivos - 0 casos (0%)</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 bg-blue-50 p-4 rounded-xl">
+                        <p class="text-sm text-blue-700 flex items-start">
+                            <i class="fa-solid fa-circle-info mt-1 mr-2"></i> 
+                            <strong>Nota:</strong> Para utilizar o relatório completo de cancelamentos, é necessário registrar os cancelamentos no sistema. Esta funcionalidade será implementada em atualizações futuras.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function getWeekNumber(date) {
+            const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+            const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+            return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+        }
+        
+        async function saveSettings() {
+            showLoader(true);
+            const saveButton = document.querySelector('#tab-settings button');
+            const originalText = saveButton.innerHTML;
+            saveButton.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-1"></i> Salvando...';
+            
+            try {
+                // Obter valores dos campos
+                const professionalName = document.getElementById('setting-professional-name').value.trim();
+                const crp = document.getElementById('setting-crp').value.trim();
+                const specialties = document.getElementById('setting-specialties').value.trim();
+                const sessionValue = parseFloat(document.getElementById('setting-session-value').value) || 150;
+                const sessionDuration = parseInt(document.getElementById('setting-session-duration').value) || 50;
+                const confirmMsg = document.getElementById('setting-msg-confirm').value.trim();
+                const reminderMsg = document.getElementById('setting-msg-reminder').value.trim();
+                const videoLink = document.getElementById('setting-video-link').value.trim();
+                
+                // Obter dias úteis selecionados
+                const workingDays = [];
+                document.querySelectorAll('#tab-settings input[type="checkbox"]').forEach(checkbox => {
+                    if (checkbox.checked) {
+                        workingDays.push(checkbox.id.replace('day-', ''));
                     }
+                });
+                
+                // Validar dados obrigatórios
+                if (!professionalName || !crp) {
+                    showToast("Nome do profissional e registro (CRP) são obrigatórios.", "error");
+                    return;
                 }
-                    
-                // Importar notas
-                if (jsonData.notes) {
-                    for (const [phone, note] of Object.entries(jsonData.notes)) {
-                        await db.collection('notes').doc(phone).set(note);
+                
+                // Atualizar state.settings
+                state.settings = {
+                    ...state.settings,
+                    professionalName,
+                    crp,
+                    specialties,
+                    sessionValue,
+                    sessionDuration,
+                    confirmMsg,
+                    reminderMsg,
+                    videoLink,
+                    workingDays,
+                    updatedAt: new Date()
+                };
+                
+                // Salvar no Firebase
+                await db.collection('settings').doc('main').set(state.settings, { merge: true });
+                
+                // Atualizar informações do profissional na view do cliente
+                document.querySelector('#view-profile h1').innerText = professionalName;
+                document.querySelector('#view-profile .text-blue-600').innerHTML = `${professionalName.split(' ')[0]} &bull; ${crp}`;
+                document.querySelector('#view-profile .text-lg.font-bold.text-blue-700').innerText = `R$ ${sessionValue}`;
+                document.querySelector('#client-confirm-bar .text-sm.font-bold.text-blue-600').innerText = `R$ ${sessionValue},00`;
+                
+                // Atualizar especialidades
+                const specialtiesContainer = document.querySelector('#view-profile .flex.flex-wrap.gap-2');
+                specialtiesContainer.innerHTML = '';
+                specialties.split(',').map(s => s.trim()).forEach(specialty => {
+                    if (specialty) {
+                        specialtiesContainer.innerHTML += `
+                            <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">${specialty}</span>
+                        `;
                     }
-                }
+                });
+                
+                showToast("Configurações salvas com sucesso!");
+            } catch (error) {
+                console.error("Error saving settings:", error);
+                showToast("Erro ao salvar configurações. Tente novamente.", "error");
+            } finally {
+                showLoader(false);
+                saveButton.innerHTML = originalText;
+            }
+        }
+        
+        async function exportAllData() {
+            if (!confirm("Você está prestes a exportar TODOS os dados do sistema. Deseja continuar?")) {
+                return;
+            }
+            
+            showLoader(true);
+            
+            try {
+                // Coletar todos os dados
+                const exportData = {
+                    timestamp: new Date().toISOString(),
+                    settings: state.settings,
+                    slots: cache.slots,
+                    bookings: cache.bookings,
+                    clients: Object.values(cache.clients),
+                    notes: await getAllNotes()
+                };
+                
+                // Converter para JSON e fazer download
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const dataUri = 'application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = `psipro_backup_${new Date().toISOString().split('T')[0]}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+                
+                showToast("Backup completo exportado com sucesso!");
+            } catch (error) {
+                console.error("Error exporting ", error);
+                showToast("Erro ao exportar dados. Tente novamente.", "error");
+            } finally {
+                showLoader(false);
+            }
+        }
+        
+        async function getAllNotes() {
+            const notesSnapshot = await db.collection('notes').get();
+            const notes = {};
+                
+            notesSnapshot.forEach(doc => {
+                notes[doc.id] = doc.data();
+            });
+                
+            return notes;
+        }
+        
+        async function importData() {
+            showLoader(true);
+                
+            try {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
                     
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                        
+                    const reader = new FileReader();
+                    reader.onload = async (event) => {
+                        try {
+                            const jsonData = JSON.parse(event.target.result);
+                                
+                            if (!confirm("Isso substituirá todos os dados atuais do sistema. Deseja continuar?")) {
+                                return;
+                            }
+                                
+                            showLoader(true);
+                                
+                            // Importar configurações
+                            if (jsonData.settings) {
+                                await db.collection('settings').doc('main').set(jsonData.settings);
+                                state.settings = jsonData.settings;
+                            }
+                                
+                            // Importar slots
+                            if (jsonData.slots) {
+                                for (const [date, slotData] of Object.entries(jsonData.slots)) {
+                                    await db.collection('slots').doc(date).set({
+                                        times: slotData.times || slotData,
+                                        date: date,
+                                        updatedAt: new Date()
+                                    });
+                                }
+                            }
+                                
+                            // Importar clientes
+                            if (jsonData.clients) {
+                                for (const client of jsonData.clients) {
+                                    await db.collection('clients').doc(client.phone).set(client);
+                                }
+                            }
+                                
+                            // Importar agendamentos
+                            if (jsonData.bookings) {
+                                for (const booking of jsonData.bookings) {
+                                    await db.collection('bookings').doc(booking.id).set(booking);
+                                }
+                            }
+                                
+                            // Importar notas
+                            if (jsonData.notes) {
+                                for (const [phone, note] of Object.entries(jsonData.notes)) {
+                                    await db.collection('notes').doc(phone).set(note);
+                                }
+                            }
+                                
+                            // Recarregar dados
+                            await Promise.all([
+                                loadSettings(),
+                                loadSlotsCache(),
+                                loadBookingsCache(),
+                                loadClientsCache()
+                            ]);
+                                
+                            // Atualizar interface
+                            if (state.view === 'view-admin') {
+                                renderAdminCalendar();
+                                updateDashboard();
+                            } else {
+                                renderClientDates();
+                                renderClientSlots();
+                            }
+                                
+                            showToast("Dados importados com sucesso! O sistema foi atualizado.");
+                        } catch (error) {
+                            console.error("Error processing import file:", error);
+                            showToast("Erro ao processar arquivo de backup. Verifique se o arquivo está no formato correto.", "error");
+                        } finally {
+                            showLoader(false);
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                    
+                input.click();
+            } catch (error) {
+                console.error("Error importing ", error);
+                showToast("Erro ao importar dados. Tente novamente.", "error");
+            } finally {
+                showLoader(false);
+            }
+        }
+        
+        async function resetApp() {
+            if (!confirm("ATENÇÃO: Isso apagará TODOS os dados do sistema, incluindo agendamentos, pacientes e configurações. Esta ação não pode ser desfeita. Deseja continuar?")) {
+                return;
+            }
+            
+            showLoader(true);
+            
+            try {
+                // Resetar dados no Firebase
+                const batch = db.batch();
+                
+                // Remover todos os documentos das coleções
+                const collections = ['slots', 'bookings', 'clients', 'notes'];
+                
+                for (const collection of collections) {
+                    const snapshot = await db.collection(collection).get();
+                    snapshot.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                }
+                
+                // Resetar configurações para padrão
+                const defaultSettings = {
+                    confirmMsg: "Olá {nome}, confirmo seu agendamento para o dia {data} às {hora}.",
+                    reminderMsg: "Olá {nome}, lembrando do nosso agendamento amanhã ({data}) às {hora}.",
+                    videoLink: "https://meet.google.com/psipro-consulta",
+                    professionalName: "Vinicius Ravagnani",
+                    crp: "CRP 06/12345",
+                    specialties: "Terapia Cognitivo-Comportamental, Ansiedade, Autoconhecimento",
+                    sessionValue: 150,
+                    sessionDuration: 50,
+                    workingDays: ["mon", "tue", "wed", "thu", "fri"],
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                };
+                
+                batch.set(db.collection('settings').doc('main'), defaultSettings);
+                
+                // Executar batch
+                await batch.commit();
+                
+                // Resetar cache local
+                cache = {
+                    slots: {},
+                    bookings: [],
+                    clients: {},
+                    notes: {},
+                    lastUpdated: new Date()
+                };
+                
                 // Recarregar dados
                 await Promise.all([
                     loadSettings(),
@@ -3658,7 +3978,7 @@ try {
                     loadBookingsCache(),
                     loadClientsCache()
                 ]);
-                    
+                
                 // Atualizar interface
                 if (state.view === 'view-admin') {
                     renderAdminCalendar();
@@ -3667,277 +3987,190 @@ try {
                     renderClientDates();
                     renderClientSlots();
                 }
-                    
-                showToast("Dados importados com sucesso! O sistema foi atualizado.");
+                
+                showToast("Sistema resetado com sucesso! Todos os dados foram apagados.", "success");
             } catch (error) {
-                console.error("Error processing import file:", error);
-                showToast("Erro ao processar arquivo de backup. Verifique se o arquivo está no formato correto.", "error");
+                console.error("Error resetting app:", error);
+                showToast("Erro ao resetar o sistema. Tente novamente.", "error");
             } finally {
                 showLoader(false);
             }
-        };
-        reader.readAsText(file);
-    };
+        }
         
-    input.click();
-} catch (error) {
-    console.error("Error importing data:", error);
-    showToast("Erro ao importar dados. Tente novamente.", "error");
-} finally {
-    showLoader(false);
-}
-}
-
-async function resetApp() {
-if (!confirm("ATENÇÃO: Isso apagará TODOS os dados do sistema, incluindo agendamentos, pacientes e configurações. Esta ação não pode ser desfeita. Deseja continuar?")) {
-    return;
-}
-
-showLoader(true);
-
-try {
-    // Resetar dados no Firebase
-    const batch = db.batch();
-    
-    // Remover todos os documentos das coleções
-    const collections = ['slots', 'bookings', 'clients', 'notes'];
-    
-    for (const collection of collections) {
-        const snapshot = await db.collection(collection).get();
-        snapshot.forEach(doc => {
-            batch.delete(doc.ref);
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+        
+        // Fechar modais ao clicar fora
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.add('hidden');
+                }
+            });
         });
-    }
-    
-    // Resetar configurações para padrão
-    const defaultSettings = {
-        confirmMsg: "Olá {nome}, confirmo seu agendamento para o dia {data} às {hora}.",
-        reminderMsg: "Olá {nome}, lembrando do nosso agendamento amanhã ({data}) às {hora}.",
-        videoLink: "https://meet.google.com/psipro-consulta",
-        professionalName: "Vinicius Ravagnani",
-        crp: "CRP 06/12345",
-        specialties: "Terapia Cognitivo-Comportamental, Ansiedade, Autoconhecimento",
-        sessionValue: 150,
-        sessionDuration: 50,
-        workingDays: ["mon", "tue", "wed", "thu", "fri"],
-        createdAt: new Date(),
-        updatedAt: new Date()
-    };
-    
-    batch.set(db.collection('settings').doc('main'), defaultSettings);
-    
-    // Executar batch
-    await batch.commit();
-    
-    // Resetar cache local
-    cache = {
-        slots: {},
-        bookings: [],
-        clients: {},
-        notes: {},
-        lastUpdated: new Date()
-    };
-    
-    // Recarregar dados
-    await Promise.all([
-        loadSettings(),
-        loadSlotsCache(),
-        loadBookingsCache(),
-        loadClientsCache()
-    ]);
-    
-    // Atualizar interface
-    if (state.view === 'view-admin') {
-        renderAdminCalendar();
-        updateDashboard();
-    } else {
-        renderClientDates();
-        renderClientSlots();
-    }
-    
-    showToast("Sistema resetado com sucesso! Todos os dados foram apagados.", "success");
-} catch (error) {
-    console.error("Error resetting app:", error);
-    showToast("Erro ao resetar o sistema. Tente novamente.", "error");
-} finally {
-    showLoader(false);
-}
-}
-
-function closeModal(modalId) {
-document.getElementById(modalId).classList.add('hidden');
-}
-
-// Fechar modais ao clicar fora
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) {
-        overlay.classList.add('hidden');
-    }
-});
-});
-
-// Função para exportar tabela para CSV
-function exportTableToCSV(tableId, filename) {
-const table = document.getElementById(tableId) || document.querySelector(`#${tableId}`);
-if (!table) return;
-
-let csv = [];
-const rows = table.querySelectorAll('tr');
-    
-for (let i = 0; i < rows.length; i++) {
-    const row = [], cols = rows[i].querySelectorAll('td, th');
         
-    for (let j = 0; j < cols.length; j++) {
-        // Remover tags HTML e pegar apenas o texto
-        let data = cols[j].innerText.replace(/,/g, ';').replace(/\n/g, ' ');
-        row.push(`"${data}"`);
-    }
+        // Função para exportar tabela para CSV
+        function exportTableToCSV(tableId, filename) {
+            const table = document.getElementById(tableId) || document.querySelector(`#${tableId}`);
+            if (!table) return;
         
-    csv.push(row.join(';'));
-}
-    
-// Download
-const csvFile = new Blob([csv.join('\n')], {type: 'text/csv'});
-const downloadLink = document.createElement('a');
-downloadLink.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
-downloadLink.href = window.URL.createObjectURL(csvFile);
-downloadLink.style.display = 'none';
-document.body.appendChild(downloadLink);
-downloadLink.click();
-document.body.removeChild(downloadLink);
-}
-
-// Helper function to format date
-function formatDate(date) {
-if (!date) return '';
-return new Date(date.toDate ? date.toDate() : date).toLocaleDateString('pt-BR');
-}
-
-// Helper function to format time
-function formatTime(timeString) {
-if (!timeString) return '';
-return timeString.substring(0, 5);
-}
-
-// Add event listeners for real-time updates
-function setupRealtimeListeners() {
-// Slots collection
-db.collection('slots').onSnapshot(snapshot => {
-    snapshot.docChanges().forEach(change => {
-        if (change.type === 'added' || change.type === 'modified') {
-            const data = change.doc.data();
-            cache.slots[change.doc.id] = data.times || [];
-        } else if (change.type === 'removed') {
-            delete cache.slots[change.doc.id];
-        }
-    });
-    console.log("Slots cache updated in real-time");
-});
-
-// Bookings collection
-db.collection('bookings').onSnapshot(snapshot => {
-    snapshot.docChanges().forEach(change => {
-        const booking = change.doc.data();
-        booking.id = change.doc.id;
-        
-        if (change.type === 'added') {
-            cache.bookings.unshift(booking);
-        } else if (change.type === 'modified') {
-            const index = cache.bookings.findIndex(b => b.id === booking.id);
-            if (index !== -1) {
-                cache.bookings[index] = booking;
+            let csv = [];
+            const rows = table.querySelectorAll('tr');
+                
+            for (let i = 0; i < rows.length; i++) {
+                const row = [], cols = rows[i].querySelectorAll('td, th');
+                    
+                for (let j = 0; j < cols.length; j++) {
+                    // Remover tags HTML e pegar apenas o texto
+                    let data = cols[j].innerText.replace(/,/g, ';').replace(/\n/g, ' ');
+                    row.push(`"${data}"`);
+                }
+                    
+                csv.push(row.join(';'));
             }
-        } else if (change.type === 'removed') {
-            cache.bookings = cache.bookings.filter(b => b.id !== booking.id);
+                
+            // Download
+            const csvFile = new Blob([csv.join('\n')], {type: 'text/csv'});
+            const downloadLink = document.createElement('a');
+            downloadLink.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = 'none';
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
         }
-    });
-    
-    // Keep only the 100 most recent bookings
-    cache.bookings.sort((a, b) => new Date(b.createdAt?.toDate() || b.createdAt) - new Date(a.createdAt?.toDate() || a.createdAt));
-    if (cache.bookings.length > 100) {
-        cache.bookings = cache.bookings.slice(0, 100);
-    }
-    
-    console.log("Bookings cache updated in real-time");
-});
-
-// Clients collection
-db.collection('clients').onSnapshot(snapshot => {
-    snapshot.docChanges().forEach(change => {
-        const client = change.doc.data();
-        client.id = change.doc.id;
         
-        if (change.type === 'added' || change.type === 'modified') {
-            cache.clients[client.phone || change.doc.id] = client;
-        } else if (change.type === 'removed') {
-            delete cache.clients[client.phone || change.doc.id];
+        // Helper function to format date
+        function formatDate(date) {
+            if (!date) return '';
+            return new Date(date.toDate ? date.toDate() : date).toLocaleDateString('pt-BR');
         }
-    });
-    console.log("Clients cache updated in real-time");
-});
-}
-
-// Initialize real-time listeners
-setupRealtimeListeners();
-
-// Touch events for mobile compatibility
-document.addEventListener('touchstart', handleTouchStart, false);
-document.addEventListener('touchmove', handleTouchMove, false);
-
-let xDown = null;
-let yDown = null;
-
-function handleTouchStart(evt) {
-xDown = evt.touches[0].clientX;
-yDown = evt.touches[0].clientY;
-}
-
-function handleTouchMove(evt) {
-if (!xDown || !yDown) {
-    return;
-}
-
-const xUp = evt.touches[0].clientX;
-const yUp = evt.touches[0].clientY;
-
-const xDiff = xDown - xUp;
-const yDiff = yDown - yUp;
-
-// Swipe down to close modals
-if (Math.abs(xDiff) < Math.abs(yDiff) && yDiff < -50) {
-    document.querySelectorAll('.modal-overlay').forEach(modal => {
-        modal.classList.add('hidden');
-    });
-}
-
-// Reset values
-xDown = null;
-yDown = null;
-}
-
-// Keyboard shortcuts for desktop
-document.addEventListener('keydown', (e) => {
-// ESC to close modals
-if (e.key === 'Escape') {
-    document.querySelectorAll('.modal-overlay').forEach(modal => {
-        modal.classList.add('hidden');
-    });
-}
-
-// Ctrl + B to open booking modal from client view
-if (e.ctrlKey && e.key === 'b' && state.view !== 'view-admin') {
-    openBookingModal();
-}
-
-// Ctrl + D to navigate to dashboard
-if (e.ctrlKey && e.key === 'd' && state.view === 'view-admin') {
-    switchTab('dashboard');
-}
-});
-
-// Final initialization
-console.log("PsiPro initialized successfully!");
-</script>
+        
+        // Helper function to format time
+        function formatTime(timeString) {
+            if (!timeString) return '';
+            return timeString.substring(0, 5);
+        }
+        
+        // Add event listeners for real-time updates
+        function setupRealtimeListeners() {
+            // Slots collection
+            db.collection('slots').onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added' || change.type === 'modified') {
+                        const data = change.doc.data();
+                        cache.slots[change.doc.id] = data.times || [];
+                    } else if (change.type === 'removed') {
+                        delete cache.slots[change.doc.id];
+                    }
+                });
+                console.log("Slots cache updated in real-time");
+            });
+        
+            // Bookings collection
+            db.collection('bookings').onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    const booking = change.doc.data();
+                    booking.id = change.doc.id;
+                    
+                    if (change.type === 'added') {
+                        cache.bookings.unshift(booking);
+                    } else if (change.type === 'modified') {
+                        const index = cache.bookings.findIndex(b => b.id === booking.id);
+                        if (index !== -1) {
+                            cache.bookings[index] = booking;
+                        }
+                    } else if (change.type === 'removed') {
+                        cache.bookings = cache.bookings.filter(b => b.id !== booking.id);
+                    }
+                });
+                
+                // Keep only the 100 most recent bookings
+                cache.bookings.sort((a, b) => new Date(b.createdAt?.toDate() || b.createdAt) - new Date(a.createdAt?.toDate() || a.createdAt));
+                if (cache.bookings.length > 100) {
+                    cache.bookings = cache.bookings.slice(0, 100);
+                }
+                
+                console.log("Bookings cache updated in real-time");
+            });
+        
+            // Clients collection
+            db.collection('clients').onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    const client = change.doc.data();
+                    client.id = change.doc.id;
+                    
+                    if (change.type === 'added' || change.type === 'modified') {
+                        cache.clients[client.phone || change.doc.id] = client;
+                    } else if (change.type === 'removed') {
+                        delete cache.clients[client.phone || change.doc.id];
+                    }
+                });
+                console.log("Clients cache updated in real-time");
+            });
+        }
+        
+        // Initialize real-time listeners
+        setupRealtimeListeners();
+        
+        // Touch events for mobile compatibility
+        document.addEventListener('touchstart', handleTouchStart, false);
+        document.addEventListener('touchmove', handleTouchMove, false);
+        
+        let xDown = null;
+        let yDown = null;
+        
+        function handleTouchStart(evt) {
+            xDown = evt.touches[0].clientX;
+            yDown = evt.touches[0].clientY;
+        }
+        
+        function handleTouchMove(evt) {
+            if (!xDown || !yDown) {
+                return;
+            }
+        
+            const xUp = evt.touches[0].clientX;
+            const yUp = evt.touches[0].clientY;
+        
+            const xDiff = xDown - xUp;
+            const yDiff = yDown - yUp;
+        
+            // Swipe down to close modals
+            if (Math.abs(xDiff) < Math.abs(yDiff) && yDiff < -50) {
+                document.querySelectorAll('.modal-overlay').forEach(modal => {
+                    modal.classList.add('hidden');
+                });
+            }
+        
+            // Reset values
+            xDown = null;
+            yDown = null;
+        }
+        
+        // Keyboard shortcuts for desktop
+        document.addEventListener('keydown', (e) => {
+            // ESC to close modals
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay').forEach(modal => {
+                    modal.classList.add('hidden');
+                });
+            }
+        
+            // Ctrl + B to open booking modal from client view
+            if (e.ctrlKey && e.key === 'b' && state.view !== 'view-admin') {
+                openBookingModal();
+            }
+        
+            // Ctrl + D to navigate to dashboard
+            if (e.ctrlKey && e.key === 'd' && state.view === 'view-admin') {
+                switchTab('dashboard');
+            }
+        });
+        
+        // Final initialization
+        console.log("PsiPro initialized successfully!");
+    </script>
 </body>
 </html>
