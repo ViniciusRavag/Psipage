@@ -1188,13 +1188,20 @@
         
         try {
             // Initialize Firebase
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-            
-            // Initialize Cloud Firestore and get a reference to the service
-            db = firebase.firestore();
-            storage = firebase.storage();
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+// Initialize Firestore with emulator settings if needed
+const app = firebase.apps[0];
+
+// Get a reference to the service
+db = app.firestore();
+storage = app.storage();
+
+// Disable deprecated features
+db.settings({ ignoreUndefinedProperties: true });
+console.log("Firebase initialized successfully");
             console.log("Firebase initialized successfully");
         } catch (error) {
             console.error("Error initializing Firebase:", error);
@@ -1405,7 +1412,33 @@
                 showToast("Erro ao carregar dados dos pacientes.", "error");
             }
         }
-        
+        function switchTab(tabId) {
+    // Remover a classe 'active' de todas as abas
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Adicionar a classe 'active' à aba selecionada
+    document.querySelector(`button[data-tab="${tabId}"]`).classList.add('active');
+    
+    // Esconder todos os conteúdos das abas
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // Mostrar o conteúdo da aba selecionada
+    document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+    
+    // Atualizar conteúdo específico de cada aba
+    if (tabId === 'dashboard') updateDashboard();
+    if (tabId === 'calendar') renderAdminCalendar();
+    if (tabId === 'clients') renderClients();
+    if (tabId === 'financial') renderFinancial();
+    if (tabId === 'reports') {
+        document.getElementById('report-results').querySelector('.empty-state').style.display = 'block';
+        document.getElementById('report-results').querySelector('table')?.remove();
+    }
+}
         function showLoader(show) {
             const loader = document.querySelector('.loader');
             if (loader) {
@@ -1492,7 +1525,9 @@
                 document.getElementById('report-results').querySelector('table')?.remove();
             }
         }
-        
+        function navigateToTab(tabId) {
+    switchTab(tabId);
+}
         function checkAdmin() {
             // Redirecionar para URL de admin sem pedir senha
             navigateTo('view-admin');
