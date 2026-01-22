@@ -2086,7 +2086,7 @@ console.log("Firebase initialized successfully");
                         </div>
                         ${booking.createdAt ? `
                         <div class="mt-3 pt-3 border-t border-slate-100 text-[10px] text-slate-400">
-                            <i class="fa-solid fa-clock mr-1"></i> Agendado em: ${formatDate(booking.createdAt)} às ${new Date(booking.createdAt.toDate()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            <i class="fa-solid fa-clock mr-1"></i> Agendado em: ${new Date(booking.createdAt.toDate()).toLocaleDateString('pt-BR')} às ${new Date(booking.createdAt.toDate()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </div>` : ''}
                     `;
                     container.appendChild(card);
@@ -2853,7 +2853,7 @@ console.log("Firebase initialized successfully");
                         <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
                             <div class="text-sm">
                                 <span class="text-xs text-slate-400 mr-2">Registrado em:</span>
-                                <span class="font-medium text-slate-700">${formatDate(client.createdAt)}</span>
+                                <span class="font-medium text-slate-700">${new Date(client.createdAt?.toDate() || client.createdAt).toLocaleDateString('pt-BR')}</span>
                             </div>
                             <button onclick="openNewSessionModal('${client.phone}', '${client.name}')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-100 transition flex items-center">
                                 <i class="fa-solid fa-calendar-plus mr-1"></i> Nova Sessão
@@ -2882,49 +2882,7 @@ console.log("Firebase initialized successfully");
                 `;
             }
         }
-        function safeToDate(date) {
-    if (!date) return null;
-    
-    // Se é um Timestamp do Firebase
-    if (date && typeof date.toDate === 'function') {
-        return date.toDate();
-    }
-    
-    // Se é uma string de data
-    if (typeof date === 'string') {
-        return new Date(date);
-    }
-    
-    // Se já é um objeto Date
-    if (date instanceof Date) {
-        return date;
-    }
-    
-    // Se é um número (timestamp)
-    if (typeof date === 'number') {
-        return new Date(date);
-    }
-    
-    // Se é um objeto com propriedades de timestamp (como { seconds, nanoseconds })
-    if (date && typeof date.seconds === 'number' && typeof date.nanoseconds === 'number') {
-        return new Date(date.seconds * 1000 + date.nanoseconds / 1000000);
-    }
-    
-    return null;
-}
-
-function formatDate(date) {
-    const d = safeToDate(date);
-    return d ? d.toLocaleDateString('pt-BR') : '';
-}
-
-function formatDateTime(date) {
-    const d = safeToDate(date);
-    return d ? d.toLocaleString('pt-BR', { 
-        dateStyle: 'short', 
-        timeStyle: 'short' 
-    }) : '';
-}
+        
         function loadMoreClients(clients, startIndex) {
             const list = document.getElementById('clients-list');
             const currentHTML = list.innerHTML;
@@ -2984,7 +2942,7 @@ function formatDateTime(date) {
                     <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
                         <div class="text-sm">
                             <span class="text-xs text-slate-400 mr-2">Registrado em:</span>
-                            <span class="font-medium text-slate-700">${formatDate(client.createdAt)}</span>
+                            <span class="font-medium text-slate-700">${new Date(client.createdAt?.toDate() || client.createdAt).toLocaleDateString('pt-BR')}</span>
                         </div>
                         <button onclick="openNewSessionModal('${client.phone}', '${client.name}')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-100 transition flex items-center">
                             <i class="fa-solid fa-calendar-plus mr-1"></i> Nova Sessão
@@ -3271,7 +3229,7 @@ function formatDateTime(date) {
                     client.reason || '',
                     client.medicalHistory || '',
                     client.source || '',
-                    formatDate(client.createdAt),
+                    new Date(client.createdAt?.toDate() || client.createdAt).toLocaleDateString('pt-BR'),
                     client.lastSession ? new Date(client.lastSession + 'T00:00:00').toLocaleDateString('pt-BR') : '',
                     client.totalSessions || 0
                 ]);
