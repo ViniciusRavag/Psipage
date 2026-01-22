@@ -430,7 +430,7 @@
             </div>
         </div>
         <div class="sticky bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 z-20">
-  <button onclick="navigateTo('view-client-calendar')" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-[0.98] flex justify-center items-center gap-2">
+  <button onclick="navigateTo('view-client-calendar')" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-[0.98] flex justify-center items-center gap-2 relative">
     <i class="fa-regular fa-calendar"></i> Agendar Sessão
   </button>
 </div>
@@ -484,7 +484,7 @@
                     <p class="text-sm font-bold text-blue-600">R$ 150,00</p>
                 </div>
             </div>
-            <button onclick="openBookingModal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-600/20 flex items-center justify-center gap-2">
+            <button onclick="openBookingModal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-600/20 flex items-center justify-center gap-2 relative z-10">
                 <i class="fa-solid fa-check"></i> Confirmar Agendamento
             </button>
         </div>
@@ -1006,7 +1006,7 @@
                     <p class="text-xs text-blue-800">Ao confirmar, você receberá os detalhes da sessão via WhatsApp e e-mail (se informado).</p>
                 </div>
                 
-                <button type="submit" class="w-full bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-black transition active:scale-[0.98] flex justify-center items-center gap-2">
+                <button type="submit" class="w-full bg-amber-700 text-white font-bold py-4 rounded-xl hover:bg-amber-900 transition active:scale-[0.98] flex justify-center items-center gap-2">
                     <i class="fa-solid fa-check"></i> Confirmar Agendamento
                 </button>
             </form>
@@ -1801,21 +1801,14 @@ specialtiesContainer.innerHTML += `
                     message += `\n\nLink para a sessão: ${state.settings.videoLink}`;
                 }
                 
-                // Redirecionar para WhatsApp
-                const whatsappUrl = `https://wa.me/55${formattedPhone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-                
-                // Mostrar mensagem de sucesso
-                showToast("Agendamento confirmado com sucesso! Você será redirecionado para o WhatsApp.");
-                
-                // Atualizar interface
-                setTimeout(() => {
-                    renderClientSlots();
-                    renderClientDates();
-                    navigateTo('view-profile');
-                    
-                    // Abrir WhatsApp após uma pequena pausa para garantir que o toast seja visto
-                    window.open(whatsappUrl, '_blank');
-                }, 1500);
+                // Mostrar mensagem de sucesso SEM redirecionamento para WhatsApp
+showToast("Agendamento confirmado com sucesso! O psicólogo entrará em contato em breve.");
+// Atualizar interface e voltar para o perfil
+setTimeout(() => {
+renderClientSlots();
+renderClientDates();
+navigateTo('view-profile');
+}, 1500);
             } catch (error) {
                 console.error("Error confirming booking:", error);
                 showToast("Erro ao confirmar agendamento. Tente novamente.", "error");
