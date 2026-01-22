@@ -57,6 +57,10 @@
             display: none;
         }
         
+        #modal-bulk-generate {
+  z-index: 60; /* Um valor maior que o z-index padrão dos outros modais (50) */
+}
+        
         .modal-content {
             background: white;
             width: 100%;
@@ -977,7 +981,7 @@
     <div id="modal-bulk-generate" class="modal-overlay hidden">
   <div class="modal-content">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="font-bold text-lg text-gray-900">Gerar Horários em Massa</h3>
+      <h3 class="font-bold text-lg text-gray-900">Gerar Horários</h3>
       <button onclick="closeModal('modal-bulk-generate')" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition">
         <i class="fa-solid fa-times"></i>
       </button>
