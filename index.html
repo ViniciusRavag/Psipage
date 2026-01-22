@@ -325,8 +325,15 @@
 
     <!-- View: Profile (Client View) -->
     <div id="view-profile" class="view-section active max-w-md mx-auto bg-white min-h-screen shadow-2xl relative z-10 pb-20">
-        <div class="h-32 bg-gradient-to-br from-blue-600 to-indigo-600 relative">
-  <button onclick="checkAdmin()" class="absolute top-4 right-4 text-white/50 hover:text-white p-2">
+        <div class="h-32 relative overflow-hidden">
+  <!-- Imagem de fundo -->
+  <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://framerusercontent.com/images/tJdtD4u8KHeUHytOm7AGzOMHnV8.png')"></div>
+  
+  <!-- Overlay escuro para melhor legibilidade do texto -->
+  <div class="absolute inset-0 bg-black/30"></div>
+  
+  <!-- Botão de administrador -->
+  <button onclick="checkAdmin()" class="absolute top-4 right-4 text-white/70 hover:text-white p-2 z-10">
     <i class="fa-solid fa-lock"></i>
   </button>
   <!-- Nova posição da foto de perfil -->
@@ -373,7 +380,7 @@
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Atendimento</h3>
                     <p class="text-sm text-gray-600">
                         <i class="fa-solid fa-calendar-days text-blue-500 mr-2"></i>Segunda a Sexta-feira<br>
-                        <i class="fa-solid fa-clock text-blue-500 mr-2"></i>08:00 às 18:00<br>
+                        <i class="fa-solid fa-clock text-blue-500 mr-2"></i>08:30 às 18:00<br>
                         <i class="fa-solid fa-house text-blue-500 mr-2"></i>Atendimento Online
                     </p>
                 </div>
