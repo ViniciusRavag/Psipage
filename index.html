@@ -974,6 +974,36 @@
     </div>
 
     <!-- Modals -->
+    <div id="modal-bulk-generate" class="modal-overlay hidden">
+  <div class="modal-content">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-bold text-lg text-gray-900">Gerar Horários em Massa</h3>
+      <button onclick="closeModal('modal-bulk-generate')" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+    <div class="bg-blue-50 p-3 rounded-lg mb-4">
+      <p class="text-sm text-blue-700 flex items-start">
+        <i class="fa-solid fa-circle-info mt-1 mr-2"></i>
+        <span id="bulk-generate-message">Você está prestes a gerar horários para este período. Selecione a opção abaixo para aplicar aos próximos dias úteis.</span>
+      </p>
+    </div>
+    <div class="mb-6">
+      <label class="flex items-start cursor-pointer">
+        <div class="flex items-center h-5">
+          <input type="checkbox" id="apply-to-all-days" class="form-checkbox h-4 w-4 text-teal-600 rounded">
+        </div>
+        <div class="ml-3 text-sm">
+          <span class="font-medium text-gray-700">Aplicar para todos os dias úteis</span>
+          <p class="text-xs text-gray-500 mt-1">Esta ação adicionará horários nos próximos 30 dias úteis (segunda a sexta-feira), respeitando seu horário comercial configurado.</p>
+        </div>
+      </label>
+    </div>
+    <button onclick="confirmBulkGenerate()" class="w-full bg-teal-600 text-white font-bold py-3 rounded-xl hover:bg-teal-700 transition flex items-center justify-center">
+      <i class="fa-solid fa-check mr-2"></i> Confirmar Geração
+    </button>
+  </div>
+    </div>
     <div id="modal-booking" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-6">
@@ -2294,7 +2324,145 @@ navigateTo('view-profile');
                 showLoader(false);
             }
         }
-        
+        function bulkGenerate(period) {
+  const periodText = period === 'morning' ? 'manhã (08-12h)' : 
+                     period === 'afternoon' ? 'tarde (13-18h)' : 
+                     period === 'evening' ? 'noite (19-21h)' : 
+                     'o dia todo (08-21h)';
+  
+  const dateObj = new Date(currentModalDate);
+  const formattedDate = dateObj.toLocaleDateString('pt-BR');
+  
+  document.getElementById('bulk-generate-message').innerHTML = 
+    `Você está prestes a gerar horários para a ${periodText}.<br><span class="font-medium text-gray-800">Dia selecionado: ${formattedDate}</span>`;
+  
+  // Armazenar o período selecionado no estado
+  state.bulkGeneratePeriod = period;
+  
+  // Limpar o checkbox
+  document.getElementById('apply-to-all-days').checked = false;
+  
+  // Mostrar o modal
+  document.getElementById('modal-bulk-generate').classList.remove('hidden');
+}
+
+async function confirmBulkGenerate() {
+  const period = state.bulkGeneratePeriod;
+  const applyToAllDays = document.getElementById('apply-to-all-days').checked;
+  
+  // Fechar o modal
+  closeModal('modal-bulk-generate');
+  
+  try {
+    showLoader(true);
+    let message;
+    
+    if (applyToAllDays) {
+      message = "Gerando horários para os próximos 30 dias úteis...";
+      showToast(message);
+      await bulkGenerateForMultipleDays(period);
+    } else {
+      message = "Gerando horários para o dia selecionado...";
+      showToast(message);
+      await generateSlotsForSingleDay(period, currentModalDate);
+    }
+    
+    // Atualizar a visualização
+    renderAdminDaySlots();
+    renderAdminCalendar();
+    
+    showToast("Horários gerados com sucesso!");
+  } catch (error) {
+    console.error("Error generating slots:", error);
+    showToast("Erro ao gerar horários. Tente novamente.", "error");
+  } finally {
+    showLoader(false);
+  }
+}
+
+async function bulkGenerateForMultipleDays(period) {
+  const today = new Date();
+  const datesToGenerate = [];
+  
+  // Encontrar os próximos 30 dias úteis
+  let daysChecked = 0;
+  while (datesToGenerate.length < 30 && daysChecked < 60) { // Limite para evitar loop infinito
+    const nextDate = new Date(today);
+    nextDate.setDate(today.getDate() + daysChecked + 1);
+    
+    // Verificar se é dia útil (segunda a sexta)
+    const dayOfWeek = nextDate.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // 0 = domingo, 6 = sábado
+      datesToGenerate.push(nextDate.toISOString().split('T')[0]);
+    }
+    
+    daysChecked++;
+  }
+  
+  // Gerar horários para cada data
+  for (let i = 0; i < datesToGenerate.length; i++) {
+    const date = datesToGenerate[i];
+    await generateSlotsForSingleDay(period, date);
+    
+    // Atualizar progresso periodicamente
+    if (i % 5 === 0 || i === datesToGenerate.length - 1) {
+      showToast(`Progresso: ${i + 1} de ${datesToGenerate.length} dias`);
+    }
+  }
+}
+
+async function generateSlotsForSingleDay(period, date) {
+  let newSlots = [];
+  let daySlots = cache.slots[date] || [];
+  
+  if (period === 'morning' || period === 'all') {
+    // Manhã: 8h às 12h, a cada hora
+    for (let h = 8; h <= 12; h++) {
+      const timeStr = `${String(h).padStart(2, '0')}:00`;
+      if (!daySlots.includes(timeStr) && !newSlots.includes(timeStr)) {
+        newSlots.push(timeStr);
+      }
+    }
+  }
+  
+  if (period === 'afternoon' || period === 'all') {
+    // Tarde: 13h às 18h, a cada hora
+    for (let h = 13; h <= 18; h++) {
+      const timeStr = `${String(h).padStart(2, '0')}:00`;
+      if (!daySlots.includes(timeStr) && !newSlots.includes(timeStr)) {
+        newSlots.push(timeStr);
+      }
+    }
+  }
+  
+  if (period === 'evening' || period === 'all') {
+    // Noite: 19h às 21h, a cada hora
+    for (let h = 19; h <= 21; h++) {
+      const timeStr = `${String(h).padStart(2, '0')}:00`;
+      if (!daySlots.includes(timeStr) && !newSlots.includes(timeStr)) {
+        newSlots.push(timeStr);
+      }
+    }
+  }
+  
+  if (newSlots.length === 0) {
+    return; // Nada para adicionar
+  }
+  
+  // Combinar slots existentes com novos slots
+  daySlots = [...daySlots, ...newSlots];
+  daySlots.sort();
+  
+  // Atualizar no Firebase
+  await db.collection('slots').doc(date).set({
+    times: daySlots,
+    date: date,
+    updatedAt: new Date()
+  });
+  
+  // Atualizar cache
+  cache.slots[date] = daySlots;
+}
         async function deleteBooking(bookingId, clientName) {
             if (!confirm(`Tem certeza que deseja cancelar o agendamento de ${clientName}?`)) {
                 return;
