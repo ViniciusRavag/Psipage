@@ -90,44 +90,6 @@
         }
         
         /* Estilos Específicos */
-        button {
-  cursor: pointer !important;
-  user-select: none !important;
-  -webkit-tap-highlight-color: transparent !important;
-}
-        /* Garantir que o botão de agendamento sempre tenha prioridade máxima */
-.fixed-bottom-button {
-  z-index: 100 !important;
-  pointer-events: none !important;
-}
-
-.fixed-bottom-button button {
-  pointer-events: auto !important;
-  position: relative !important;
-}
-
-/* Garantir que nenhum elemento pai interfira */
-#view-profile {
-  overflow: visible !important;
-}
-
-/* Forçar que cliques no botão não sejam interceptados */
-#view-profile * {
-  pointer-events: auto !important;
-}
-
-/* Solução específica para dispositivos móveis */
-@media (max-width: 768px) {
-  .fixed-bottom-button {
-    padding-bottom: env(safe-area-inset-bottom) !important;
-  }
-}
-
-/* Garantir que elementos filhos de botões também sejam não selecionáveis */
-button * {
-  user-select: none !important;
-  pointer-events: none !important;
-}
         .time-slot {
             transition: all 0.2s;
             border: 1px solid #E5E7EB;
@@ -467,10 +429,9 @@ button * {
                 </div>
             </div>
         </div>
-        <div class="sticky bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 z-[100] pointer-events-none fixed-bottom-button">
-  <button onclick="navigateTo('view-client-calendar')" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-[0.98] flex justify-center items-center gap-2 cursor-pointer select-none pointer-events-auto relative overflow-hidden">
+        <div class="sticky bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 z-20">
+  <button onclick="navigateTo('view-client-calendar')" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-4 rounded-xl shadow-lg transform transition active:scale-[0.98] flex justify-center items-center gap-2">
     <i class="fa-regular fa-calendar"></i> Agendar Sessão
-      <div class="absolute inset-0"></div>
   </button>
 </div>
     </div>
@@ -523,7 +484,7 @@ button * {
                     <p class="text-sm font-bold text-blue-600">R$ 150,00</p>
                 </div>
             </div>
-            <button onclick="openBookingModal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-600/20 flex items-center justify-center gap-2 relative z-[100] cursor-pointer select-none">
+            <button onclick="openBookingModal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-600/20 flex items-center justify-center gap-2">
                 <i class="fa-solid fa-check"></i> Confirmar Agendamento
             </button>
         </div>
@@ -1045,7 +1006,7 @@ button * {
                     <p class="text-xs text-blue-800">Ao confirmar, você receberá os detalhes da sessão via WhatsApp e e-mail (se informado).</p>
                 </div>
                 
-                <button type="submit" class="w-full bg-amber-700 text-white font-bold py-4 rounded-xl hover:bg-amber-900 transition active:scale-[0.98] flex justify-center items-center gap-2">
+                <button type="submit" class="w-full bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-black transition active:scale-[0.98] flex justify-center items-center gap-2">
                     <i class="fa-solid fa-check"></i> Confirmar Agendamento
                 </button>
             </form>
