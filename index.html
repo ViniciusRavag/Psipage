@@ -687,6 +687,34 @@
                     <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Cheio</div>
                 </div>
                 
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 mt-6 p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-800">Legenda de Cores</h3>
+                        <button onclick="openDayModal(new Date().toISOString().split('T')[0])" class="text-teal-600 font-medium flex items-center">
+                            <i class="fa-solid fa-plus mr-1"></i> Adicionar Horários Hoje
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 rounded-full bg-teal-500 mr-2"></div>
+                            <span class="text-sm">Horários disponíveis</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 rounded-full bg-amber-500 mr-2"></div>
+                            <span class="text-sm">Horários parcialmente cheios</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
+                            <span class="text-sm">Horários esgotados</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 rounded-full bg-gray-300 mr-2"></div>
+                            <span class="text-sm">Sem horários disponíveis</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Clients Tab -->
             <div id="tab-clients" class="tab-content hidden">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-6">
