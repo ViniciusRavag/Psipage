@@ -7266,38 +7266,6 @@ async function generateSlotsForSingleDay(period, date) {
             });
         }
         
-        function sendQuickMsg() {
-            const el = document.getElementById('dash-next-content');
-            const phone = el.dataset.nextPhone;
-            
-            if (!phone) {
-                showToast("Nenhum agendamento encontrado para enviar mensagem.", "error");
-                return;
-            }
-            
-            // Gerar mensagem de confirmação
-            const nextTime = document.getElementById('dash-next-time').innerText;
-            const nextDate = document.getElementById('dash-next-badge').innerText === 'HOJE' ? 
-                new Date().toLocaleDateString('pt-BR') : 
-                document.getElementById('dash-next-badge').innerText;
-            const clientName = el.dataset.nextName;
-            const clientFirstName = clientName.split(' ')[0];
-            const value = cache.bookings.find(b => b.id === el.dataset.nextId)?.value || 150;
-            
-            let message = (state.settings?.confirmMsg || "Olá {nome}, confirmo seu agendamento para o dia {data} às {hora}. Valor: R$ {valor}.")
-                .replace('{nome}', clientFirstName)
-                .replace('{data}', nextDate)
-                .replace('{hora}', nextTime)
-                .replace('{valor}', value);
-            
-            if (state.settings?.videoLink) {
-                message += `\n\nLink para a sessão: ${state.settings.videoLink}`;
-            }
-            
-            const whatsappUrl = `https://wa.me/55${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
-        }
-        
         function openNextClientDetails() {
             const el = document.getElementById('dash-next-content');
             const phone = el.dataset.nextPhone;
