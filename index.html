@@ -485,7 +485,7 @@
                 </div>
                 <div class="text-right">
                     <p class="text-xs text-gray-500 font-medium uppercase">Valor</p>
-                    <p class="text-sm font-bold text-blue-600">R$ 150,00</p>
+                    <p class="text-sm font-bold text-green-700">R$ 150,00</p>
                 </div>
             </div>
             <button onclick="openBookingModal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-600/20 flex items-center justify-center gap-2">
@@ -1401,13 +1401,13 @@ console.log("Firebase initialized successfully");
                 // Atualizar informações do profissional SOMENTE se os elementos existirem
 if (state.settings.professionalName) {
 const profileTitle = document.querySelector('#view-profile h1');
-const profileSubtitle = document.querySelector('#view-profile .text-blue-600');
+const profileSubtitle = document.querySelector('#view-profile .text-amber-800');
 if (profileTitle) profileTitle.innerText = state.settings.professionalName;
 if (profileSubtitle) profileSubtitle.innerHTML = `${state.settings.professionalName.split(' ')[0]} &bull; ${state.settings.crp}`;
 }
 if (state.settings.sessionValue) {
-const sessionValueElement = document.querySelector('#view-profile .text-lg.font-bold.text-blue-700');
-const confirmBarValue = document.querySelector('#client-confirm-bar .text-sm.font-bold.text-blue-600');
+const sessionValueElement = document.querySelector('#view-profile .text-lg.font-bold.text-green-700);
+const confirmBarValue = document.querySelector('#client-confirm-bar .text-sm.font-bold.text-green-700');
 if (sessionValueElement) sessionValueElement.innerText = `R$ ${state.settings.sessionValue}`;
 if (confirmBarValue) confirmBarValue.innerText = `R$ ${state.settings.sessionValue},00`;
 }
@@ -3952,9 +3952,9 @@ async function generateSlotsForSingleDay(period, date) {
                 
                 // Atualizar informações do profissional na view do cliente SOMENTE se os elementos existirem
 const profileTitle = document.querySelector('#view-profile h1');
-const profileSubtitle = document.querySelector('#view-profile .text-blue-600');
-const sessionValueElement = document.querySelector('#view-profile .text-lg.font-bold.text-blue-700');
-const confirmBarValue = document.querySelector('#client-confirm-bar .text-sm.font-bold.text-blue-600');
+const profileSubtitle = document.querySelector('#view-profile .text-amber-800');
+const sessionValueElement = document.querySelector('#view-profile .text-lg.font-bold.text-green-700');
+const confirmBarValue = document.querySelector('#client-confirm-bar .text-sm.font-bold.text-green-600');
 
 if (profileTitle) profileTitle.innerText = professionalName;
 if (profileSubtitle) profileSubtitle.innerHTML = `${professionalName.split(' ')[0]} &bull; ${crp}`;
