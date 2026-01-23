@@ -8846,6 +8846,11 @@ async function updateReminderStatus(bookingId) {
     showToast("Erro ao marcar lembrete como enviado.", "error");
   }
 }
+        // Tornar funções acessíveis globalmente para os eventos onclick do HTML
+window.sendQuickMsg = sendQuickMsg;
+window.sendMessage = sendMessage;
+window.closeModal = closeModal;
+        
         // Keyboard shortcuts for desktop
         document.addEventListener('keydown', (e) => {
             // ESC to close modals
