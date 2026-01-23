@@ -6790,9 +6790,6 @@ async function confirmBulkGenerate() {
   const period = state.bulkGeneratePeriod;
   const applyToAllDays = document.getElementById('apply-to-all-days').checked;
   
-  // Fechar o modal
-  closeModal('modal-bulk-generate');
-  
   try {
     showLoader(true);
     let message;
@@ -8776,6 +8773,7 @@ specialtiesContainer.innerHTML += `
             xDown = null;
             yDown = null;
         }
+        
         function sendMessage(messageType) {
   closeModal('modal-message-selection'); // Fechar o modal
   
