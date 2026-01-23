@@ -978,6 +978,28 @@
     </div>
 
     <!-- Modals -->
+
+    <div id="modal-message-selection" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-lg text-gray-900">Enviar Mensagem</h3>
+            <button onclick="closeModal('modal-message-selection')" class="w-8 h-8 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        <p class="text-sm text-gray-600 mb-6">Escolha o tipo de mensagem que deseja enviar para o paciente via WhatsApp:</p>
+        
+        <div class="space-y-3">
+            <button onclick="sendMessage('confirm')" class="w-full bg-teal-600 text-white font-bold py-3 rounded-xl hover:bg-teal-700 transition flex items-center justify-center">
+                <i class="fa-solid fa-check-circle mr-2"></i> Confirmação de Agendamento
+            </button>
+            <button onclick="sendMessage('reminder')" class="w-full bg-amber-500 text-white font-bold py-3 rounded-xl hover:bg-amber-600 transition flex items-center justify-center">
+                <i class="fa-solid fa-bell mr-2"></i> Lembrete de Sessão
+            </button>
+        </div>
+    </div>
+</div>
+
     <div id="modal-bulk-generate" class="modal-overlay hidden">
   <div class="modal-content">
     <div class="flex justify-between items-center mb-4">
@@ -4337,7 +4359,31 @@ specialtiesContainer.innerHTML += `
             xDown = null;
             yDown = null;
         }
-        
+
+        function sendQuickMsg() {
+  const el = document.getElementById('dash-next-content');
+  const phone = el.dataset.nextPhone;
+  
+  if (!phone) {
+    showToast("Nenhum agendamento encontrado para enviar mensagem.", "error");
+    return;
+  }
+  
+  // Armazenar dados do próximo agendamento no state
+  state.nextAppointment = {
+    phone: phone,
+    time: document.getElementById('dash-next-time').innerText,
+    date: document.getElementById('dash-next-badge').innerText === 'HOJE' ? 
+          new Date().toLocaleDateString('pt-BR') : 
+          document.getElementById('dash-next-badge').innerText,
+    name: el.dataset.nextName,
+    bookingId: el.dataset.nextId
+  };
+  
+  // Abrir o modal de seleção de mensagem
+  document.getElementById('modal-message-selection').classList.remove('hidden');
+}
+
         function sendMessage(messageType) {
   closeModal('modal-message-selection'); // Fechar o modal
   
