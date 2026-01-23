@@ -350,20 +350,20 @@
   </div>
 </div>
 <div class="px-6 mt-16 relative">
-            <div class="mt-4 flex justify-between items-start">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Vinicius Ravagnani</h1>
-                    <p class="text-sm text-amber-800 font-medium">Psicólogo Clínico &bull; CRP 06/12345</p>
-                </div>
-                <div class="text-right bg-green-50 px-3 py-1 rounded-lg">
-                    <p class="text-lg font-bold text-green-700">R$ 90</p>
-                    <p class="text-[10px] text-green-700 font-bold uppercase">Sessão 50min</p>
-                </div>
-            </div>
+    <div class="mt-4 flex justify-between items-start">
+        <div>
+            <h1 id="profile-display-name" class="text-2xl font-bold text-gray-900">Vinicius Ravagnani</h1>
+            <p id="profile-display-subtitle" class="text-sm text-amber-800 font-medium">Psicólogo Clínico &bull; CRP 06/12345</p>
+        </div>
+        <div class="text-right bg-green-50 px-3 py-1 rounded-lg">
+            <p id="profile-display-price" class="text-lg font-bold text-green-700">R$ 90</p>
+            <p id="profile-display-duration" class="text-[10px] text-green-700 font-bold uppercase">Sessão 50min</p>
+        </div>
+    </div>
             <div class="mt-6 space-y-6">
                 <div>
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Especialidades</h3>
-                    <div class="flex flex-wrap gap-2">
+                    <div id="profile-specialties-container" class="flex flex-wrap gap-2">
                         <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">Terapia Cognitivo-Comportamental</span>
                         <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">Ansiedade</span>
                         <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">Autoconhecimento</span>
@@ -1399,35 +1399,69 @@ console.log("Firebase initialized successfully");
                     if (checkbox) checkbox.checked = true;
                 });
                 
-                // Atualizar informações do profissional SOMENTE se os elementos existirem
-if (state.settings.professionalName) {
-const profileTitle = document.querySelector('#view-profile h1');
-const profileSubtitle = document.querySelector('#view-profile .text-blue-600');
-if (profileTitle) profileTitle.innerText = state.settings.professionalName;
-if (profileSubtitle) profileSubtitle.innerHTML = `${state.settings.professionalName.split(' ')[0]} &bull; ${state.settings.crp}`;
-}
-if (state.settings.sessionValue) {
-const sessionValueElement = document.querySelector('#view-profile .text-lg.font-bold.text-blue-700');
-const confirmBarValue = document.querySelector('#client-confirm-bar .text-sm.font-bold.text-blue-600');
-if (sessionValueElement) sessionValueElement.innerText = `R$ ${state.settings.sessionValue}`;
-if (confirmBarValue) confirmBarValue.innerText = `R$ ${state.settings.sessionValue},00`;
-}
-if (state.settings.specialties) {
-const specialtiesContainer = document.querySelector('#view-profile .flex.flex-wrap.gap-2');
-if (specialtiesContainer) {
-specialtiesContainer.innerHTML = '';
-state.settings.specialties.split(',').map(s => s.trim()).forEach(specialty => {
-specialtiesContainer.innerHTML += `
-<span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">${specialty}</span>
-`;
-});
-}
-}
+                updateProfileUI();
+
+    } catch (error) {
+        console.error("Error loading settings:", error);
+        showToast("Erro ao carregar configurações do sistema.", "error");
+    }
+        }
             } catch (error) {
                 console.error("Error loading settings:", error);
                 showToast("Erro ao carregar configurações do sistema.", "error");
             }
         }
+    
+        function updateProfileUI() {
+    if (!state.settings) return;
+
+    // 1. Atualiza Nome
+    const nameEl = document.getElementById('profile-display-name');
+    if (nameEl && state.settings.professionalName) {
+        nameEl.innerText = state.settings.professionalName;
+    }
+
+    // 2. Atualiza Subtítulo (CRP)
+    const subEl = document.getElementById('profile-display-subtitle');
+    if (subEl && state.settings.professionalName && state.settings.crp) {
+        // Mantém o estilo visual mas atualiza o texto
+        subEl.innerHTML = `Psicólogo Clínico &bull; ${state.settings.crp}`;
+    }
+
+    // 3. Atualiza Preço (Perfil)
+    const priceEl = document.getElementById('profile-display-price');
+    if (priceEl && state.settings.sessionValue) {
+        priceEl.innerText = `R$ ${state.settings.sessionValue}`;
+    }
+
+    // 4. Atualiza Duração
+    const durationEl = document.getElementById('profile-display-duration');
+    if (durationEl && state.settings.sessionDuration) {
+        durationEl.innerText = `SESSÃO ${state.settings.sessionDuration}MIN`;
+    }
+
+    // 5. Atualiza Barra de Confirmação (Preço)
+    const confirmBarPrice = document.querySelector('#client-confirm-bar .text-blue-600');
+    if (confirmBarPrice && state.settings.sessionValue) {
+        confirmBarPrice.innerText = `R$ ${state.settings.sessionValue},00`;
+    }
+
+    // 6. Atualiza Especialidades
+    const specialtiesContainer = document.getElementById('profile-specialties-container');
+    if (specialtiesContainer && state.settings.specialties) {
+        specialtiesContainer.innerHTML = ''; // Limpa as atuais
+        
+        // Cria as novas tags
+        state.settings.specialties.split(',').map(s => s.trim()).forEach(specialty => {
+            if (specialty) {
+                specialtiesContainer.innerHTML += `
+                    <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full">${specialty}</span>
+                `;
+            }
+        });
+    }
+}
+
         
         async function loadSlotsCache() {
             try {
@@ -3950,6 +3984,12 @@ async function generateSlotsForSingleDay(period, date) {
                 
                 // Salvar no Firebase
                 await db.collection('settings').doc('main').set(state.settings, { merge: true });
+
+    updateProfileUI();
+    
+    showToast("Configurações salvas com sucesso!");
+    
+            }
                 
                 // Atualizar informações do profissional na view do cliente SOMENTE se os elementos existirem
 const profileTitle = document.querySelector('#view-profile h1');
