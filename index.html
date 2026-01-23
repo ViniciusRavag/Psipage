@@ -1576,6 +1576,9 @@ specialtiesContainer.innerHTML += `
             }
         }
         
+        function closeModal(modalId) {
+  document.getElementById(modalId).classList.add('hidden');
+}
         function navigateToTab(tabId) {
             document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
             document.querySelector(`button[data-tab="${tabId}"]`).classList.add('active');
