@@ -2090,8 +2090,6 @@ navigateTo('view-profile');
         function renderAdminDayBookings() {
             const container = document.getElementById('day-content-bookings');
             container.innerHTML = '<div class="text-center py-6"><div class="loader mx-auto mb-2"></div><p class="text-slate-500 text-sm">Carregando agendamentos...</p></div>';
-            // Na função renderAdminDayBookings(), adicione esta classe se reminderSent for true:
-${booking.reminderSent ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded ml-2">Lembrete enviado</span>' : ''}
             
             setTimeout(() => {
                 const bookings = cache.bookings
