@@ -688,32 +688,23 @@
                 </div>
                 
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 mt-6 p-5">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-bold text-slate-800">Legenda de Cores</h3>
-                        <button onclick="openDayModal(new Date().toISOString().split('T')[0])" class="text-teal-600 font-medium flex items-center">
-                            <i class="fa-solid fa-plus mr-1"></i> Adicionar Horários Hoje
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="flex items-center">
-                            <div class="w-4 h-4 rounded-full bg-teal-500 mr-2"></div>
-                            <span class="text-sm">Horários disponíveis</span>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="w-4 h-4 rounded-full bg-amber-500 mr-2"></div>
-                            <span class="text-sm">Horários parcialmente cheios</span>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
-                            <span class="text-sm">Horários esgotados</span>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="w-4 h-4 rounded-full bg-gray-300 mr-2"></div>
-                            <span class="text-sm">Sem horários disponíveis</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<div class="flex items-start">
+<div class="bg-green-500 text-white w-8 h-8 rounded-full flex items-center justify-center mr-3 mt-1 flex-shrink-0">
+<i class="fa-solid fa-calendar-plus"></i>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-slate-800">Exportar para Google Calendar</h4>
+<p class="text-sm text-slate-600 mb-3">Baixe um arquivo .ics com todos os seus agendamentos para importar no Google Calendar</p>
+<button onclick="generateICSFile()" class="text-sm bg-green-600 text-white px-4 py-2.5 rounded-lg hover:bg-green-700 transition flex items-center shadow-md">
+<i class="fa-solid fa-download mr-2"></i> Exportar Todos os Agendamentos
+</button>
+<p class="text-xs text-slate-500 mt-3 bg-green-50 p-3 rounded-lg">
+<i class="fa-solid fa-circle-info text-green-600 mr-1"></i>
+Após baixar o arquivo .ics, abra o Google Calendar, clique em "Importar" nas configurações e selecione o arquivo para adicionar todos os seus agendamentos.
+</p>
+</div>
+</div>
+</div>
 
             <!-- Clients Tab -->
             <div id="tab-clients" class="tab-content hidden">
@@ -928,24 +919,6 @@
                             <input type="text" id="setting-video-link" placeholder="https://meet.google.com/..." class="input-field" value="https://meet.google.com/psipro-consulta">
                         </div>
                     </div>
-                    
-                    <div>
-<h3 class="font-bold text-slate-800 text-sm border-b border-slate-100 pb-2 mb-4">Exportação para Calendário</h3>
-<div class="bg-green-50 p-4 rounded-xl">
-<div class="flex items-start">
-<div class="bg-green-500 text-white w-8 h-8 rounded-full flex items-center justify-center mr-3 mt-1 flex-shrink-0">
-<i class="fa-solid fa-calendar-plus"></i>
-</div>
-<div>
-<h4 class="font-bold text-slate-800">Exportar para Google Calendar</h4>
-<p class="text-sm text-slate-600 mb-2">Baixe um arquivo .ics com todos os seus agendamentos para importar no Google Calendar</p>
-<button onclick="generateICSFile()" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition flex items-center">
-<i class="fa-solid fa-download mr-1"></i> Exportar Agendamentos
-</button>
-</div>
-</div>
-</div>
-</div>
                     
                     <button onclick="saveSettings()" class="w-full bg-teal-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-teal-500/20 hover:bg-teal-700 transition active:scale-95">
                         <i class="fa-solid fa-save mr-2"></i> Salvar Todas as Configurações
