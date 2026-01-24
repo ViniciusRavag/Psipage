@@ -489,7 +489,7 @@
                 </div>
             </div>
             <button onclick="openBookingModal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-green-600/20 flex items-center justify-center gap-2">
-                <i class="fa-solid fa-check"></i> Confirmar Agendamento
+                <i class="fa-solid fa-check"></i> Solicitar Agendamento
             </button>
         </div>
     </div>
@@ -1062,7 +1062,7 @@
                 </div>
                 
                 <button type="submit" class="w-full bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-black transition active:scale-[0.98] flex justify-center items-center gap-2">
-                    <i class="fa-solid fa-check"></i> Confirmar Agendamento
+                    <i class="fa-solid fa-check"></i> Solicitar Agendamento
                 </button>
             </form>
         </div>
@@ -1839,34 +1839,33 @@ specialtiesContainer.innerHTML += `
                 if (cache.bookings.length > 100) cache.bookings.pop();
                 
                 // Fechar modal
-                closeModal('modal-booking');
-                
-                // Gerar mensagem para WhatsApp
-                const formattedDate = state.selectedDate.split('-').reverse().join('/');
-                const clientFirstName = name.split(' ')[0];
-                
-                let message = (state.settings?.confirmMsg || "Olá {nome}, confirmo seu agendamento para o dia {data} às {hora}. Valor: R$ {valor}.")
-                    .replace('{nome}', clientFirstName)
-                    .replace('{data}', formattedDate)
-                    .replace('{hora}', state.selectedSlot)
-                    .replace('{valor}', value);
-                
-                // Adicionar link de videochamada se existir
-                if (state.settings?.videoLink) {
-                    message += `\n\nLink para a sessão: ${state.settings.videoLink}`;
-                }
-                
-                // Mostrar mensagem de sucesso SEM redirecionamento para WhatsApp
-showToast("Agendamento confirmado com sucesso! O psicólogo entrará em contato em breve.");
-// Atualizar interface e voltar para o perfil
+closeModal('modal-booking');
+
+// Redirecionar para WhatsApp com mensagem formatada após salvar o agendamento
 setTimeout(() => {
-renderClientSlots();
-renderClientDates();
-navigateTo('view-profile');
-}, 1500);
+    // Formatar data para exibição
+    const formattedDate = state.selectedDate.split('-').reverse().join('/');
+    
+    // Montar mensagem para o psicólogo
+    const message = `Olá, me chamo ${name}, gostaria de agendar uma sessão para o dia ${formattedDate} às ${state.selectedSlot}.`;
+    
+    // Codificar a mensagem para URL e redirecionar para WhatsApp
+    const encodedMessage = encodeURIComponent(message);
+    window.location.href = `https://wa.me/5516991421704?text=${encodedMessage}`;
+    
+    // Mensagem de sucesso
+    showToast("Solicitação enviada com sucesso! Você será redirecionado para o WhatsApp.");
+    
+    // Atualizar interface depois de um breve delay
+    setTimeout(() => {
+        renderClientSlots();
+        renderClientDates();
+        navigateTo('view-profile');
+    }, 3000);
+}, 500);
             } catch (error) {
                 console.error("Error confirming booking:", error);
-                showToast("Erro ao confirmar agendamento. Tente novamente.", "error");
+                showToast("Erro ao solicitar agendamento. Tente novamente.", "error");
             } finally {
                 showLoader(false);
             }
