@@ -2800,8 +2800,8 @@ async function generateSlotsForSingleDay(period, date) {
                 clientEl.className = "flex items-center p-3 border-b border-slate-100 last:border-b-0";
                 clientEl.innerHTML = `
                     <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3 flex-shrink-0">
-                        <span class="font-bold text-blue-700 text-sm">${client.name.charAt(0)}</span>
-                    </div>
+<span class="font-bold text-blue-700 text-sm">${client.name && client.name.length > 0 ? client.name.charAt(0) : '?'}</span>
+</div>
                     <div class="flex-1 min-w-0">
                         <h4 class="font-bold text-slate-800 truncate" title="${client.name}">${client.name}</h4>
                         <div class="flex flex-wrap gap-2 mt-1">
@@ -2954,8 +2954,8 @@ async function generateSlotsForSingleDay(period, date) {
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-start">
                                     <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mr-3 flex-shrink-0">
-                                        <span class="text-white text-lg font-bold">${client.name.charAt(0)}</span>
-                                    </div>
+<span class="text-white text-lg font-bold">${client.name && client.name.length > 0 ? client.name.charAt(0) : '?'}</span>
+</div>
                                     <div class="min-w-0 flex-1">
                                         <h4 class="font-bold text-lg text-slate-800 truncate" title="${client.name}">${client.name}</h4>
                                         <div class="flex flex-wrap items-center gap-2 mt-1">
@@ -3023,7 +3023,13 @@ async function generateSlotsForSingleDay(period, date) {
                 `;
             }
         }
-        
+        async function saveNewClient(e) {
+e.preventDefault();
+const name = document.getElementById('client-name').value.trim();
+if (!name || !phone) {
+showToast("Nome e WhatsApp são obrigatórios para cadastro.", "error");
+return;
+}
         function loadMoreClients(clients, startIndex) {
             const list = document.getElementById('clients-list');
             const currentHTML = list.innerHTML;
@@ -3043,8 +3049,8 @@ async function generateSlotsForSingleDay(period, date) {
                         <div class="min-w-0 flex-1">
                             <div class="flex items-start">
                                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mr-3 flex-shrink-0">
-                                    <span class="text-white text-lg font-bold">${client.name.charAt(0)}</span>
-                                </div>
+<span class="text-white text-lg font-bold">${client.name && client.name.length > 0 ? client.name.charAt(0) : '?'}</span>
+</div>
                                 <div class="min-w-0 flex-1">
                                     <h4 class="font-bold text-lg text-slate-800 truncate" title="${client.name}">${client.name}</h4>
                                     <div class="flex flex-wrap items-center gap-2 mt-1">
