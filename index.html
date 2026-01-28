@@ -2895,200 +2895,232 @@ async function generateSlotsForSingleDay(period, date) {
         }
         
         async function renderClients() {
-const search = document.getElementById('client-search').value.toLowerCase();
-const list = document.getElementById('clients-list');
-list.innerHTML = '<div class="flex justify-center items-center py-10"><div class="text-center"><div class="loader mx-auto mb-3"></div><p class="text-slate-500">Carregando pacientes...</p></div></div>';
-try {
-let clients = Object.values(cache.clients);
-// Filtrar por pesquisa
-if (search) {
-clients = clients.filter(client =>
-client.name.toLowerCase().includes(search) ||
-client.phone.toLowerCase().includes(search.replace(/\D/g, '')) ||
-(client.email && client.email.toLowerCase().includes(search))
-);
-}
-// Ordenar por última sessão (mais recente primeiro)
-clients.sort((a, b) => {
-if (!a.lastSession) return 1;
-if (!b.lastSession) return -1;
-return new Date(b.lastSession) - new Date(a.lastSession);
-});
-// Atualizar contador
-document.getElementById('clients-count').innerText = clients.length;
-// Mostrar/ocultar botão de carregar mais
-const loadMoreBtn = document.getElementById('load-more-clients');
-loadMoreBtn.classList.add('hidden');
-// Renderizar clientes
-if (clients.length === 0) {
-list.innerHTML = `
-<div class="empty-state py-10">
-<i class="fa-solid fa-magnifying-glass text-slate-300"></i>
-<h4 class="font-bold text-lg text-slate-700">Nenhum paciente encontrado</h4>
-<p class="text-slate-500">Tente outra busca ou cadastre um novo paciente</p>
-<button onclick="openNewClientModal()" class="mt-4 bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 transition">
-<i class="fa-solid fa-user-plus mr-1"></i> Cadastrar Novo Paciente
-</button>
-</div>
-`;
-return;
-}
-list.innerHTML = '';
-clients.slice(0, clientsPerPage).forEach(client => {
-const lastSessionDate = client.lastSession ? new Date(client.lastSession + 'T00:00:00') : null;
-const formattedDate = lastSessionDate ? lastSessionDate.toLocaleDateString('pt-BR') : 'Nenhuma sessão';
-const totalSessions = client.totalSessions || 0;
-const el = document.createElement('div');
-el.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100";
-el.innerHTML = `
-<div class="flex justify-between items-start">
-<div class="min-w-0 flex-1">
-<div class="flex items-start">
-<div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mr-3 flex-shrink-0">
-<span class="text-white text-lg font-bold">${client.name && client.name.length > 0 ? client.name.charAt(0) : '?'}</span>
-</div>
-<div class="min-w-0 flex-1">
-<h4 class="font-bold text-lg text-slate-800 truncate" title="${client.name || 'Sem nome'}">${client.name || 'Paciente sem nome'}</h4>
-<div class="flex flex-wrap items-center gap-2 mt-1">
-<span class="text-sm text-slate-600 flex items-center">
-<i class="fa-solid fa-phone mr-1 text-slate-400"></i> ${client.phone}
-</span>
-${client.email ? `
-<span class="text-sm text-slate-600 flex items-center">
-<i class="fa-solid fa-envelope mr-1 text-slate-400"></i> ${client.email}
-</span>` : ''}
-</div>
-<div class="flex flex-wrap items-center gap-2 mt-2 text-sm">
-<span class="text-slate-500 flex items-center">
-<i class="fa-solid fa-calendar-day mr-1 text-slate-400"></i> Última sessão: ${formattedDate}
-</span>
-<span class="text-slate-500 flex items-center">
-<i class="fa-solid fa-user-injured mr-1 text-slate-400"></i> ${totalSessions} ${totalSessions !== 1 ? 'sessões' : 'sessão'}
-</span>
-${client.source ? `
-<span class="text-slate-500 flex items-center">
-<i class="fa-solid fa-bullhorn mr-1 text-slate-400"></i> Origem: ${client.source === 'indication' ? 'Indicação' : client.source === 'google' ? 'Google' : client.source === 'instagram' ? 'Instagram' : client.source === 'facebook' ? 'Facebook' : 'Outro'}
-</span>` : ''}
-</div>
-</div>
-</div>
-</div>
-<div class="flex flex-col items-end space-y-2 ml-3">
-<button onclick="openNotesModal('${client.phone}', '${client.name || ''}')" class="w-9 h-9 bg-teal-50 text-teal-600 rounded-lg flex items-center justify-center hover:bg-teal-100 transition" title="Ver prontuário">
-<i class="fa-solid fa-file-medical text-base"></i>
-</button>
-<a href="https://wa.me/55${client.phone.replace(/\D/g,'')}" target="_blank" class="w-9 h-9 bg-green-50 text-green-600 rounded-lg flex items-center justify-center hover:bg-green-100 transition" title="WhatsApp">
-<i class="fa-brands fa-whatsapp text-base"></i>
-</a>
-</div>
-</div>
-<div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
-<div class="text-sm">
-<span class="text-xs text-slate-400 mr-2">Registrado em:</span>
-<span class="font-medium text-slate-700">${new Date(client.createdAt?.toDate() || client.createdAt).toLocaleDateString('pt-BR')}</span>
-</div>
-<button onclick="openNewSessionModal('${client.phone}', '${client.name || ''}')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-100 transition flex items-center">
-<i class="fa-solid fa-calendar-plus mr-1"></i> Nova Sessão
-</button>
-</div>
-`;
-list.appendChild(el);
-});
-// Mostrar botão de carregar mais se houver mais clientes
-if (clients.length > clientsPerPage) {
-loadMoreBtn.classList.remove('hidden');
-loadMoreBtn.onclick = () => loadMoreClients(clients, clientsPerPage);
-}
-} catch (error) {
-console.error("Error rendering clients:", error);
-list.innerHTML = `
-<div class="empty-state py-10">
-<i class="fa-solid fa-triangle-exclamation text-red-300"></i>
-<h4 class="font-bold text-lg text-slate-700">Erro ao carregar pacientes</h4>
-<p class="text-slate-500">Tente atualizar a página ou verificar sua conexão</p>
-<button onclick="renderClients()" class="mt-4 bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition">
-<i class="fa-solid fa-rotate mr-1"></i> Tentar Novamente
-</button>
-</div>
-`;
-}
-}
-        function loadMoreClients(clients, startIndex) {
-            const list = document.getElementById('clients-list');
-            const currentHTML = list.innerHTML;
+    const search = document.getElementById('client-search').value.toLowerCase();
+    const list = document.getElementById('clients-list');
+    list.innerHTML = '<div class="flex justify-center items-center py-10"><div class="text-center"><div class="loader mx-auto mb-3"></div><p class="text-slate-500">Carregando pacientes...</p></div></div>';
+    
+    try {
+        let clients = Object.values(cache.clients);
+        
+        // Filtrar por pesquisa
+        if (search) {
+            clients = clients.filter(client => {
+                const name = client.name || '';
+                const phone = client.phone || '';
+                const email = client.email || '';
+                return name.toLowerCase().includes(search) ||
+                       phone.toLowerCase().includes(search.replace(/\D/g, '')) ||
+                       email.toLowerCase().includes(search);
+            });
+        }
+        
+        // Ordenar por última sessão (mais recente primeiro)
+        clients.sort((a, b) => {
+            if (!a.lastSession) return 1;
+            if (!b.lastSession) return -1;
+            return new Date(b.lastSession) - new Date(a.lastSession);
+        });
+        
+        // Atualizar contador
+        document.getElementById('clients-count').innerText = clients.length;
+        
+        // Mostrar/ocultar botão de carregar mais
+        const loadMoreBtn = document.getElementById('load-more-clients');
+        loadMoreBtn.classList.add('hidden');
+        
+        // Renderizar clientes
+        if (clients.length === 0) {
+            list.innerHTML = `
+            <div class="empty-state py-10">
+                <i class="fa-solid fa-magnifying-glass text-slate-300"></i>
+                <h4 class="font-bold text-lg text-slate-700">Nenhum paciente encontrado</h4>
+                <p class="text-slate-500">Tente outra busca ou cadastre um novo paciente</p>
+                <button onclick="openNewClientModal()" class="mt-4 bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 transition">
+                    <i class="fa-solid fa-user-plus mr-1"></i> Cadastrar Novo Paciente
+                </button>
+            </div>
+            `;
+            return;
+        }
+        
+        list.innerHTML = '';
+        
+        clients.slice(0, clientsPerPage).forEach(client => {
+            // Validação segura dos dados do cliente
+            const name = client.name || 'Paciente sem nome';
+            const phone = client.phone || '';
+            const email = client.email || null;
+            const source = client.source || null;
+            const lastSessionDate = client.lastSession ? new Date(client.lastSession + 'T00:00:00') : null;
+            const formattedDate = lastSessionDate ? lastSessionDate.toLocaleDateString('pt-BR') : 'Nenhuma sessão';
+            const totalSessions = client.totalSessions || 0;
+            const createdAt = client.createdAt || new Date();
             
-            const endIndex = Math.min(clients.length, startIndex + clientsPerPage);
-            const moreClients = clients.slice(startIndex, endIndex);
+            // Escapar aspas simples para evitar quebrar o onclick
+            const safeName = name.replace(/'/g, "\\'");
+            const safePhone = phone.replace(/'/g, "\\'");
             
-            moreClients.forEach(client => {
-                const lastSessionDate = client.lastSession ? new Date(client.lastSession + 'T00:00:00') : null;
-                const formattedDate = lastSessionDate ? lastSessionDate.toLocaleDateString('pt-BR') : 'Nenhuma sessão';
-                const totalSessions = client.totalSessions || 0;
-                
-                const el = document.createElement('div');
-                el.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100";
-                el.innerHTML = `
-                    <div class="flex justify-between items-start">
+            const el = document.createElement('div');
+            el.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100";
+            el.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-start">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mr-3 flex-shrink-0">
+                            <span class="text-white text-lg font-bold">${name.charAt(0)}</span>
+                        </div>
                         <div class="min-w-0 flex-1">
-                            <div class="flex items-start">
-                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mr-3 flex-shrink-0">
-<span class="text-white text-lg font-bold">${client.name && client.name.length > 0 ? client.name.charAt(0) : '?'}</span>
-</div>
-                                <div class="min-w-0 flex-1">
-                                    <h4 class="font-bold text-lg text-slate-800 truncate" title="${client.name}">${client.name}</h4>
-                                    <div class="flex flex-wrap items-center gap-2 mt-1">
-                                        <span class="text-sm text-slate-600 flex items-center">
-                                            <i class="fa-solid fa-phone mr-1 text-slate-400"></i> ${client.phone}
-                                        </span>
-                                        ${client.email ? `
-                                        <span class="text-sm text-slate-600 flex items-center">
-                                            <i class="fa-solid fa-envelope mr-1 text-slate-400"></i> ${client.email}
-                                        </span>` : ''}
-                                    </div>
-                                    <div class="flex flex-wrap items-center gap-2 mt-2 text-sm">
-                                        <span class="text-slate-500 flex items-center">
-                                            <i class="fa-solid fa-calendar-day mr-1 text-slate-400"></i> Última sessão: ${formattedDate}
-                                        </span>
-                                        <span class="text-slate-500 flex items-center">
-                                            <i class="fa-solid fa-user-injured mr-1 text-slate-400"></i> ${totalSessions} ${totalSessions !== 1 ? 'sessões' : 'sessão'}
-                                        </span>
-                                        ${client.source ? `
-                                        <span class="text-slate-500 flex items-center">
-                                            <i class="fa-solid fa-bullhorn mr-1 text-slate-400"></i> Origem: ${client.source === 'indication' ? 'Indicação' : client.source === 'google' ? 'Google' : client.source === 'instagram' ? 'Instagram' : client.source === 'facebook' ? 'Facebook' : 'Outro'}
-                                        </span>` : ''}
-                                    </div>
-                                </div>
+                            <h4 class="font-bold text-lg text-slate-800 truncate" title="${name}">${name}</h4>
+                            <div class="flex flex-wrap items-center gap-2 mt-1">
+                                <span class="text-sm text-slate-600 flex items-center">
+                                    <i class="fa-solid fa-phone mr-1 text-slate-400"></i> ${phone}
+                                </span>
+                                ${email ? `
+                                <span class="text-sm text-slate-600 flex items-center">
+                                    <i class="fa-solid fa-envelope mr-1 text-slate-400"></i> ${email}
+                                </span>` : ''}
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 mt-2 text-sm">
+                                <span class="text-slate-500 flex items-center">
+                                    <i class="fa-solid fa-calendar-day mr-1 text-slate-400"></i> Última sessão: ${formattedDate}
+                                </span>
+                                <span class="text-slate-500 flex items-center">
+                                    <i class="fa-solid fa-user-injured mr-1 text-slate-400"></i> ${totalSessions} ${totalSessions !== 1 ? 'sessões' : 'sessão'}
+                                </span>
+                                ${source ? `
+                                <span class="text-slate-500 flex items-center">
+                                    <i class="fa-solid fa-bullhorn mr-1 text-slate-400"></i> Origem: ${source === 'indication' ? 'Indicação' : source === 'google' ? 'Google' : source === 'instagram' ? 'Instagram' : source === 'facebook' ? 'Facebook' : 'Outro'}
+                                </span>` : ''}
                             </div>
                         </div>
-                        <div class="flex flex-col items-end space-y-2 ml-3">
-                            <button onclick="openNotesModal('${client.phone}', '${client.name}')" class="w-9 h-9 bg-teal-50 text-teal-600 rounded-lg flex items-center justify-center hover:bg-teal-100 transition" title="Ver prontuário">
-                                <i class="fa-solid fa-file-medical text-base"></i>
-                            </button>
-                            <a href="https://wa.me/55${client.phone.replace(/\D/g,'')}" target="_blank" class="w-9 h-9 bg-green-50 text-green-600 rounded-lg flex items-center justify-center hover:bg-green-100 transition" title="WhatsApp">
-                                <i class="fa-brands fa-whatsapp text-base"></i>
-                            </a>
-                        </div>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
-                        <div class="text-sm">
-                            <span class="text-xs text-slate-400 mr-2">Registrado em:</span>
-                            <span class="font-medium text-slate-700">${new Date(client.createdAt?.toDate() || client.createdAt).toLocaleDateString('pt-BR')}</span>
-                        </div>
-                        <button onclick="openNewSessionModal('${client.phone}', '${client.name}')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-100 transition flex items-center">
-                            <i class="fa-solid fa-calendar-plus mr-1"></i> Nova Sessão
-                        </button>
-                    </div>
-                `;
-                list.appendChild(el);
-            });
-            
-            const loadMoreBtn = document.getElementById('load-more-clients');
-            if (endIndex < clients.length) {
-                loadMoreBtn.classList.remove('hidden');
-            } else {
-                loadMoreBtn.classList.add('hidden');
-            }
+                </div>
+                <div class="flex flex-col items-end space-y-2 ml-3">
+                    <button onclick="openNotesModal('${safePhone}', '${safeName}')" class="w-9 h-9 bg-teal-50 text-teal-600 rounded-lg flex items-center justify-center hover:bg-teal-100 transition" title="Ver prontuário">
+                        <i class="fa-solid fa-file-medical text-base"></i>
+                    </button>
+                    <a href="https://wa.me/55${phone.replace(/\D/g,'')}" target="_blank" class="w-9 h-9 bg-green-50 text-green-600 rounded-lg flex items-center justify-center hover:bg-green-100 transition" title="WhatsApp">
+                        <i class="fa-brands fa-whatsapp text-base"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+                <div class="text-sm">
+                    <span class="text-xs text-slate-400 mr-2">Registrado em:</span>
+                    <span class="font-medium text-slate-700">${new Date(createdAt?.toDate ? createdAt.toDate() : createdAt).toLocaleDateString('pt-BR')}</span>
+                </div>
+                <button onclick="openNewSessionModal('${safePhone}', '${safeName}')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-100 transition flex items-center">
+                    <i class="fa-solid fa-calendar-plus mr-1"></i> Nova Sessão
+                </button>
+            </div>
+            `;
+            list.appendChild(el);
+        });
+        
+        // Mostrar botão de carregar mais se houver mais clientes
+        if (clients.length > clientsPerPage) {
+            loadMoreBtn.classList.remove('hidden');
+            loadMoreBtn.onclick = () => loadMoreClients(clients, clientsPerPage);
         }
+        
+    } catch (error) {
+        console.error("Error rendering clients:", error);
+        list.innerHTML = `
+        <div class="empty-state py-10">
+            <i class="fa-solid fa-triangle-exclamation text-red-300"></i>
+            <h4 class="font-bold text-lg text-slate-700">Erro ao carregar pacientes</h4>
+            <p class="text-slate-500">Tente atualizar a página ou verificar sua conexão</p>
+            <button onclick="renderClients()" class="mt-4 bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition">
+                <i class="fa-solid fa-rotate mr-1"></i> Tentar Novamente
+            </button>
+        </div>
+        `;
+    }
+}
+        function loadMoreClients(clients, startIndex) {
+    const list = document.getElementById('clients-list');
+    const endIndex = Math.min(clients.length, startIndex + clientsPerPage);
+    const moreClients = clients.slice(startIndex, endIndex);
+    
+    moreClients.forEach(client => {
+        // Validação segura dos dados do cliente
+        const name = client.name || 'Paciente sem nome';
+        const phone = client.phone || '';
+        const email = client.email || null;
+        const source = client.source || null;
+        const lastSessionDate = client.lastSession ? new Date(client.lastSession + 'T00:00:00') : null;
+        const formattedDate = lastSessionDate ? lastSessionDate.toLocaleDateString('pt-BR') : 'Nenhuma sessão';
+        const totalSessions = client.totalSessions || 0;
+        const createdAt = client.createdAt || new Date();
+        
+        // Escapar aspas simples para evitar quebrar o onclick
+        const safeName = name.replace(/'/g, "\\'");
+        const safePhone = phone.replace(/'/g, "\\'");
+        
+        const el = document.createElement('div');
+        el.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100";
+        el.innerHTML = `
+        <div class="flex justify-between items-start">
+            <div class="min-w-0 flex-1">
+                <div class="flex items-start">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mr-3 flex-shrink-0">
+                        <span class="text-white text-lg font-bold">${name.charAt(0)}</span>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <h4 class="font-bold text-lg text-slate-800 truncate" title="${name}">${name}</h4>
+                        <div class="flex flex-wrap items-center gap-2 mt-1">
+                            <span class="text-sm text-slate-600 flex items-center">
+                                <i class="fa-solid fa-phone mr-1 text-slate-400"></i> ${phone}
+                            </span>
+                            ${email ? `
+                            <span class="text-sm text-slate-600 flex items-center">
+                                <i class="fa-solid fa-envelope mr-1 text-slate-400"></i> ${email}
+                            </span>` : ''}
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 mt-2 text-sm">
+                            <span class="text-slate-500 flex items-center">
+                                <i class="fa-solid fa-calendar-day mr-1 text-slate-400"></i> Última sessão: ${formattedDate}
+                            </span>
+                            <span class="text-slate-500 flex items-center">
+                                <i class="fa-solid fa-user-injured mr-1 text-slate-400"></i> ${totalSessions} ${totalSessions !== 1 ? 'sessões' : 'sessão'}
+                            </span>
+                            ${source ? `
+                            <span class="text-slate-500 flex items-center">
+                                <i class="fa-solid fa-bullhorn mr-1 text-slate-400"></i> Origem: ${source === 'indication' ? 'Indicação' : source === 'google' ? 'Google' : source === 'instagram' ? 'Instagram' : source === 'facebook' ? 'Facebook' : 'Outro'}
+                            </span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col items-end space-y-2 ml-3">
+                <button onclick="openNotesModal('${safePhone}', '${safeName}')" class="w-9 h-9 bg-teal-50 text-teal-600 rounded-lg flex items-center justify-center hover:bg-teal-100 transition" title="Ver prontuário">
+                    <i class="fa-solid fa-file-medical text-base"></i>
+                </button>
+                <a href="https://wa.me/55${phone.replace(/\D/g,'')}" target="_blank" class="w-9 h-9 bg-green-50 text-green-600 rounded-lg flex items-center justify-center hover:bg-green-100 transition" title="WhatsApp">
+                    <i class="fa-brands fa-whatsapp text-base"></i>
+                </a>
+            </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+            <div class="text-sm">
+                <span class="text-xs text-slate-400 mr-2">Registrado em:</span>
+                <span class="font-medium text-slate-700">${new Date(createdAt?.toDate ? createdAt.toDate() : createdAt).toLocaleDateString('pt-BR')}</span>
+            </div>
+            <button onclick="openNewSessionModal('${safePhone}', '${safeName}')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-lg hover:bg-blue-100 transition flex items-center">
+                <i class="fa-solid fa-calendar-plus mr-1"></i> Nova Sessão
+            </button>
+        </div>
+        `;
+        list.appendChild(el);
+    });
+    
+    const loadMoreBtn = document.getElementById('load-more-clients');
+    if (endIndex < clients.length) {
+        loadMoreBtn.classList.remove('hidden');
+    } else {
+        loadMoreBtn.classList.add('hidden');
+    }
+}
         
         async function openNewClientModal() {
             document.getElementById('modal-new-client').classList.remove('hidden');
