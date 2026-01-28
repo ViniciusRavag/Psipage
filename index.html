@@ -4623,15 +4623,30 @@ async function generateSmartSummary() {
 
     try {
         const prompt = `
-            Aja como um psicólogo clínico (TCC).
-            Transforme o seguinte relato bruto/ditado em um registro formal SOAP.
-            Corrija erros de português e mantenha o tom profissional.
-            
-            Estrutura:
-            S (Subjetivo): O que o paciente relatou.
-            O (Objetivo): Observações do terapeuta.
-            A (Avaliação): Impressão clínica.
-            P (Plano): Próximos passos.
+            Com base no Resumo da sessão enviado, formate-a como um registro de sessão profissional. O registro deve ser bem estruturado, claro e conciso, utilizando formatação markdown. O objetivo é capturar os pontos essenciais da sessão para referência futura do terapeuta.
+
+Estruture o registro da seguinte forma:
+
+# Registro de Sessão
+
+## Tema Principal da Sessão
+Identifique e resuma o principal tópico ou preocupação discutida durante a sessão.
+
+## Resumo do Relato do Paciente
+Sintetize os pontos chave, sentimentos e experiências compartilhados pelo paciente.
+
+## Observações e Hipóteses do Terapeuta
+Com base na transcrição, extraia possíveis observações, padrões de comportamento ou hipóteses que o terapeuta poderia ter feito.
+
+## Pontos de Destaque e Intervenções
+Liste os momentos mais significativos da sessão ou possíveis intervenções realizadas pelo terapeuta.
+
+## Encaminhamentos e Tarefas
+Descreva quaisquer tarefas, recomendações ou planos discutidos para o período entre as sessões ou para a próxima consulta.
+
+DIRETRIZES DE SEGURANÇA:
+    1. Se houver nomes próprios completos, abrevie para as iniciais.
+    2. Mantenha tom estritamente clínico e impessoal.
 
             Texto: "${rawText}"
         `;
