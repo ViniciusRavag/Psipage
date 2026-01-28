@@ -4539,7 +4539,7 @@ window.closeModal = closeModal;
         // --- SISTEMA DE TRANSCRIÇÃO E IA (CUSTO ZERO) ---
 
 // Configuração da IA (Gemini Flash - Free Tier)
-const GEMINI_API_KEY = "COLE_SUA_API_KEY_DO_GOOGLE_AI_STUDIO_AQUI"; 
+const GEMINI_API_KEY = "AIzaSyDRa61V5I3jz7qej0YCBJ_PI0EYfehKigA"; 
 
 let recognition = null;
 let isRecording = false;
@@ -4610,7 +4610,7 @@ async function generateSmartSummary() {
         return;
     }
     
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === "AIzaSyAEVbiuzA90teoVxu53_FKAWaKyj5kiCZc") {
+    if (!GEMINI_API_KEY || GEMINI_API_KEY === "AIzaSyDRa61V5I3jz7qej0YCBJ_PI0EYfehKigA") {
         showToast("Configure a API Key no código para usar a IA.", "error");
         return;
     }
